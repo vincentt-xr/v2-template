@@ -18,12 +18,17 @@ import PreviewVideo from "@assets/common/preview.mp4";
  *
  * The editor preview injects these at build time so it can run without a
  * camera prompt; a published app leaves the webcam default.
+ *
+ * Mirror note: the SDK always horizontally flips the camera frame (correct for
+ * a selfie webcam). Photo/video sources are real-world footage, not a selfie,
+ * so they must be pre-flipped here to cancel that mirror and read upright.
  */
 export const useXRInit = (xrModels: Array<{ model: string }>) => {
   const { session } = useXRContext();
 
   useEffect(() => {
     let cancelled = false;
+    let rafId = 0;
 
     const init = async () => {
       const inputSource = import.meta.env.VITE_INPUT_SOURCE;
@@ -39,8 +44,24 @@ export const useXRInit = (xrModels: Array<{ model: string }>) => {
         video.autoplay = true;
         video.playsInline = true;
         await video.play();
+        // Mirror the video into a canvas (cancels the SDK's selfie flip), then
+        // capture the canvas stream.
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("2d canvas context unavailable");
+        const draw = () => {
+          if (cancelled) return;
+          ctx.save();
+          ctx.scale(-1, 1);
+          ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+          ctx.restore();
+          rafId = requestAnimationFrame(draw);
+        };
+        draw();
         const stream = (
-          video as HTMLVideoElement & { captureStream: () => MediaStream }
+          canvas as HTMLCanvasElement & { captureStream: (fps?: number) => MediaStream }
         ).captureStream();
         await session.setMediaSource({ source: XRMediaSource.STREAM, stream });
       } else if (inputSource === "photo" && inputUrl) {
@@ -56,7 +77,9 @@ export const useXRInit = (xrModels: Array<{ model: string }>) => {
         canvas.height = img.naturalHeight;
         const ctx = canvas.getContext("2d");
         if (!ctx) throw new Error("2d canvas context unavailable");
-        ctx.drawImage(img, 0, 0);
+        // Pre-flip so the SDK's selfie mirror lands it upright.
+        ctx.scale(-1, 1);
+        ctx.drawImage(img, -canvas.width, 0);
         const stream = (
           canvas as HTMLCanvasElement & {
             captureStream: (frameRate?: number) => MediaStream;
@@ -76,6 +99,7 @@ export const useXRInit = (xrModels: Array<{ model: string }>) => {
 
     return () => {
       cancelled = true;
+      if (rafId) cancelAnimationFrame(rafId);
     };
     // Runs once: session and xrModels are stable for the app's lifetime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
