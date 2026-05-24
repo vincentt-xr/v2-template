@@ -14,7 +14,7 @@
     "@react-three/drei": "9.105.6",
     "@react-three/fiber": "8.18.0",
     "@vincentt-sdks/xr-app-utilities": "^1.4.0",
-    "@vincentt-sdks/xr-sdk": "file:../xr-sdk",
+    "@vincentt-sdks/xr-sdk": "https://cdn.vincentt.studio/sdks/xr/stg/xr-sdk.tgz",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router-dom": "^7.2.0",

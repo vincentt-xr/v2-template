@@ -11,12 +11,12 @@ import stylePlugin from "esbuild-style-plugin";
 const require = createRequire(import.meta.url);
 const repoRoot = path.dirname(fileURLToPath(import.meta.url));
 
-// Packages that MUST resolve to a single instance. The XR SDK is symlinked
-// (file:../xr-sdk) and carries its own node_modules, so esbuild would otherwise
-// resolve the SDK's React/three/fiber to a second copy — two React instances
-// give "Cannot read properties of null (reading 'useMemo')", and two fiber
-// instances break the <Canvas> R3F context ("Hooks can only be used within the
-// Canvas"). Pin each to this repo's own copy.
+// Packages that MUST resolve to a single instance. Two React instances give
+// "Cannot read properties of null (reading 'useMemo')"; two fiber instances
+// break the <Canvas> R3F context ("Hooks can only be used within the Canvas").
+// With the SDK installed as a tarball these hoist to one copy on their own, but
+// pinning here is cheap insurance against a transitive dep (or a symlinked dev
+// SDK) pulling a second copy. Pin each to this repo's own copy.
 const SINGLETONS = [
   "react",
   "react-dom",
