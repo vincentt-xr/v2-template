@@ -5,6 +5,7 @@ interface ImportMetaEnv {
   readonly BASE_URL: string;
   readonly VITE_PREVIEW?: string;
   readonly VITE_INPUT_SOURCE?: string;
+  readonly VITE_INPUT_URL?: string;
 }
 
 interface ImportMeta {
