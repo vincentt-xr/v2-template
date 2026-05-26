@@ -1,6 +1,10 @@
 # Agent instructions for this Vincentt XR project
 
-You are editing a real WebXR/AR app. **Only edit files under `src/app/**`.** Never touch `src/_core/**`, `src/App.tsx`, `main.tsx`, build config, or `package.json` — those are the framework.
+You are editing a real WebXR/AR app. **Only edit files under `src/app/**`.** Never touch `src/_core/**`, `src/App.tsx`, `main.tsx`, or the build config (`esbuild.config.mjs`, `tsconfig*.json`) — those are the framework.
+
+## Adding a dependency
+
+To use an npm package that isn't already installed, add it to the `dependencies` field of `package.json` (this is the ONE framework file you may edit, and only that field). Do NOT run `npm install`, `pnpm install`, or any package manager, and do NOT look for a terminal or shell — you have none. The platform installs the dependency automatically after your change is committed; the preview rebuilds once it is ready. Just edit `package.json`, then continue as if the package is available. If you know the lockfile entry, you may add it too, but it is not required.
 
 ## Conversation continuity
 
