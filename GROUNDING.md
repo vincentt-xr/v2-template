@@ -33,9 +33,11 @@ Import from `@vincentt-sdks/xr-sdk`. Category: ui.
 | `aspect`       | `number` | 2.5                  | Panel SHAPE (width ÷ height). >1 = wide/banner, <1 = tall, 1 = square. This is how you make a wide banner vs a square chip — NOT fontSize. e.g. a full-width top banner is aspect ~5–7. |
 | `scale`        | `[x,y,z] \| number` | 1         | World size of the panel. The mesh is 1×1 world units; scale it up to span more of the view (e.g. `scale={[4,1,1]}` for a wide bar). Combine wide `aspect` + wide `scale.x` for a full-width banner. |
 | `position`     | `[x,y,z]` | [0,0,0]             | World position. +Y up, -Y down, +X right, -X left.                                                                                 |
+| `name`         | `string` | —                    | Stable identifier for the rendered mesh. Set a short descriptive name on every element you create (e.g. `name="welcomeLabel"`). It enables `getObjectByName` at runtime AND lets visual feedback match this element by name. |
 
 **Gotchas:**
 
+- Name the elements you create. → Always give each `<TextLabel>`/mesh a `name`. Unnamed elements are anonymous at runtime, which makes later edits and visual-feedback targeting guess by position instead of identity.
 - fontSize is canvas px, not world units. → The canvas is 512px by default. Chips/badges need fontSize ~200-320, not ~16-48.
 - fontSize does NOT change the panel's shape or width — it only changes text size inside the panel. → To make a wide/short banner, set `aspect` (shape) and `scale` (world size), not a bigger fontSize. A bigger fontSize on a square `aspect` just yields a bigger square.
 - TextLabel ignores the `visible` prop. → To start hidden, wrap it in `<group visible={false}>` — otherwise it flashes for one frame.
