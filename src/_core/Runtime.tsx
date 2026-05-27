@@ -4,6 +4,7 @@ import { useXRReady, VideoBackground, XRScene } from "@vincentt-sdks/xr-sdk";
 import { PerspectiveCamera } from "@react-three/drei";
 
 import { Loading } from "./Loading";
+import { PreviewAnchors } from "./PreviewAnchors";
 import { SceneSwitch } from "./SceneSwitch";
 import type { AppConfig } from "./SceneProps";
 import { useAssets } from "./useAssets";
@@ -40,6 +41,7 @@ export const Runtime = ({ config }: { config: AppConfig }) => {
           initialScene={config.initialScene}
           assets={assets}
         />
+        <PreviewAnchors />
       </XRScene>
     </AspectRatioContainer>
   );
