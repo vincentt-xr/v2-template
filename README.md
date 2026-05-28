@@ -9,19 +9,16 @@ powers the in-editor preview and the published build).
 
 ```
 src/
-  main.tsx          mount — never edited
-  App.tsx           composition root: XRProvider + Router + Runtime(config)
-  _core/            framework glue (Runtime, SceneSwitch, useXRInit, useAssets)
-                    — never imports app; agent never edits
-  app/              the agent's surface:
-    scenes/index.ts the scenes map + initialScene (the wiring)
-    scenes/*.tsx    each scene = a React component taking SceneProps
-    config/         assets + xrModels (plain typed data)
+  main.tsx            mount — never edited
+  App.tsx             protected shell: XRProvider + AspectRatioContainer +
+                      XRScene + media-source binding, camera, lighting,
+                      VideoBackground, PreviewAnchors — never edited
+  Scene.tsx           the agent's surface: add SDK components and R3F
+                      primitives here
+  PreviewAnchors.tsx  editor-preview integration — never edited
 ```
 
-Configuration is explicit static data, not import-side-effect registration, so
-the app builds correctly under any bundler (not just Vite dev). See `AGENTS.md`
-and `GROUNDING.md` for how to author scenes.
+See `AGENTS.md` and `GROUNDING.md` for the API reference and how to author scenes.
 
 ## Develop
 
@@ -30,5 +27,4 @@ npm install
 npm run dev          # esbuild dev server on :5173
 npm run typecheck    # tsc --noEmit
 npm run build        # production bundle to dist/
-npm run check:boundary  # assert _core never imports @app
 ```
