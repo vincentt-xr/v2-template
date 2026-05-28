@@ -14,6 +14,15 @@ const distDir = path.join(root, "dist");
 await fs.rm(distDir, { recursive: true, force: true });
 const result = await esbuild.build(buildOptions({ mode: "production", root }));
 
+// Mirror /public into dist so root-relative refs (favicon, og:image, fonts)
+// are served by the published bundle.
+const publicDir = path.join(root, "public");
+try {
+  await fs.cp(publicDir, distDir, { recursive: true });
+} catch (e) {
+  if (e.code !== "ENOENT") throw e;
+}
+
 let js = "";
 let css = "";
 for (const [out, meta] of Object.entries(result.metafile.outputs)) {
