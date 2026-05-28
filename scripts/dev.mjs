@@ -21,6 +21,16 @@ const distDir = path.join(root, "dist");
 const opts = buildOptions({ mode: "development", root });
 
 await fs.mkdir(distDir, { recursive: true });
+// Mirror /public into dist so root-relative refs (favicon, og:image, fonts)
+// resolve. esbuild's `serve` only exposes its build output, not the source
+// tree.
+const publicDir = path.join(root, "public");
+try {
+  await fs.cp(publicDir, distDir, { recursive: true });
+} catch (e) {
+  if (e.code !== "ENOENT") throw e;
+}
+
 let html = await fs.readFile(path.join(root, "index.html"), "utf8");
 html = html.replace(
   /<link[^>]+href="\/src\/index\.css"[^>]*>/,
