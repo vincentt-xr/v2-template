@@ -108,10 +108,24 @@ const MediaSourceBinder = () => {
 
 const Loading = ({ shouldFadeOut }: { shouldFadeOut: boolean }) => (
   <div
-    className={`w-full h-full bg-[var(--color-bg-app)] ${
+    className={`flex w-full h-full flex-col items-center justify-center gap-6 bg-[var(--color-bg-app)] text-[var(--color-fg-app)] ${
       shouldFadeOut ? "animate-fadeOut [animation-delay:0.3s]" : ""
     }`}
-  />
+  >
+    <svg
+      viewBox="0 0 2040 2040"
+      fill="currentColor"
+      className="h-16 w-16 animate-breathe"
+      aria-hidden="true"
+    >
+      <path d="M1736.06,394.62l-195.11,1201.52c-4.4,27.09-30.43,49.25-57.87,49.25h-416.79c17.53,0,31.13-15.24,29.14-32.66l-35.06-306.39,48.9-796.11c.76-13.07,12.02-25.27,24.98-27.2l601.81-88.41Z" />
+      <path d="M1074.53,1645.38H456.54L304.16,427.57c-2.17-17.47,11.49-32.95,29.14-32.95H912.07c29.37,0,55.64,23.98,58.33,53.23l98.2,858.49,35.06,306.39c1.99,17.41-11.61,32.66-29.14,32.66Z" />
+    </svg>
+    <div className="flex flex-col items-center gap-1">
+      <div className="text-base font-medium tracking-wide">Vincentt</div>
+      <div className="text-sm text-[var(--color-fg-muted)]">Make it real.</div>
+    </div>
+  </div>
 );
 
 const Shell = () => {
