@@ -37,7 +37,6 @@ function pkgDir(localRequire, pkg) {
 }
 
 export function aliasMap(root = repoRoot) {
-  const src = path.join(root, "src");
   const localRequire = createRequire(path.join(root, "package.json"));
   const singletons = {};
   for (const pkg of SINGLETONS) {
@@ -48,9 +47,6 @@ export function aliasMap(root = repoRoot) {
     }
   }
   return {
-    "@core": path.join(src, "_core"),
-    "@app": path.join(src, "app"),
-    "@assets": path.join(src, "assets"),
     ...singletons,
   };
 }

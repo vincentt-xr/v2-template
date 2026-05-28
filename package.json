@@ -7,8 +7,7 @@
     "dev": "node scripts/dev.mjs",
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "check:boundary": "node scripts/check-boundary.mjs"
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
     "@react-three/drei": "9.105.6",
@@ -17,7 +16,6 @@
     "@vincentt-sdks/xr-sdk": "https://cdn.vincentt.studio/sdks/xr/xr-sdk-v1.0.0-rc-12/xr-sdk.tgz",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "react-router-dom": "^7.2.0",
     "three": "0.173.0"
   },
   "devDependencies": {

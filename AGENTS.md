@@ -1,61 +1,28 @@
 # Agent instructions for this Vincentt XR project
 
-You are editing a real WebXR/AR app. **Only edit files under `src/app/**`.** Never touch `src/_core/**`, `src/App.tsx`, `main.tsx`, or the build config (`esbuild.config.mjs`, `tsconfig*.json`) — those are the framework.
+You are editing a real WebXR/AR app.
 
-## Adding a dependency
+## What you edit
 
-To use an npm package that isn't already installed, add it to the `dependencies` field of `package.json` (this is the ONE framework file you may edit, and only that field). Do NOT run `npm install`, `pnpm install`, or any package manager, and do NOT look for a terminal or shell — you have none. The platform installs the dependency automatically after your change is committed; the preview rebuilds once it is ready. Just edit `package.json`, then continue as if the package is available. If you know the lockfile entry, you may add it too, but it is not required.
+- **`src/Scene.tsx`** — the scene. This is your primary surface. Add SDK components, R3F primitives, animation, state machines here.
+- **Any new file you create under `src/`** — utility hooks, sub-components, asset imports. Free to organize.
+- **`package.json` dependencies** — add a dep by editing the `dependencies` field. The platform installs it automatically after your commit. Do NOT run `npm`/`pnpm install` (no terminal).
 
-## Conversation continuity
+## What you don't edit
 
-This conversation is **persistent**. The full thread (the creator's earlier messages and your earlier replies) is retained across sessions and reloads, and is available to you in context. When the creator refers to something said earlier, use the conversation above — do NOT reply that you "have no memory of previous conversations" or that "each session starts fresh". You do have the prior turns.
+- **`src/App.tsx`** — the runtime shell (XR session start, media-source binding, camera, lighting, scene mount). The platform protects this; edits are rejected at commit time.
+- **`src/main.tsx`** — the mount.
+- **`src/PreviewAnchors.tsx`** — editor-preview integration.
+- **Build config** (`esbuild.config.mjs`, `tsconfig.json`, `tsconfig.node.json`) — also protected.
 
 ## Before writing any scene
 
-Read `GROUNDING.md` (repo root). It is the authoritative list of available SDK components, their props, defaults, and gotchas. Use the components and prop values it documents. Do not invent props.
+Read `GROUNDING.md` (repo root). It's the API reference for SDK components, hooks, and the common patterns (gesture photo booth, face decoration, hand effects, etc.). Use the components and props it documents. Do not invent props.
 
-## How the app is wired
+## Conversation continuity
 
-The app is **explicit static data** — there is no registration, no lifecycle DSL, no `context` object.
+This conversation is persistent. The full thread is retained across sessions and is in your context. If the creator refers to something said earlier, use the prior turns — do NOT reply that you "have no memory of previous conversations."
 
-```
-src/app/
-  scenes/
-    index.ts        the scenes map + `initialScene` — THE wiring
-    Welcome.tsx     a scene = a React component taking SceneProps
-    Second.tsx
-  config/
-    assets.ts       { key: importedUrl } — textures loaded at startup
-    xrModels.ts     [{ model: XRModel.X }] — XR trackers the app needs
-```
+## Plan mode (future)
 
-## How scenes work
-
-A scene is a plain React component that default-exports a `SceneProps` taker:
-
-```tsx
-import type { SceneProps } from "@core/SceneProps";
-
-export default function Welcome({ navigate, assets }: SceneProps) {
-  return <TextLabel text="Hello" position={[0, 0.5, 0]} fontSize={220} />;
-}
-```
-
-- **`navigate(key)`** switches to another scene. The key must be one in `scenes/index.ts` (it's type-checked).
-- **`assets`** are the loaded textures from `config/assets.ts` (e.g. `assets.preview`).
-- **Per-scene setup**: a `useEffect` inside the component. **Per-frame logic**: R3F `useFrame`. There is NO `onInit`/`onUpdate`/`onDestroy` and NO `context` argument.
-- Render SDK components (`<TextLabel>`, `<GestureTracker>`, …) and R3F primitives (`<mesh>`, `<group>`). These are the APIs you already know.
-
-Scenes render **over the live camera feed** (AR). The camera background is provided by the framework — do NOT add your own full-screen background plane; it will cover the camera.
-
-## To add a scene
-
-1. Create `src/app/scenes/<Name>.tsx` — default-export a component taking `SceneProps`.
-2. Add it to the `scenes` map in `src/app/scenes/index.ts` (one line).
-3. To show it first, set `initialScene` to its key.
-
-A wrong key or bad prop is a **TypeScript/build error** the build will report — not a silently blank screen. Keep returned JSX plain (literal props, nested geometry/material, simple handlers) so the visual editor can round-trip it.
-
-## Golden AR flow
-
-Default to: Home (instruction + gesture to continue) → Main (the experience) → Result/Preview. Adapt to the user's request; this is a guide, not a rule.
+`PLAN.md` is reserved for an upcoming "plan mode" feature: you will propose the project shape there before editing code, the creator approves it, and your subsequent edits implement against it. Today it may be empty; that's expected.
