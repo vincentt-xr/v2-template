@@ -187,27 +187,61 @@ import { GestureTracker, GestureTrigger } from "@vincentt-sdks/xr-sdk";
 
 ---
 
-## Photo capture
+## Capture (photo + video)
 
-### `session.captureFrame(): string` — Synchronous PNG dataURL of the current R3F frame
+Trigger-agnostic capture primitives live in `src/capture.ts`. Wire them to whatever the project uses — a gesture, a click, a timer — the hooks don't care. Both flows return `{ blob, dataUrl }` so previews, downloads, uploads, and shares are all one-line follow-ups.
 
-Call inside a gesture handler or click. Returns a `data:image/png;base64,...` string. Hand it to React state, a download link, or a share API.
+### `usePhotoCapture()` — single-shot photo from the live R3F render
 
 ```tsx
-import { useXRContext, GestureTracker, GestureTrigger } from "@vincentt-sdks/xr-sdk";
+import { usePhotoCapture, saveToDevice } from "../capture";
+import { GestureTracker, GestureTrigger } from "@vincentt-sdks/xr-sdk";
 
-const { session } = useXRContext();
+const { capture, latest } = usePhotoCapture();
 
 <GestureTracker />
 <GestureTrigger
   gestures={["victory"]}
-  onTrigger={() => {
-    const png = session.captureFrame();
-    // e.g. hand to parent via callback prop, or open in new tab:
-    // window.open(png, "_blank");
+  onTrigger={async () => {
+    const photo = await capture();
+    saveToDevice(photo, "snap.png");
   }}
 />
+
+// optional preview thumbnail (R3F mesh)
+{latest && (
+  <ScreenTransform anchors={{ left: 0.4, right: 0.9, top: 0.9, bottom: 0.6 }}>
+    <mesh name="thumb">
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial map={useTexture(latest.dataUrl)} />
+    </mesh>
+  </ScreenTransform>
+)}
 ```
+
+### `useVideoCapture({ audio? })` — record the live canvas to a video blob
+
+```tsx
+import { useVideoCapture, saveToDevice } from "../capture";
+
+const { start, stop, isRecording } = useVideoCapture({ audio: true });
+
+<GestureTrigger gestures={["open_palm"]} onTrigger={() => start()} />
+<GestureTrigger gestures={["closed_fist"]} onTrigger={async () => {
+  const video = await stop();
+  saveToDevice(video, "clip.webm");
+}} />
+```
+
+`isRecording` is reactive — use it to drive a "● REC" indicator or pulse a UI element while filming. Audio is off by default so kiosk / silent contexts don't surface a mic prompt; pass `{ audio: true }` for mobile capture with sound.
+
+### `saveToDevice(media, filename)` — browser download
+
+Mobile: surfaces the share / save sheet. Desktop: writes to `~/Downloads`. Kiosk contexts usually want to upload `media.blob` to a server instead — skip this helper and `fetch(uploadUrl, { method: "POST", body: media.blob })`.
+
+### `session.captureFrame(): string` — low-level alternative
+
+Returns a raw `data:image/png;base64,...` string. Use this only when you need the synchronous string directly (e.g. setting a texture without going through state). For everything else, prefer `usePhotoCapture()` — it manages the latest preview, returns a `Blob` for uploads, and keeps the photo/video API shapes symmetric.
 
 ---
 
