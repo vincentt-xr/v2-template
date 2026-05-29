@@ -313,6 +313,28 @@ const onSnap = async () => {
 
 Renders as SVG (sharp at any size). `padded` (default true) draws a white quiet-zone card so the code stays scannable over a busy camera feed. QR is **display/encode only** — there is no camera-side QR scanning in the template.
 
+### Gotcha: give replaced elements (`<img>`, `<video>`) a sized wrapper
+
+`<Overlay>` bridges out of the canvas via a wrapper that shrink-wraps its content. Text and `<QRCode>` carry their own intrinsic size, so they render fine. A bare `<img>` or `<video>` does **not** — it collapses to ~0px (just its border) and looks invisible. Wrap media in a `div` with explicit `width` + `height`, give it `overflow: hidden`, and let the media fill it:
+
+```tsx
+import { usePhotoCapture } from "../capture";
+import { Overlay } from "../overlay";
+
+const { latest } = usePhotoCapture();
+
+// preview the last photo, bottom-left
+{latest && (
+  <Overlay corner="bottom-left" margin={20}>
+    <div style={{ width: 110, height: 146, overflow: "hidden", borderRadius: 10, border: "2px solid #fff" }}>
+      <img src={latest.dataUrl} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+    </div>
+  </Overlay>
+)}
+```
+
+The same applies to a `useVideoCapture()` `latest` preview — wrap the `<video>` in a sized `div`. (To preview captures as a 3D plane instead, use `useTexture(latest.dataUrl)` on a `<mesh>` inside `<ScreenSpaceUI>` — see the capture section.)
+
 ---
 
 ## Camera background
