@@ -128,3 +128,59 @@ export const saveToDevice = (media: CapturedMedia, filename: string): void => {
   a.remove();
   URL.revokeObjectURL(url);
 };
+
+const inferExtension = (mime: string): string => {
+  if (mime.includes("png")) return "png";
+  if (mime.includes("jpeg") || mime.includes("jpg")) return "jpg";
+  if (mime.includes("mp4")) return "mp4";
+  if (mime.includes("webm")) return "webm";
+  return "bin";
+};
+
+/**
+ * `shareMedia(media, opts?)` — open the native share sheet for a capture.
+ *
+ * On devices that support the Web Share API with file payloads (most
+ * mobile browsers), this surfaces the OS share sheet so the user can send
+ * the photo/video to Instagram, WhatsApp, Messages, etc. Where it isn't
+ * available (most desktop browsers) it falls back to `saveToDevice`.
+ *
+ * Returns `{ shared }` — `true` if the native sheet opened, `false` if it
+ * fell back to a download — so the UI can branch (e.g. show a QR "scan to
+ * get it on your phone" prompt when `shared` is false).
+ *
+ * `filename` defaults to `capture.<ext>` inferred from the blob's MIME.
+ * `title` / `text` populate the share sheet caption where supported.
+ */
+export const shareMedia = async (
+  media: CapturedMedia,
+  opts?: { filename?: string; title?: string; text?: string },
+): Promise<{ shared: boolean }> => {
+  const filename =
+    opts?.filename ?? `capture.${inferExtension(media.blob.type)}`;
+  const file = new File([media.blob], filename, { type: media.blob.type });
+
+  // navigator.share with files is the goal; canShare gates it per-platform.
+  const nav = navigator as Navigator & {
+    canShare?: (data: ShareData) => boolean;
+  };
+  const shareData: ShareData = {
+    files: [file],
+    title: opts?.title,
+    text: opts?.text,
+  };
+  if (nav.share && nav.canShare?.({ files: [file] })) {
+    try {
+      await nav.share(shareData);
+      return { shared: true };
+    } catch (err) {
+      // AbortError = user dismissed the sheet; treat as a no-op success, not
+      // a fallback (re-downloading after a deliberate cancel is surprising).
+      if ((err as DOMException).name === "AbortError") return { shared: true };
+      // Any other failure: fall through to download.
+    }
+  }
+
+  saveToDevice(media, filename);
+  return { shared: false };
+};
