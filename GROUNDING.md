@@ -239,9 +239,79 @@ const { start, stop, isRecording } = useVideoCapture({ audio: true });
 
 Mobile: surfaces the share / save sheet. Desktop: writes to `~/Downloads`. Kiosk contexts usually want to upload `media.blob` to a server instead — skip this helper and `fetch(uploadUrl, { method: "POST", body: media.blob })`.
 
+### `shareMedia(media, opts?)` — native share sheet
+
+Opens the OS share sheet (Instagram / WhatsApp / Messages) on devices that support the Web Share API with files; falls back to a download elsewhere. Returns `{ shared }` so you can branch — e.g. show a "scan to get it on your phone" QR when the native sheet isn't available.
+
+```tsx
+import { useVideoCapture, shareMedia } from "../capture";
+
+const { stop } = useVideoCapture();
+
+const video = await stop();
+const { shared } = await shareMedia(video, {
+  filename: "my-ar-clip.webm",
+  title: "My AR clip",
+});
+if (!shared) {
+  // desktop / kiosk: it downloaded instead. Show a QR or upload + display a link.
+}
+```
+
 ### `session.captureFrame(): string` — low-level alternative
 
 Returns a raw `data:image/png;base64,...` string. Use this only when you need the synchronous string directly (e.g. setting a texture without going through state). For everything else, prefer `usePhotoCapture()` — it manages the latest preview, returns a `Blob` for uploads, and keeps the photo/video API shapes symmetric.
+
+---
+
+## HTML overlays (QR codes, sharp DOM UI)
+
+Most chrome (frames, prompts, badges) belongs in the 3D scene via `<ScreenSpaceUI>` — it composites with the AR content and tracks correctly. Use HTML overlays (`src/overlay.tsx`) only for content that must be pixel-sharp and is awkward in 3D, chiefly **QR codes** (they moire and soften when projected onto a textured plane).
+
+Overlays render as plain DOM positioned over the canvas, inside the portrait frame. They are NOT R3F — use HTML/CSS inside them, not meshes. Place an overlay anywhere in your `Scene.tsx` return; it portals visually above the canvas via absolute positioning.
+
+### `<Overlay corner margin interactive>` — positioned DOM layer
+
+```tsx
+import { Overlay, QRCode } from "../overlay";
+
+// "Scan to open on your phone" — kiosk entry point
+<Overlay corner="bottom-right" margin={32}>
+  <QRCode value="https://myapp.vincentt.app" size={180} />
+</Overlay>
+```
+
+`corner` is one of `top-left | top-right | bottom-left | bottom-right | center` (default `bottom-right`). `interactive` (default false) lets pointer events through so the overlay never blocks gestures; set it `true` only for a tappable control on a touch kiosk.
+
+### `<QRCode value size light dark padded>` — crisp scannable QR
+
+```tsx
+import { usePhotoCapture, shareMedia } from "../capture";
+import { Overlay, QRCode } from "../overlay";
+import { useState } from "react";
+
+const { capture } = usePhotoCapture();
+const [shareUrl, setShareUrl] = useState<string | null>(null);
+
+// after a capture, upload the blob and show a QR to the resulting URL
+const onSnap = async () => {
+  const photo = await capture();
+  const { shared } = await shareMedia(photo, { filename: "snap.png" });
+  if (!shared) {
+    // desktop/kiosk: upload and surface a QR instead of a download
+    const url = await uploadAndGetUrl(photo.blob); // your endpoint
+    setShareUrl(url);
+  }
+};
+
+{shareUrl && (
+  <Overlay corner="center">
+    <QRCode value={shareUrl} size={220} />
+  </Overlay>
+)}
+```
+
+Renders as SVG (sharp at any size). `padded` (default true) draws a white quiet-zone card so the code stays scannable over a busy camera feed. QR is **display/encode only** — there is no camera-side QR scanning in the template.
 
 ---
 

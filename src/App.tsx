@@ -7,6 +7,7 @@ import {
   useXRContext,
   XRMediaSource,
   useXRReady,
+  useXRError,
 } from "@vincentt-sdks/xr-sdk";
 import { AspectRatioContainer } from "@vincentt-sdks/xr-app-utilities";
 import { PerspectiveCamera } from "@react-three/drei";
@@ -128,12 +129,44 @@ const Loading = ({ shouldFadeOut }: { shouldFadeOut: boolean }) => (
   </div>
 );
 
+const CameraError = () => {
+  const xrError = useXRError();
+  return (
+  <div className="flex w-full h-full flex-col items-center justify-center gap-4 bg-[var(--color-bg-app)] text-[var(--color-fg-app)] px-8 text-center">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-12 w-12 text-[var(--color-fg-muted)]"
+      aria-hidden="true"
+    >
+      <path d="M2 2l20 20" />
+      <path d="M15 7h2a2 2 0 0 1 2 2v2m-2 6H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2" />
+      <path d="M9.5 9.5a3 3 0 0 0 4.2 4.2" />
+    </svg>
+    <div className="flex flex-col items-center gap-1">
+      <div className="text-base font-medium tracking-wide">
+        Camera unavailable
+      </div>
+      <div className="text-sm text-[var(--color-fg-muted)] max-w-xs">
+        {xrError?.message ||
+          "Allow camera access in your browser, then refresh the page."}
+      </div>
+    </div>
+  </div>
+  );
+};
+
 const Shell = () => {
   const ready = useXRReady();
   return (
     <AspectRatioContainer>
       <XRScene
         loadingComponent={<Loading shouldFadeOut={ready} />}
+        errorComponent={<CameraError />}
         loadingTransitionDuration={1000}
         style={{ width: "100%", height: "100%" }}
       >
