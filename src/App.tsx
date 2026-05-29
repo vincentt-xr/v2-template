@@ -7,6 +7,7 @@ import {
   useXRContext,
   XRMediaSource,
   useXRReady,
+  useXRError,
 } from "@vincentt-sdks/xr-sdk";
 import { AspectRatioContainer } from "@vincentt-sdks/xr-app-utilities";
 import { PerspectiveCamera } from "@react-three/drei";
@@ -14,14 +15,19 @@ import { PerspectiveCamera } from "@react-three/drei";
 import { Scene } from "./Scene";
 import { PreviewAnchors } from "./PreviewAnchors";
 
-import PreviewVideo from "./assets/common/preview.mp4";
+// Fallback clip for the "video" source when no VITE_INPUT_URL is supplied.
+// Referenced by URL (not bundled) so it stays out of the published bundle —
+// publish runs the webcam default and never hits this path. Editor preview
+// always passes a real VITE_INPUT_URL, so this is a dev/last-resort fallback.
+const FALLBACK_VIDEO_URL =
+  "https://cdn.vincentt.studio/assets/preview/v2/videos/Head_tilt_woman.mp4";
 
 /**
  * Picks the media source and starts the XR session. Runs once on mount.
  *
  * VITE_INPUT_SOURCE controls the source:
  *   - "webcam" (default): live getUserMedia
- *   - "video": loop VITE_INPUT_URL (or the bundled preview.mp4 if unset)
+ *   - "video": loop VITE_INPUT_URL (or FALLBACK_VIDEO_URL if unset)
  *   - "photo": draw VITE_INPUT_URL to a canvas as a static 1-frame stream
  *
  * Photo/video sources are pre-mirrored to cancel the SDK's selfie flip.
@@ -40,7 +46,7 @@ const MediaSourceBinder = () => {
       if (inputSource === "video") {
         const video = document.createElement("video");
         video.crossOrigin = "anonymous";
-        video.src = inputUrl || PreviewVideo;
+        video.src = inputUrl || FALLBACK_VIDEO_URL;
         video.loop = true;
         video.muted = true;
         video.autoplay = true;
@@ -128,12 +134,44 @@ const Loading = ({ shouldFadeOut }: { shouldFadeOut: boolean }) => (
   </div>
 );
 
+const CameraError = () => {
+  const xrError = useXRError();
+  return (
+  <div className="flex w-full h-full flex-col items-center justify-center gap-4 bg-[var(--color-bg-app)] text-[var(--color-fg-app)] px-8 text-center">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-12 w-12 text-[var(--color-fg-muted)]"
+      aria-hidden="true"
+    >
+      <path d="M2 2l20 20" />
+      <path d="M15 7h2a2 2 0 0 1 2 2v2m-2 6H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2" />
+      <path d="M9.5 9.5a3 3 0 0 0 4.2 4.2" />
+    </svg>
+    <div className="flex flex-col items-center gap-1">
+      <div className="text-base font-medium tracking-wide">
+        Camera unavailable
+      </div>
+      <div className="text-sm text-[var(--color-fg-muted)] max-w-xs">
+        {xrError?.message ||
+          "Allow camera access in your browser, then refresh the page."}
+      </div>
+    </div>
+  </div>
+  );
+};
+
 const Shell = () => {
   const ready = useXRReady();
   return (
     <AspectRatioContainer>
       <XRScene
         loadingComponent={<Loading shouldFadeOut={ready} />}
+        errorComponent={<CameraError />}
         loadingTransitionDuration={1000}
         style={{ width: "100%", height: "100%" }}
       >
