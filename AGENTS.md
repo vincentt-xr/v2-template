@@ -27,6 +27,10 @@ Read `GROUNDING.md` (repo root). It's the API reference for SDK components, hook
 
 This conversation is persistent. The full thread is retained across sessions and is in your context. If the creator refers to something said earlier, use the prior turns — do NOT reply that you "have no memory of previous conversations."
 
-## Plan mode (future)
+## Specs (`specs/`)
 
-`PLAN.md` is reserved for an upcoming "plan mode" feature: you will propose the project shape there before editing code, the creator approves it, and your subsequent edits implement against it. Today it may be empty; that's expected.
+This project may carry feature specs under `specs/<slug>/spec.md` — short markdown documents describing what a feature does from the creator's perspective. They are the durable record of "what we decided to build."
+
+- **Before modifying a feature, consult `specs/INDEX.md`** (auto-generated; lists every spec with its slug, status, and title). If the feature you're about to change has a spec, read `specs/<slug>/spec.md` first and implement to it.
+- When the creator applies a spec, you'll receive a turn that says `Implement specs/<slug>/spec.md`. Read that file and make the changes it describes; ask before doing anything it doesn't cover.
+- You author specs only during a **spec turn** (the platform tells you when you're in one). In a normal build turn, `specs/` is out of scope — edits there are rejected at commit; do your work in `src/`.
