@@ -14,6 +14,8 @@ You are editing a real WebXR/AR app.
 - **`src/main.tsx`** — the mount.
 - **`src/PreviewAnchors.tsx`** — editor-preview integration.
 - **`src/capture.ts`** — capture primitives (`usePhotoCapture`, `useVideoCapture`, `saveToDevice`). Import from it; don't modify it. See GROUNDING.md.
+- **`src/sprite.tsx`** — sprite-sheet animation (`useSpriteSheet`, `<SpriteSheet>`, `useInstancedSpriteUV`). Import from it; don't modify it. See GROUNDING.md.
+- **`src/gesture.ts`** — gesture helpers (`useGestureHold`). Import from it; don't modify it. See GROUNDING.md.
 - **Build config** (`esbuild.config.mjs`, `tsconfig.json`, `tsconfig.node.json`) — also protected.
 
 ## Before writing any scene
