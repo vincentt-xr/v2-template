@@ -14,14 +14,19 @@ import { PerspectiveCamera } from "@react-three/drei";
 import { Scene } from "./Scene";
 import { PreviewAnchors } from "./PreviewAnchors";
 
-import PreviewVideo from "./assets/common/preview.mp4";
+// Fallback clip for the "video" source when no VITE_INPUT_URL is supplied.
+// Referenced by URL (not bundled) so it stays out of the published bundle —
+// publish runs the webcam default and never hits this path. Editor preview
+// always passes a real VITE_INPUT_URL, so this is a dev/last-resort fallback.
+const FALLBACK_VIDEO_URL =
+  "https://cdn.vincentt.studio/assets/preview/v2/videos/Head_tilt_woman.mp4";
 
 /**
  * Picks the media source and starts the XR session. Runs once on mount.
  *
  * VITE_INPUT_SOURCE controls the source:
  *   - "webcam" (default): live getUserMedia
- *   - "video": loop VITE_INPUT_URL (or the bundled preview.mp4 if unset)
+ *   - "video": loop VITE_INPUT_URL (or FALLBACK_VIDEO_URL if unset)
  *   - "photo": draw VITE_INPUT_URL to a canvas as a static 1-frame stream
  *
  * Photo/video sources are pre-mirrored to cancel the SDK's selfie flip.
@@ -40,7 +45,7 @@ const MediaSourceBinder = () => {
       if (inputSource === "video") {
         const video = document.createElement("video");
         video.crossOrigin = "anonymous";
-        video.src = inputUrl || PreviewVideo;
+        video.src = inputUrl || FALLBACK_VIDEO_URL;
         video.loop = true;
         video.muted = true;
         video.autoplay = true;
