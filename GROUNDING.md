@@ -185,6 +185,32 @@ import { GestureTracker, GestureTrigger } from "@vincentt-sdks/xr-sdk";
 />
 ```
 
+### `useGestureHold({ gesture, holdMs, armDelayMs, enabled, onTrigger })` — hold-to-trigger (from `src/gesture.ts`)
+
+`<GestureTrigger>` is one-shot. `useGestureHold` fires after a gesture has been **held** for `holdMs`, debounced so a stray misclassified frame can't latch it. It re-arms when the gesture is released, so the next hold fires again. Needs a `<GestureTracker />` mounted.
+
+```tsx
+import { GestureTracker } from "@vincentt-sdks/xr-sdk";
+import { useGestureHold } from "./gesture";
+
+<GestureTracker />;
+
+// hold the peace sign ~0.6s to take the photo
+useGestureHold({ gesture: "victory", holdMs: 600, onTrigger: takePhoto });
+```
+
+- `holdMs: 0` fires on first detection (instant); larger values require a deliberate hold.
+- **`armDelayMs` (default 500) is the scene-transition guard.** When a gesture advances to a new scene, the user's hand is often still in that gesture as the next scene mounts — without an arm delay the new scene would fire instantly off the lingering gesture. The default keeps "the next scene doesn't double-fire" working out of the box. Pass `armDelayMs: 0` only if you genuinely want instant-on-mount.
+- `enabled: false` gates it without unmounting (e.g. only accept the gesture after a celebration finishes).
+
+```tsx
+// Scene A: instant peace-sign advances to Scene B
+useGestureHold({ gesture: "victory", holdMs: 0, onTrigger: goToSceneB });
+
+// Scene B: the default arm delay ignores the peace sign that's still up from leaving A
+useGestureHold({ gesture: "victory", holdMs: 0, onTrigger: goToSceneC });
+```
+
 ---
 
 ## Capture (photo + video)
@@ -362,6 +388,68 @@ const tex = useTexture("/assets/badge.webp");
   <planeGeometry args={[1, 1]} />
   <meshBasicMaterial map={tex} transparent />
 </mesh>
+```
+
+---
+
+## Sprite-sheet animation (from `src/sprite.tsx`)
+
+A sprite sheet is one image holding a grid of animation frames. Use it for countdowns, animated stickers, mascots, and particle bursts — anything frame-by-frame. Two tiers:
+
+### `<SpriteSheet>` — a single animated sprite (the common case)
+
+A textured plane that cycles through the sheet's cells. Extra mesh props pass through, so it composes in screen-space (inside `<ScreenTransform>`) or world-space (inside `<TrackingAnchor>`) unchanged. Frames read left-to-right, top row first.
+
+```tsx
+import { useTexture } from "@react-three/drei";
+import { SpriteSheet } from "./sprite";
+
+const sheet = useTexture("/assets/countdown.png"); // a 1x3 sheet: "3","2","1"
+
+// screen-center countdown that plays once
+<ScreenTransform anchors={{ left: -0.25, right: 0.25, top: 0.25, bottom: -0.25 }}>
+  <SpriteSheet name="countdown" texture={sheet} columns={1} rows={3} fps={1} loop={false} onComplete={snap} />
+</ScreenTransform>
+
+// or pinned to the forehead as an animated sticker (4x4 sheet, looping)
+<FaceTracker>
+  <TrackingAnchor target="face.forehead">
+    <SpriteSheet name="sticker" texture={stickerSheet} columns={4} rows={4} fps={12} scale={[0.3, 0.3, 1]} />
+  </TrackingAnchor>
+</FaceTracker>
+```
+
+Props: `texture`, `columns`, `rows`, `fps` (default 12), `loop` (default true), `playing` (default true — gate playback), `frameCount` (default `columns*rows`; set lower if the sheet has blank trailing cells), `onComplete` (fires when a non-looping animation ends). Plus any mesh prop (`name`, `scale`, `position`, `renderOrder`, `opacity`).
+
+### `useSpriteSheet(opts)` — the hook, when you need the raw frame
+
+Returns `{ map, frame, setFrame }`. Apply `map` to your own material; read `frame` for per-frame logic; call `setFrame(i)` to jump/restart. `<SpriteSheet>` is just this hook on a plane.
+
+### `useInstancedSpriteUV({ texture, columns, rows, count })` — sprite particles (advanced)
+
+For many sprites in one draw call (confetti, sparkles). It gives you only the reusable **mechanic** — per-instance UV cell + alpha through a pre-patched material — and you write the spawn/physics loop yourself (particle behavior is always bespoke).
+
+```tsx
+import { useInstancedSpriteUV } from "./sprite";
+
+const sprite = useInstancedSpriteUV({ texture: confettiSheet, columns: 4, rows: 4, count: 1500 });
+
+useEffect(() => {
+  const g = meshRef.current.geometry;
+  g.setAttribute("instanceUvOffset", sprite.uvOffset);
+  g.setAttribute("instanceAlpha", sprite.alpha);
+}, []);
+
+useFrame((_s, delta) => {
+  // your physics: move each instance's matrix, set its cell + alpha
+  sprite.setCell(i, cellIndex);          // which sheet cell this instance shows
+  sprite.alpha.setX(i, fade);            // per-instance fade
+  sprite.alpha.needsUpdate = true;
+});
+
+<instancedMesh ref={meshRef} args={[undefined, sprite.material, 1500]}>
+  <planeGeometry args={[0.1, 0.1]} />
+</instancedMesh>
 ```
 
 ---

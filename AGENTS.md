@@ -15,6 +15,8 @@ You are editing a real WebXR/AR app.
 - **`src/PreviewAnchors.tsx`** — editor-preview integration.
 - **`src/capture.ts`** — capture + share primitives (`usePhotoCapture`, `useVideoCapture`, `saveToDevice`, `shareMedia`). Import from it; don't modify it. See GROUNDING.md.
 - **`src/overlay.tsx`** — HTML overlay primitives (`<Overlay>`, `<QRCode>`) for pixel-sharp DOM UI over the canvas. Import from it; don't modify it. See GROUNDING.md.
+- **`src/sprite.tsx`** — sprite-sheet animation (`useSpriteSheet`, `<SpriteSheet>`, `useInstancedSpriteUV`). Import from it; don't modify it. See GROUNDING.md.
+- **`src/gesture.ts`** — gesture helpers (`useGestureHold`). Import from it; don't modify it. See GROUNDING.md.
 - **Build config** (`esbuild.config.mjs`, `tsconfig.json`, `tsconfig.node.json`) — also protected.
 
 ## Before writing any scene
