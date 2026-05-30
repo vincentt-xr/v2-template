@@ -19,9 +19,11 @@ You are editing a real WebXR/AR app.
 - **`src/gesture.ts`** — gesture helpers (`useGestureHold`). Import from it; don't modify it. See GROUNDING.md.
 - **Build config** (`esbuild.config.mjs`, `tsconfig.json`, `tsconfig.node.json`) — also protected.
 
-## Before writing any scene
+## The SDK API lives in GROUNDING.md — not in node_modules
 
-Read `GROUNDING.md` (repo root). It's the API reference for SDK components, hooks, and the common patterns (gesture photo booth, face decoration, hand effects, etc.). Use the components and props it documents. Do not invent props.
+`GROUNDING.md` (repo root) is the **complete and authoritative** reference for every SDK component, hook, and prop you may use (`<FaceTracker>`, `<HandTracker>`, `<TrackingAnchor>`, capture/overlay/sprite helpers, the common patterns). Read it before writing any scene. Use the components and props it documents; do not invent props.
+
+**Do not go looking for SDK types or source.** `node_modules` is intentionally NOT on disk in this working tree — the SDK ships as a CDN tarball installed by the platform at build time, so there is nothing to read there. Searching `node_modules`, the pnpm store, `.npmrc`, or a global cache for `@vincentt-sdks/xr-sdk` types is a dead end and wastes the turn. If an API isn't in GROUNDING.md, treat it as not existing — don't try to discover it by introspecting the package. If GROUNDING.md genuinely lacks something you need, say so and ask, rather than spelunking the filesystem.
 
 ## Assets (`src/assets/manifest.json`)
 
