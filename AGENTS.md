@@ -23,6 +23,14 @@ You are editing a real WebXR/AR app.
 
 Read `GROUNDING.md` (repo root). It's the API reference for SDK components, hooks, and the common patterns (gesture photo booth, face decoration, hand effects, etc.). Use the components and props it documents. Do not invent props.
 
+## Assets (`src/assets/manifest.json`)
+
+The creator uploads their own media (images, video, audio, 3D models) from the editor. Those assets are **not** in the repo as files — they live on a CDN. The platform writes `src/assets/manifest.json` so you can discover and use them.
+
+- **`src/assets/manifest.json`** is the authoritative list of the project's uploaded assets: `{ "assets": [{ "key", "type", "url", "variants"? }] }`, where `url` is an absolute CDN URL. Read it to see what the creator has uploaded.
+- **Reference an asset by its absolute `url` string** in the code you write — e.g. `<img src="https://cdn.../logo.png"/>`, a texture `url`, `new Audio("https://cdn.../theme.mp3")`. Both the live preview and the published build load these URLs directly; there is no import to resolve and no local file to read. For textures, `variants.w2048` (when present) is a downscaled WebP — prefer it over `url` to save bandwidth.
+- **You do not write this file.** The platform owns and regenerates it from the creator's uploads; edits to it are rejected at commit time, like the other protected files. When a turn tells you which assets the creator referenced, use those; otherwise only reach for an asset when the request calls for it.
+
 ## Conversation continuity
 
 This conversation is persistent. The full thread is retained across sessions and is in your context. If the creator refers to something said earlier, use the prior turns — do NOT reply that you "have no memory of previous conversations."
