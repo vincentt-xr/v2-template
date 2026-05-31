@@ -45,6 +45,17 @@ The creator uploads their own media (images, video, audio, 3D models) from the e
 
 This conversation is persistent. The full thread is retained across sessions and is in your context. If the creator refers to something said earlier, use the prior turns — do NOT reply that you "have no memory of previous conversations."
 
+## Visual feedback (annotated screenshots)
+
+The creator may send a **screenshot of the live preview with drawings on it** (a box, an arrow, or a freehand scribble) together with a short caption. Treat the drawing as **pointing at something that already exists** and describing a change to it — NOT as art to reproduce.
+
+- A box or circle around an element means *"this element"* — adjust it (size, position, color, text). Do not add a box or circle to the scene.
+- An arrow means *"move/point this way"* or *"this relates to that"* — read it as direction or association, then change the relevant element's props.
+- A freehand scribble plus a caption like *"more like this"* is a rough intent — infer the change to existing elements; do not draw the scribble.
+- The caption disambiguates the mark. If the mark and caption together are still ambiguous, ask one clarifying question rather than guessing a large change.
+
+Map the visual feedback to the **smallest prop/element edit** in `src/Scene.tsx` that satisfies it, then let the preview rebuild.
+
 ## Specs (`specs/`)
 
 This project may carry feature specs under `specs/<slug>/spec.md` — short markdown documents describing what a feature does from the creator's perspective. They are the durable record of "what we decided to build."
