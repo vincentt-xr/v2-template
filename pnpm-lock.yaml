@@ -18,8 +18,8 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0(@react-three/drei@9.105.6(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@types/react@18.3.5)(@types/three@0.173.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0)
       '@vincentt-sdks/xr-sdk':
-        specifier: https://cdn.vincentt.studio/sdks/xr/xr-sdk-v1.0.0-rc-12/xr-sdk.tgz
-        version: https://cdn.vincentt.studio/sdks/xr/xr-sdk-v1.0.0-rc-12/xr-sdk.tgz(@mediapipe/tasks-vision@0.10.8)(@react-three/drei@9.105.6(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@types/react@18.3.5)(@types/three@0.173.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0)
+        specifier: https://cdn.vincentt.studio/sdks/xr/xr-sdk-v1.0.0-rc-13/xr-sdk.tgz
+        version: https://cdn.vincentt.studio/sdks/xr/xr-sdk-v1.0.0-rc-13/xr-sdk.tgz(@mediapipe/tasks-vision@0.10.8)(@react-three/drei@9.105.6(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@types/react@18.3.5)(@types/three@0.173.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0)
       qrcode.react:
         specifier: 4.2.0
         version: 4.2.0(react@18.3.1)
@@ -619,9 +619,9 @@ packages:
       react-dom: ^18.2.0
       three: 0.173.0
 
-  '@vincentt-sdks/xr-sdk@https://cdn.vincentt.studio/sdks/xr/xr-sdk-v1.0.0-rc-12/xr-sdk.tgz':
-    resolution: {integrity: sha512-qgfCLQhf3atwloB8fxL3ckw7xkJuyswr1glmi23/dooNIJNDmAyZ9hE2//2g3UoD/qxnD63/0/74LW9ETBR7lQ==, tarball: https://cdn.vincentt.studio/sdks/xr/xr-sdk-v1.0.0-rc-12/xr-sdk.tgz}
-    version: 1.0.0-rc-12
+  '@vincentt-sdks/xr-sdk@https://cdn.vincentt.studio/sdks/xr/xr-sdk-v1.0.0-rc-13/xr-sdk.tgz':
+    resolution: {integrity: sha512-K4aIA3bzgGUup5p41ya1hI1bQWGm4FyOSviVoKKf687jbQUo+zZ9EzS0tYBwSwjXqJkkfjqrYOu1xu2s9+nvrA==, tarball: https://cdn.vincentt.studio/sdks/xr/xr-sdk-v1.0.0-rc-13/xr-sdk.tgz}
+    version: 1.0.0-rc-13
     peerDependencies:
       '@mediapipe/tasks-vision': ^0.10.18
       '@react-three/drei': 9.105.6
@@ -2595,7 +2595,7 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       three: 0.173.0
 
-  '@vincentt-sdks/xr-sdk@https://cdn.vincentt.studio/sdks/xr/xr-sdk-v1.0.0-rc-12/xr-sdk.tgz(@mediapipe/tasks-vision@0.10.8)(@react-three/drei@9.105.6(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@types/react@18.3.5)(@types/three@0.173.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0)':
+  '@vincentt-sdks/xr-sdk@https://cdn.vincentt.studio/sdks/xr/xr-sdk-v1.0.0-rc-13/xr-sdk.tgz(@mediapipe/tasks-vision@0.10.8)(@react-three/drei@9.105.6(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@types/react@18.3.5)(@types/three@0.173.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0)':
     dependencies:
       '@mediapipe/tasks-vision': 0.10.8
       '@react-three/drei': 9.105.6(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@types/react@18.3.5)(@types/three@0.173.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0)

@@ -13,7 +13,7 @@
     "@react-three/drei": "9.105.6",
     "@react-three/fiber": "8.18.0",
     "@vincentt-sdks/xr-app-utilities": "^1.4.0",
-    "@vincentt-sdks/xr-sdk": "https://cdn.vincentt.studio/sdks/xr/xr-sdk-v1.0.0-rc-12/xr-sdk.tgz",
+    "@vincentt-sdks/xr-sdk": "https://cdn.vincentt.studio/sdks/xr/xr-sdk-v1.0.0-rc-13/xr-sdk.tgz",
     "qrcode.react": "4.2.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
