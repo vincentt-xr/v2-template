@@ -475,17 +475,18 @@ Import from `@vincentt-sdks/xr-sdk`. Billboarded in 3D space.
 - `fontSize` is canvas px, not world units. Chips/badges need 200-320, not 16-48.
 - `fontSize` does not change panel shape — use `aspect` (shape) and `scale` (size).
 - `TextLabel` ignores the `visible` prop — wrap in `<group visible={false}>` to start hidden.
+- **Inside a `<ScreenTransform>`, the parent stretches the label to fill the anchor rect — `aspect` must equal the rect's aspect or the banner distorts and leaves dead space around the text.** The rect's aspect is `(right − left) / (top − bottom)`. So for a full-width top banner `anchors={{ left: -1, right: 1, top: 1, bottom: 0.76 }}` → aspect `= 2 / 0.24 ≈ 8.3`. Set `borderRadius={0}` for a true edge-to-edge banner. (The rect controls size + placement — don't add `scale`/`position` to fill it; set the anchors instead.)
 
 ```tsx
-// Full-width banner near the top
-<TextLabel
-  name="topBanner"
-  text="Welcome"
-  position={[0, 1.4, 0]}
-  scale={[4, 0.8, 1]}
-  aspect={6}
-  fontSize={180}
-/>
+// Full-width banner pinned to the top, INSIDE a ScreenTransform.
+// aspect = rect width (2) / rect height (0.24) ≈ 8.3 — matches the rect so it fills cleanly.
+<ScreenTransform anchors={{ left: -1, right: 1, top: 1, bottom: 0.76 }}>
+  <TextLabel name="topBanner" text="Head-Tilt Trivia" aspect={8.3} borderRadius={0} fontSize={270} />
+</ScreenTransform>
+
+// Full-width banner via position+scale, NOT inside a ScreenTransform.
+// Here aspect should match scale.x / scale.y (4 / 0.8 = 5).
+<TextLabel name="topBanner" text="Welcome" position={[0, 1.4, 0]} scale={[4, 0.8, 1]} aspect={5} fontSize={180} />
 ```
 
 ---
