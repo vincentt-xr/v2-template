@@ -19,9 +19,19 @@ You are editing a real WebXR/AR app.
 - **`src/gesture.ts`** — gesture helpers (`useGestureHold`). Import from it; don't modify it. See GROUNDING.md.
 - **Build config** (`esbuild.config.mjs`, `tsconfig.json`, `tsconfig.node.json`) — also protected.
 
-## Before writing any scene
+## The SDK API lives in GROUNDING.md — not in node_modules
 
-Read `GROUNDING.md` (repo root). It's the API reference for SDK components, hooks, and the common patterns (gesture photo booth, face decoration, hand effects, etc.). Use the components and props it documents. Do not invent props.
+`GROUNDING.md` (repo root) is the **complete and authoritative** reference for every SDK component, hook, and prop you may use (`<FaceTracker>`, `<HandTracker>`, `<TrackingAnchor>`, capture/overlay/sprite helpers, the common patterns). Read it before writing any scene. Use the components and props it documents; do not invent props.
+
+**Do not go looking for SDK types or source.** `GROUNDING.md` is the contract; `node_modules` is off-limits and reads there are denied by the platform. Do NOT read, glob, or grep under `node_modules/` — the installed `@vincentt-sdks/*` package (its `dist/*.d.ts`, the minified `main.js`/`main.cjs` bundle, etc.) is NOT a source of truth. The published types can lag or omit props, and the bundle is minified; reverse-engineering it is unreliable and wastes the turn. If an API isn't in GROUNDING.md, treat it as not existing — do not try to discover it by introspecting the package. If GROUNDING.md genuinely lacks something you need, say so and ask, rather than spelunking the filesystem.
+
+## Talking to the creator
+
+Everything you write outside a tool call is shown to the creator in the chat as your reply. They are a non-technical app creator, not an engineer watching you work. So:
+
+- Do NOT narrate your investigation ("Now I have a complete picture", "Let me do one final check", "I now have everything I need"). Keep that to yourself.
+- Do NOT paste SDK type definitions, file contents, line numbers, or internal API breakdowns into the reply. The creator does not read code.
+- When you're done, say plainly what you built or changed in product terms (what they'll see and do), and what to try. One short message, not a report.
 
 ## Assets (`src/assets/manifest.json`)
 
