@@ -44,7 +44,7 @@ Coordinates are normalized: -1 to +1, with +y up. The center of the screen is `(
 ```
 
 **Converting a screen-region annotation (% coords) to anchors.** Annotation marks come as top-left percentages (x: 0%=left→100%=right, y: 0%=top→100%=bottom). Anchors are normalized -1..+1 with +y UP, so the y sign flips:
-`left = x%/50 - 1`, `right = x%/50 - 1`, `top = 1 - y%/50`, `bottom = 1 - y%/50`. A mark at x 0–100%, y 0–28% → `anchors={{ left: -1, right: 1, top: 1, bottom: 0.44 }}`. Extend a near-edge mark to the actual edge (top: 1 for a top bar).
+`left = x%/50 - 1`, `right = x%/50 - 1`, `top = 1 - y%/50`, `bottom = 1 - y%/50`. A mark at x 0–100%, y 0–28% → `anchors={{ left: -1, right: 1, top: 1, bottom: 0.44 }}`. **Snap a near-edge mark to that edge** (within ~10%): top→`top: 1`, bottom→`bottom: -1`, left→`left: -1`, right→`right: 1`. A strip drawn near the bottom (y 78–90%) → `anchors={{ left: -1, right: 1, top: -0.6, bottom: -1 }}` (flush at -1, not the literal -0.8).
 
 ### `useScreenRectAspect()` + `computeContainScale(rectAspect, contentAspect)` — Aspect-correct fitting
 
