@@ -24,7 +24,7 @@ import { ScreenSpaceUI, ScreenTransform } from "@vincentt-sdks/xr-sdk";
 
 ### `<ScreenTransform anchors={{ left, right, top, bottom }}>` — Place an element within a normalized screen rect
 
-Coordinates are normalized: -1 to +1, with +y up. The center of the screen is `(0, 0)`.
+Coordinates are normalized: -1 to +1, with +y up. The center of the screen is `(0, 0)`. The anchors rect controls BOTH size and placement of the child — it stretches the child (plane, TextLabel, sprite) to fill the rect. Don't add `scale`/`position`/`planeGeometry args` to size or move a screen-anchored child; set the anchors.
 
 ```tsx
 // Full-screen frame
@@ -36,7 +36,15 @@ Coordinates are normalized: -1 to +1, with +y up. The center of the screen is `(
 <ScreenTransform anchors={{ left: -0.4, right: 0.4, top: -0.5, bottom: -0.9 }}>
   <TextLabel name="prompt" text="Show your hand" fontSize={220} />
 </ScreenTransform>
+
+// Full-width strip pinned FLUSH to the top edge (e.g. a colored banner plane)
+<ScreenTransform anchors={{ left: -1, right: 1, top: 1, bottom: 0.6 }}>
+  <mesh name="topBar"><planeGeometry args={[1, 1]} /><meshBasicMaterial color="#2255ff" /></mesh>
+</ScreenTransform>
 ```
+
+**Converting a screen-region annotation (% coords) to anchors.** Annotation marks come as top-left percentages (x: 0%=left→100%=right, y: 0%=top→100%=bottom). Anchors are normalized -1..+1 with +y UP, so the y sign flips:
+`left = x%/50 - 1`, `right = x%/50 - 1`, `top = 1 - y%/50`, `bottom = 1 - y%/50`. A mark at x 0–100%, y 0–28% → `anchors={{ left: -1, right: 1, top: 1, bottom: 0.44 }}`. Extend a near-edge mark to the actual edge (top: 1 for a top bar).
 
 ### `useScreenRectAspect()` + `computeContainScale(rectAspect, contentAspect)` — Aspect-correct fitting
 
