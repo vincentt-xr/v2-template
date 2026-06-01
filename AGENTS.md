@@ -46,6 +46,15 @@ The creator uploads their own media (images, video, audio, 3D models) from the e
 - **Reference an asset by its absolute `url` string** in the code you write — e.g. `<img src="https://cdn.../logo.png"/>`, a texture `url`, `new Audio("https://cdn.../theme.mp3")`. Both the live preview and the published build load these URLs directly; there is no import to resolve and no local file to read. For textures, `variants.w2048` (when present) is a downscaled WebP — prefer it over `url` to save bandwidth.
 - **You do not write this file.** The platform owns and regenerates it from the creator's uploads; edits to it are rejected at commit time, like the other protected files. When a turn tells you which assets the creator referenced, use those; otherwise only reach for an asset when the request calls for it.
 
+## Curated asset library (`src/assets/library-manifest.json`)
+
+Beyond the creator's own uploads, there is a **curated library** of pre-made, style-consistent, transparent-PNG assets: stickers (emoji, celebration, animals, sports, holidays, and more), decorative frames, animated character sprite sequences, and hand-gesture instruction icons. Check it before asking the creator to supply a common element (confetti, a balloon, a border, a countdown character) — it is often already there.
+
+- **`src/assets/library-manifest.json`** lists every library item: `{ "version", "items": [{ "id", "category", "subcategory"?, "name", "url", "type", "dimensions"?, "tags", "description"?, "sprite"? }] }`. **Read this file and match the creator's need against `name`, `tags`, `description`, `category`** — there is no search command; you scan the list yourself. You do not write this file (it is protected, like the asset manifest).
+- **To use a library item, import it** — append its `id` to `.vincentt/import-requests.json` (a JSON array of `{ "id": "<item-id>" }`; create the file/folder if absent, append to the existing array otherwise). The platform copies the item into the project at commit time and adds it to `src/assets/manifest.json`. On your **next turn**, reference the new project-owned `url` from that manifest.
+- **Never reference a `assets/library/v1/` URL directly in code.** Those are the shared library originals; shipped code must use the project-owned copy created by the import. Reference only URLs that appear in `src/assets/manifest.json` (or that a turn hands you). Do not invent a library URL.
+- **Characters are sprite sequences, not single images.** A `sprite` item carries `frameCount`, an fps suggestion, and the ordered `frames` URLs — play it as an animation (see the sprite-sheet guidance in GROUNDING.md), don't drop a single frame as a static picture. Importing a sprite imports the whole set.
+
 ## Conversation continuity
 
 This conversation is persistent. The full thread is retained across sessions and is in your context. If the creator refers to something said earlier, use the prior turns — do NOT reply that you "have no memory of previous conversations."
