@@ -55,6 +55,20 @@ Beyond the creator's own uploads, there is a **curated library** of pre-made, st
 - **Never reference a `assets/library/v1/` URL directly in code.** Those are the shared library originals; shipped code must use the project-owned copy created by the import. Reference only URLs that appear in `src/assets/manifest.json` (or that a turn hands you). Do not invent a library URL.
 - **Characters are sprite sequences, not single images.** A `sprite` item carries `frameCount`, an fps suggestion, and the ordered `frames` URLs — play it as an animation (see the sprite-sheet guidance in GROUNDING.md), don't drop a single frame as a static picture. Importing a sprite imports the whole set.
 
+## Integrations (`src/integrations/`)
+
+The creator can connect a third-party backend (a "Service" — e.g. a marketing-campaign backend) to this project from the editor. When they do, the platform writes two kinds of file under `src/integrations/`, both **platform-owned and read-only to you**:
+
+- **`src/integrations/<name>.json`** — the integration's runtime config, e.g. `{ "apiKey": "...", "campaignId": "..." }`. Read these values and pass them to the integration's SDK (for example, an `initialize({ apiKey, campaignId })` call). The values are client-safe (they ship in the published app).
+- **`src/integrations/<name>.GROUNDING.md`** — the **authoritative reference** for that integration's SDK: the available methods, the initialize call, and any ordering rules. Read it before writing integration code, and follow it the same way you follow `GROUNDING.md` for the XR SDK.
+
+Rules:
+
+- **You do not write files under `src/integrations/`.** The platform owns and materializes them when the creator connects an integration; writes to them are rejected at commit time (like `src/assets/manifest.json`). Read them; never author or edit them.
+- **The integration's grounding doc is the contract — do not read the SDK package's own types.** As with the XR SDK, the published types can lag; use only what the integration's `GROUNDING.md` documents. If it isn't in that doc, treat it as not existing.
+- **Add the SDK dependency the grounding doc names** to `package.json` (the platform installs it after your commit), then import and call it per the doc, reading config from `src/integrations/<name>.json`.
+- **Only reach for an integration when the request calls for it** and the relevant `src/integrations/` files exist. If a creator asks for a capability that needs an integration they haven't connected, say so plainly rather than inventing config.
+
 ## Conversation continuity
 
 This conversation is persistent. The full thread is retained across sessions and is in your context. If the creator refers to something said earlier, use the prior turns — do NOT reply that you "have no memory of previous conversations."
