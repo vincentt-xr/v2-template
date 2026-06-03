@@ -97,9 +97,9 @@ import { FaceTracker, FaceMesh } from "@vincentt-sdks/xr-sdk";
 </FaceTracker>
 ```
 
-### `<HandTracker>` — Hand tracking (21 joints)
+### `<HandTracker>` — Hand tracking (21 joints), binary grip only
 
-Registers the HAND_TRACKER model. Detects `closed_fist` and `open_palm` only. For named gestures (peace/victory, thumbs-up, etc.) use `<GestureTracker>` instead.
+Registers the HAND_TRACKER model. Use it for 21-joint hand landmarks (anchoring to `hand.indexTip` etc.) or a crude open-vs-closed grip. Its `node.gesture` is a heuristic with exactly two possible values: `closed_fist` and `open_palm` — nothing else. It **cannot** detect any named gesture. For `victory`, `thumb_up`, `pointing_up`, etc., use `<GestureTracker>` — not `<HandTracker>`.
 
 ```tsx
 import { HandTracker } from "@vincentt-sdks/xr-sdk";
@@ -107,9 +107,17 @@ import { HandTracker } from "@vincentt-sdks/xr-sdk";
 <HandTracker />
 ```
 
-### `<GestureTracker>` — Full named-gesture set
+### `<GestureTracker>` — Named-gesture recognition (superset of HandTracker)
 
-Registers the gesture-tracker model. Detects: `victory`, `pointing_up`, `open_hand`, `closed_fist`, `open_palm`, `thumbs_up`, `thumbs_down`, and more. Use this for peace-sign / thumbs-up interactions.
+Registers the gesture-tracker model — the **only** component that detects named gestures. Its `node.gesture` is one of these exact strings (copy verbatim — these are the only valid values):
+
+`closed_fist`, `open_palm`, `pointing_up`, `thumb_down`, `thumb_up`, `victory`, `i_love_you`, `none`.
+
+Catches people out:
+- It is `thumb_up` / `thumb_down` — singular, no trailing "s" (not `thumbs_up`).
+- The peace sign is `victory`.
+- There is no `open_hand`; the open-hand gesture is `open_palm`.
+- This set is a strict superset of `<HandTracker>`'s two values, so prefer `<GestureTracker>` whenever you need a gesture trigger of any kind.
 
 ```tsx
 import { GestureTracker } from "@vincentt-sdks/xr-sdk";
