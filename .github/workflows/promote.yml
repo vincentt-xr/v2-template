@@ -1,0 +1,27 @@
+name: Promote Template Release
+# A `v2-template-v*` tag is the deliberate gate that activates a template release.
+# This dispatches to the backend repo, which owns the box (init.sh + SSH creds) and
+# runs the actual promotion. See backend/.github/workflows/template-promote.yml and
+# the deploy runbook's "Promoting a template release".
+#
+# Requires a secret BACKEND_DISPATCH_TOKEN: a PAT (or fine-grained token) with
+# write/contents+actions on vincentt-xr/backend, so repository_dispatch is accepted.
+on:
+  push:
+    tags:
+      - 'v2-template-v*'
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch promote to backend
+        env:
+          TOKEN: ${{ secrets.BACKEND_DISPATCH_TOKEN }}
+          TPL_VERSION: ${{ github.ref_name }}
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: token ${TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/vincentt-xr/backend/dispatches" \
+            -d "$(printf '{"event_type":"promote-template","client_payload":{"version":"%s"}}' "${TPL_VERSION}")"
+          echo "dispatched promote-template for ${TPL_VERSION} to vincentt-xr/backend"
