@@ -57,3 +57,8 @@ const { host, port: actualPort } = await ctx.serve({
   port,
 });
 console.log(`dev server: http://${host || "127.0.0.1"}:${actualPort}`);
+if (process.env.SDK_LINK) {
+  const linked =
+    process.env.SDK_LINK === "1" ? "../xr-sdk" : process.env.SDK_LINK;
+  console.log(`SDK linked → ${linked} (run \`pnpm build:watch\` there)`);
+}
