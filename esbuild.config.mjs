@@ -36,6 +36,23 @@ function pkgDir(localRequire, pkg) {
   return path.dirname(pkgJson);
 }
 
+const SDK_PKG = "@vincentt-sdks/xr-sdk";
+
+// Dev-only SDK link: `SDK_LINK=1 npm run dev` resolves the SDK to a local xr-sdk
+// checkout (its built dist/) instead of the pinned tarball, so SDK edits show up
+// in the app's dev loop without publish→repin→reinstall. Run `pnpm build:watch`
+// in xr-sdk alongside so dist/ rebuilds on change. `SDK_LINK=1` uses the sibling
+// `../xr-sdk`; `SDK_LINK=/abs/path/to/xr-sdk` overrides. Resolves to the package
+// DIRECTORY (esbuild reads its exports → dist/main.js), and the SINGLETONS pins
+// above keep the linked SDK from dragging a second React/three. Never affects the
+// publish build (SDK_LINK unset) — the tarball remains the source of truth.
+function linkedSdkDir() {
+  const link = process.env.SDK_LINK;
+  if (!link) return undefined;
+  const dir = link === "1" ? path.resolve(repoRoot, "..", "xr-sdk") : path.resolve(link);
+  return dir;
+}
+
 export function aliasMap(root = repoRoot) {
   const localRequire = createRequire(path.join(root, "package.json"));
   const singletons = {};
@@ -46,8 +63,10 @@ export function aliasMap(root = repoRoot) {
       // Not installed (e.g. optional dep) — skip; esbuild resolves normally.
     }
   }
+  const sdkLink = linkedSdkDir();
   return {
     ...singletons,
+    ...(sdkLink ? { [SDK_PKG]: sdkLink } : {}),
   };
 }
 
