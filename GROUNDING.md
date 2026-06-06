@@ -1,209 +1,25 @@
-# Vincentt XR SDK — Grounding Reference
+# Vincentt Project — Template Grounding
 
-Edit `src/Scene.tsx`. Compose the SDK components and hooks below with R3F primitives. There is no lifecycle DSL — per-frame logic is R3F `useFrame`, per-mount setup is `useEffect`, both written inside the scene component. Trackers (`<FaceTracker>`, `<GestureTracker>`, `<HandTracker>`, `<BodyTracker>`) **self-register** when mounted — no explicit `registerXRPipeline` call.
+This file documents the **template-local helpers** that live in this project's
+`src/` (capture, gesture-hold, HTML overlays, sprite-sheet animation), plus
+project-shape notes and common patterns.
 
----
+The **SDK component/hook API** (`@vincentt-sdks/xr-sdk` — trackers, screen-space
+layout, `<TextLabel>`, `<Panel>`, mesh/texture conventions) is documented in the
+**SDK grounding**, which ships with the SDK. In a running project the platform
+combines the SDK grounding with this file into the `GROUNDING.md` the agent reads,
+so the agent sees one complete reference. (Developing locally across both repos?
+The SDK API reference is `xr-sdk/GROUNDING.md` in your sibling checkout.)
 
-## Screen-space layout (your primary tool)
-
-Most Vincentt projects use screen-space UI: decorative frames, prompts, badges, controls — overlaid on the live camera feed. This is more common than world-space landmark attachment.
-
-### `<ScreenSpaceUI>` — Container for screen-space content
-
-Wraps all screen-anchored children. Must be the parent of any `<ScreenTransform>`.
-
-```tsx
-import { ScreenSpaceUI, ScreenTransform } from "@vincentt-sdks/xr-sdk";
-
-<ScreenSpaceUI>
-  <ScreenTransform anchors={{ left: -1, right: 1, top: 1, bottom: -1 }}>
-    {/* full-screen content */}
-  </ScreenTransform>
-</ScreenSpaceUI>
-```
-
-### `<ScreenTransform anchors={{ left, right, top, bottom }}>` — Place an element within a normalized screen rect
-
-Coordinates are normalized: -1 to +1, with +y up. The center of the screen is `(0, 0)`. The anchors rect controls BOTH size and placement of the child — it stretches the child (plane, TextLabel, sprite) to fill the rect. Don't add `scale`/`position`/`planeGeometry args` to size or move a screen-anchored child; set the anchors.
-
-```tsx
-// Full-screen frame
-<ScreenTransform anchors={{ left: -1, right: 1, top: 1, bottom: -1 }}>
-  <mesh name="frame"><planeGeometry args={[1, 1]} /><meshBasicMaterial map={frameTex} transparent /></mesh>
-</ScreenTransform>
-
-// Bottom-center prompt
-<ScreenTransform anchors={{ left: -0.4, right: 0.4, top: -0.5, bottom: -0.9 }}>
-  <TextLabel name="prompt" text="Show your hand" fontSize={220} />
-</ScreenTransform>
-
-// Full-width strip pinned FLUSH to the top edge (e.g. a colored banner plane)
-<ScreenTransform anchors={{ left: -1, right: 1, top: 1, bottom: 0.6 }}>
-  <mesh name="topBar"><planeGeometry args={[1, 1]} /><meshBasicMaterial color="#2255ff" /></mesh>
-</ScreenTransform>
-```
-
-**Converting a screen-region annotation (% coords) to anchors.** Annotation marks come as top-left percentages (x: 0%=left→100%=right, y: 0%=top→100%=bottom). Anchors are normalized -1..+1 with +y UP, so the y sign flips:
-`left = x%/50 - 1`, `right = x%/50 - 1`, `top = 1 - y%/50`, `bottom = 1 - y%/50`. A mark at x 0–100%, y 0–28% → `anchors={{ left: -1, right: 1, top: 1, bottom: 0.44 }}`. **Snap a near-edge mark to that edge** (within ~10%): top→`top: 1`, bottom→`bottom: -1`, left→`left: -1`, right→`right: 1`. A strip drawn near the bottom (y 78–90%) → `anchors={{ left: -1, right: 1, top: -0.6, bottom: -1 }}` (flush at -1, not the literal -0.8).
-
-### `useScreenRectAspect()` + `computeContainScale(rectAspect, contentAspect)` — Aspect-correct fitting
-
-Use together when you need a texture or mesh to fit inside its anchor box without stretching.
-
-```tsx
-import { useScreenRectAspect, computeContainScale } from "@vincentt-sdks/xr-sdk";
-
-const rectAspect = useScreenRectAspect();
-const [sx, sy] = computeContainScale(rectAspect, 1200 / 800); // content w/h ratio
-
-<mesh name="badge" scale={[sx * 0.5, sy * 0.5, 1]}>
-  <planeGeometry args={[1, 1]} />
-  <meshBasicMaterial map={tex} transparent />
-</mesh>
-```
+Edit `src/Scene.tsx`. Compose the SDK components/hooks with the template helpers
+below and R3F primitives. There is no lifecycle DSL — per-frame logic is R3F
+`useFrame`, per-mount setup is `useEffect`, both inside the scene component.
 
 ---
 
-## Trackers (self-registering)
+## `useGestureHold({ gesture, holdMs, armDelayMs, enabled, onTrigger })` — hold-to-trigger (from `src/gesture.ts`)
 
-Mount the tracker component; it registers the underlying ML model automatically. No `registerXRPipeline` call needed.
-
-### `<FaceTracker>` — Face tracking (468 landmarks)
-
-Detects faces and provides face transform to children via context. Supports `faceIndex` (default 0) and `scaleWithFace`.
-
-```tsx
-import { FaceTracker, TrackingAnchor } from "@vincentt-sdks/xr-sdk";
-
-<FaceTracker>
-  <TrackingAnchor target="face.forehead">
-    <mesh name="crown" position={[0, 0.1, 0]}>
-      <planeGeometry args={[0.3, 0.15]} />
-      <meshBasicMaterial map={crownTex} transparent />
-    </mesh>
-  </TrackingAnchor>
-</FaceTracker>
-```
-
-### `<FaceTracker.Mesh />` / `<FaceMesh>` — Deforming 468-point face mesh
-
-For masks, makeup, and full-face decoration that deforms with skin.
-
-```tsx
-import { FaceTracker, FaceMesh } from "@vincentt-sdks/xr-sdk";
-
-<FaceTracker>
-  <FaceMesh appearance={{ map: maskTex }} />
-</FaceTracker>
-```
-
-### `<HandTracker>` — Hand tracking (21 joints), binary grip only
-
-Registers the HAND_TRACKER model. Use it for 21-joint hand landmarks (anchoring to `hand.indexTip` etc.) or a crude open-vs-closed grip. Its `node.gesture` is a heuristic with exactly two possible values: `closed_fist` and `open_palm` — nothing else. It **cannot** detect any named gesture. For `victory`, `thumb_up`, `pointing_up`, etc., use `<GestureTracker>` — not `<HandTracker>`.
-
-```tsx
-import { HandTracker } from "@vincentt-sdks/xr-sdk";
-
-<HandTracker />
-```
-
-### `<GestureTracker>` — Named-gesture recognition (superset of HandTracker)
-
-Registers the gesture-tracker model — the **only** component that detects named gestures. Its `node.gesture` is one of these exact strings (copy verbatim — these are the only valid values):
-
-`closed_fist`, `open_palm`, `pointing_up`, `thumb_down`, `thumb_up`, `victory`, `i_love_you`, `none`.
-
-Catches people out:
-- It is `thumb_up` / `thumb_down` — singular, no trailing "s" (not `thumbs_up`).
-- The peace sign is `victory`.
-- There is no `open_hand`; the open-hand gesture is `open_palm`.
-- This set is a strict superset of `<HandTracker>`'s two values, so prefer `<GestureTracker>` whenever you need a gesture trigger of any kind.
-
-```tsx
-import { GestureTracker } from "@vincentt-sdks/xr-sdk";
-
-<GestureTracker />
-```
-
-### `<BodyTracker>` — Pose tracking (33 landmarks)
-
-Head, shoulders, elbows, wrists, hips, knees, ankles.
-
-```tsx
-import { BodyTracker, TrackingAnchor } from "@vincentt-sdks/xr-sdk";
-
-<BodyTracker>
-  <TrackingAnchor target="body.leftShoulder">
-    <mesh name="badge-left"><sphereGeometry args={[0.05]} /><meshBasicMaterial color="red" /></mesh>
-  </TrackingAnchor>
-</BodyTracker>
-```
-
-### `<Segmentation type="portrait">` — Background segmentation (declarative)
-
-Registers the portrait segmentation pipeline. The resulting mask feeds into `<VideoBackground segmentationMask={...} />` for background replacement. Mount it alongside a ref or state that holds the mask texture.
-
----
-
-## Reading tracker state
-
-### `<TrackingAnchor target="...">` — Declarative landmark following
-
-Wraps children; the child's world position is updated to the tracked landmark each frame. Use for all decoration that simply follows a face/hand/body point.
-
-Valid targets:
-- **Face:** `face.forehead`, `face.noseTip`, `face.chin`, `face.leftEyeOuter`, `face.rightEyeOuter`, `face.leftCheek`, `face.rightCheek`, `face.mouthCenter`
-- **Hand:** `hand.wrist`, `hand.thumbTip`, `hand.indexTip`, `hand.middleTip`, `hand.ringTip`, `hand.pinkyTip`, `hand.indexBase`, `hand.middleBase`, `hand.ringBase`, `hand.pinkyBase`
-- **Body:** `body.head`, `body.neck`, `body.leftShoulder`, `body.rightShoulder`, `body.leftElbow`, `body.rightElbow`, `body.leftWrist`, `body.rightWrist`, `body.leftHip`, `body.rightHip`, `body.leftKnee`, `body.rightKnee`, `body.leftAnkle`, `body.rightAnkle`
-
-```tsx
-<FaceTracker>
-  <TrackingAnchor target="face.noseTip">
-    <mesh name="noseDot" scale={[0.04, 0.04, 0.04]}>
-      <sphereGeometry />
-      <meshBasicMaterial color="red" />
-    </mesh>
-  </TrackingAnchor>
-</FaceTracker>
-```
-
-### `useXRContext()` + `session.getModelNode(XRModel.GESTURE_TRACKER)` — Raw gesture reads
-
-Use inside `useFrame` when you need the gesture name or landmark coordinates for a state machine or fine-grained control.
-
-```tsx
-import { useXRContext, XRModel } from "@vincentt-sdks/xr-sdk";
-import { useFrame } from "@react-three/fiber";
-
-const { session } = useXRContext();
-
-useFrame(() => {
-  const node = session.getModelNode(XRModel.GESTURE_TRACKER) as
-    | { gesture?: string; coordinates?: { x: number; y: number }[] }
-    | undefined;
-  if (node?.gesture === "victory") {
-    // handle peace sign
-  }
-});
-```
-
-### `<GestureTrigger gestures={["victory"]} onTrigger={(g) => ...}>` — Declarative one-shot gesture handler
-
-Debounced; fires once per gesture recognition event. Simpler alternative to manual `useFrame` polling.
-
-```tsx
-import { GestureTracker, GestureTrigger } from "@vincentt-sdks/xr-sdk";
-
-<GestureTracker />
-<GestureTrigger
-  gestures={["victory"]}
-  onTrigger={() => console.log("peace sign!")}
-/>
-```
-
-### `useGestureHold({ gesture, holdMs, armDelayMs, enabled, onTrigger })` — hold-to-trigger (from `src/gesture.ts`)
-
-`<GestureTrigger>` is one-shot. `useGestureHold` fires after a gesture has been **held** for `holdMs`, debounced so a stray misclassified frame can't latch it. It re-arms when the gesture is released, so the next hold fires again. Needs a `<GestureTracker />` mounted.
+`<GestureTrigger>` (SDK) is one-shot. `useGestureHold` fires after a gesture has been **held** for `holdMs`, debounced so a stray misclassified frame can't latch it. It re-arms when the gesture is released, so the next hold fires again. Needs a `<GestureTracker />` (SDK) mounted.
 
 ```tsx
 import { GestureTracker } from "@vincentt-sdks/xr-sdk";
@@ -229,9 +45,9 @@ useGestureHold({ gesture: "victory", holdMs: 0, onTrigger: goToSceneC });
 
 ---
 
-## Capture (photo + video)
+## Capture (photo + video) — from `src/capture.ts`
 
-Trigger-agnostic capture primitives live in `src/capture.ts`. Wire them to whatever the project uses — a gesture, a click, a timer — the hooks don't care. Both flows return `{ blob, dataUrl }` so previews, downloads, uploads, and shares are all one-line follow-ups.
+Trigger-agnostic capture primitives. Wire them to whatever the project uses — a gesture, a click, a timer — the hooks don't care. Both flows return `{ blob, dataUrl }` so previews, downloads, uploads, and shares are all one-line follow-ups.
 
 ### `usePhotoCapture()` — single-shot photo from the live R3F render
 
@@ -300,15 +116,13 @@ if (!shared) {
 }
 ```
 
-### `session.captureFrame(): string` — low-level alternative
-
-Returns a raw `data:image/png;base64,...` string. Use this only when you need the synchronous string directly (e.g. setting a texture without going through state). For everything else, prefer `usePhotoCapture()` — it manages the latest preview, returns a `Blob` for uploads, and keeps the photo/video API shapes symmetric.
+For a low-level synchronous alternative, the SDK's `session.captureFrame(): string` returns a raw `data:image/png;base64,...` string. Prefer `usePhotoCapture()` for everything else — it manages the latest preview, returns a `Blob` for uploads, and keeps the photo/video API shapes symmetric.
 
 ---
 
-## HTML overlays (QR codes, sharp DOM UI)
+## HTML overlays (QR codes, sharp DOM UI) — from `src/overlay.tsx`
 
-Most chrome (frames, prompts, badges) belongs in the 3D scene via `<ScreenSpaceUI>` — it composites with the AR content and tracks correctly. Use HTML overlays (`src/overlay.tsx`) only for content that must be pixel-sharp and is awkward in 3D, chiefly **QR codes** (they moire and soften when projected onto a textured plane).
+Most chrome (frames, prompts, badges) belongs in the 3D scene via `<ScreenSpaceUI>` (SDK) — it composites with the AR content and tracks correctly. Use HTML overlays only for content that must be pixel-sharp and is awkward in 3D, chiefly **QR codes** (they moire and soften when projected onto a textured plane).
 
 Overlays render as plain DOM positioned over the canvas, inside the portrait frame. They are NOT R3F — use HTML/CSS inside them, not meshes. Place an overlay anywhere in your `Scene.tsx` return; it portals visually above the canvas via absolute positioning.
 
@@ -379,36 +193,7 @@ The same applies to a `useVideoCapture()` `latest` preview — wrap the `<video>
 
 ---
 
-## Camera background
-
-### `<VideoBackground customBackground="#6366f1" segmentationMask={maskTex} renderOrder={-999} />`
-
-Already mounted in `src/App.tsx` — do NOT add a second one. Mentioned here because `customBackground` is also how you do background replacement: pair it with `<Segmentation type="portrait" />` and pass the segmentation mask texture as `segmentationMask`.
-
----
-
-## Mesh primitives and textures
-
-Use R3F intrinsic `<mesh>`, `<group>`, `<planeGeometry>`, `<meshBasicMaterial>`, etc. Load image textures with drei's `useTexture`. Place asset files under `public/assets/` — reference them as `/assets/<name>` from `useTexture`.
-
-**Always name your meshes** (`name="myLabel"`). Names enable runtime lookup AND visual-feedback editing by the editor.
-
-**Materials accept `map`, not `alphaMap`, for image asset slots.**
-
-```tsx
-import { useTexture } from "@react-three/drei";
-
-const tex = useTexture("/assets/badge.webp");
-
-<mesh name="badge" position={[0, 0.5, 0]}>
-  <planeGeometry args={[1, 1]} />
-  <meshBasicMaterial map={tex} transparent />
-</mesh>
-```
-
----
-
-## Sprite-sheet animation (from `src/sprite.tsx`)
+## Sprite-sheet animation — from `src/sprite.tsx`
 
 A sprite sheet is one image holding a grid of animation frames. Use it for countdowns, animated stickers, mascots, and particle bursts — anything frame-by-frame. Two tiers:
 
@@ -420,7 +205,7 @@ A textured plane that cycles through the sheet's cells. Extra mesh props pass th
 import { useTexture } from "@react-three/drei";
 import { SpriteSheet } from "./sprite";
 
-const sheet = useTexture("/assets/countdown.png"); // a 1x3 sheet: "3","2","1"
+const sheet = useTexture("https://cdn.../countdown.png"); // a 1x3 sheet: "3","2","1"
 
 // screen-center countdown that plays once
 <ScreenTransform anchors={{ left: -0.25, right: 0.25, top: 0.25, bottom: -0.25 }}>
@@ -470,92 +255,43 @@ useFrame((_s, delta) => {
 
 ---
 
-## `<TextLabel>` — Canvas-rendered text panel
-
-Import from `@vincentt-sdks/xr-sdk`. Billboarded in 3D space.
-
-| prop           | type                    | default              | notes |
-| -------------- | ----------------------- | -------------------- | ----- |
-| `text`         | `string`                | **required**         | The text to render. |
-| `color`        | `string`                | `#ffffff`            | Text color. |
-| `fontSize`     | `number`                | `48`                 | Canvas px at the default 512px canvas — NOT world units. Chips/badges typically need 200-320. |
-| `bgColor`      | `string`                | `rgba(20,40,110,0.88)` | Panel background; use `"transparent"` for text-only. |
-| `borderColor`  | `string`                | —                    | Border color; omit for no border. |
-| `borderRadius` | `number`                | `24`                 | Corner radius; 0 for square. |
-| `aspect`       | `number`                | `2.5`                | Panel shape (width ÷ height). >1 = wide/banner, <1 = tall. |
-| `scale`        | `[x,y,z] \| number`    | `1`                  | World size. Combine with `aspect` to make wide banners. |
-| `position`     | `[x,y,z]`              | `[0,0,0]`            | World position. +Y up, -Y down. |
-| `name`         | `string`                | —                    | Set on every element you create. |
-
-**Gotchas:**
-- `fontSize` is canvas px, not world units. Chips/badges need 200-320, not 16-48.
-- `fontSize` does not change panel shape — use `aspect` (shape) and `scale` (size).
-- `TextLabel` ignores the `visible` prop — wrap in `<group visible={false}>` to start hidden.
-- **Inside a `<ScreenTransform>`, the parent stretches the label to fill the anchor rect — `aspect` must equal the rect's aspect or the banner distorts and leaves dead space around the text.** The rect's aspect is `(right − left) / (top − bottom)`. So for a full-width top banner `anchors={{ left: -1, right: 1, top: 1, bottom: 0.76 }}` → aspect `= 2 / 0.24 ≈ 8.3`. Set `borderRadius={0}` for a true edge-to-edge banner. (The rect controls size + placement — don't add `scale`/`position` to fill it; set the anchors instead.)
-
-```tsx
-// Full-width banner pinned to the top, INSIDE a ScreenTransform.
-// aspect = rect width (2) / rect height (0.24) ≈ 8.3 — matches the rect so it fills cleanly.
-<ScreenTransform anchors={{ left: -1, right: 1, top: 1, bottom: 0.76 }}>
-  <TextLabel name="topBanner" text="Head-Tilt Trivia" aspect={8.3} borderRadius={0} fontSize={270} />
-</ScreenTransform>
-
-// Full-width banner via position+scale, NOT inside a ScreenTransform.
-// Here aspect should match scale.x / scale.y (4 / 0.8 = 5).
-<TextLabel name="topBanner" text="Welcome" position={[0, 1.4, 0]} scale={[4, 0.8, 1]} aspect={5} fontSize={180} />
-```
-
----
-
-## `<Panel>` — 3D billboarded panel for grouping UI content
-
-```tsx
-import { Panel, TextLabel } from "@vincentt-sdks/xr-sdk";
-
-<Panel>
-  <TextLabel name="title" text="Score: 10" fontSize={240} />
-</Panel>
-```
-
----
-
 ## Common patterns
 
-Each pattern names which primitives compose it. Use as starting points; combine and adapt freely.
+Each pattern names which primitives compose it (SDK components + template helpers). Use as starting points; combine and adapt freely.
 
 ### gesture-photo-booth (the canonical photo flow)
 
-- `<GestureTracker />` to enable gesture detection
-- `<ScreenSpaceUI>` overlay with a "do the peace sign" prompt and decorative frame
-- `<GestureTrigger gestures={["victory"]} onTrigger={...}>` fires the capture (or use `useFrame` + `session.getModelNode` for a hold-to-trigger with debounce)
-- Optional: 3-2-1 countdown sprite before `captureFrame()`
-- `session.captureFrame()` returns the PNG dataURL; hand to state or a download
+- `<GestureTracker />` (SDK) to enable gesture detection
+- `<ScreenSpaceUI>` (SDK) overlay with a "do the peace sign" prompt and decorative frame
+- `<GestureTrigger gestures={["victory"]} onTrigger={...}>` (SDK) fires the capture (or `useGestureHold` for a debounced hold-to-trigger)
+- `usePhotoCapture()` (template) returns the photo; hand to state, download, or share
+- Optional: 3-2-1 countdown `<SpriteSheet>` (template) before the capture
 
 ### face-decoration (single-scene face effect)
 
-- `<FaceTracker>` wrapping `<TrackingAnchor target="face.forehead">` (or other face landmark) with a 3D mesh/texture
-- Optional `<FaceTracker.Mesh />` for full deforming face coverage
+- `<FaceTracker>` wrapping `<TrackingAnchor target="face.forehead">` (SDK) with a 3D mesh/texture
+- Optional `<FaceTracker.Mesh />` (SDK) for full deforming face coverage
 - No interaction required — the decoration simply follows the face
 
 ### hand-effect / body-effect
 
-- `<HandTracker>` or `<BodyTracker>` + `<TrackingAnchor target="hand.indexTip">` / `<TrackingAnchor target="body.leftShoulder">`
+- `<HandTracker>` or `<BodyTracker>` (SDK) + `<TrackingAnchor target="hand.indexTip">` / `<TrackingAnchor target="body.leftShoulder">`
 - 3D objects follow the landmark each frame
 
 ### segmentation-background
 
-- `<Segmentation type="portrait" />` (registers the segmentation pipeline; mounts alongside a state/ref for the mask)
-- Pass the resulting mask texture to `<VideoBackground segmentationMask={mask} customBackground={replacementColor} />` in App.tsx — or add a second VideoBackground in Scene if you need a dynamic background
+- `<Segmentation type="portrait" />` (SDK; registers the segmentation pipeline; mounts alongside a state/ref for the mask)
+- Pass the resulting mask texture to `<VideoBackground segmentationMask={mask} customBackground={replacementColor} />` (SDK) in App.tsx
 
 ### gesture-controlled (no tracker visuals)
 
-- `<GestureTracker>` + `<GestureTrigger>` drives effects (particles, scene transitions, animations) without any visible hand/face overlay
+- `<GestureTracker>` + `<GestureTrigger>` (SDK) drives effects (particles, scene transitions, animations) without any visible hand/face overlay
 
 ---
 
 ## Notes
 
 - `VideoBackground`, camera, and lighting are already mounted in `src/App.tsx`. Do NOT add a second background plane — it covers the camera.
-- Place asset files in `public/assets/`; reference as `/assets/<name>` from `useTexture`.
+- Assets are referenced by **URL** (uploaded-asset or curated-library CDN URLs); read `src/assets/manifest.json` / `src/assets/library-manifest.json` for what's available.
 - Tracker components self-register — no `registerXRPipeline` call needed.
 - Always name your meshes — `name="..."` enables runtime lookup and visual-feedback editing.
