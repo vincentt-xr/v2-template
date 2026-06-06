@@ -1,0 +1,48 @@
+name: Smoke Build
+# Builds the base template against the SDK exactly as a published project would —
+# a fresh install (resolving the real @vincentt-sdks/xr-sdk tarball from the CDN),
+# then build + typecheck. SDK_LINK is unset, so this is the TARBALL path, never the
+# local-link dev path.
+#
+# Its headline job is to guard the SDK re-pin: a PR that bumps the tarball URL in
+# package.json must also build cleanly against that new tarball before merge. The
+# frozen lockfile makes a pin bump fail here unless the lockfile was updated to
+# match the new tarball — so "bumped the URL but forgot the lockfile" is caught
+# loud, not at deploy. It also catches any app/template change that breaks the
+# production build.
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install (frozen — resolves the real SDK tarball from the CDN)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (tarball SDK, SDK_LINK unset)
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
