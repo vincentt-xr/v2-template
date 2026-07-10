@@ -8,7 +8,8 @@
 import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 
-import { useXRContext, XRModel } from "@vincentt-sdks/xr-sdk";
+import { XRModel } from "@vincentt-xr/sdk";
+import { useXRContext } from "@vincentt-xr/sdk/low-level";
 
 export interface GestureHoldOptions {
   /** Gesture name to wait for, e.g. "victory", "open_palm", "thumbs_up". */

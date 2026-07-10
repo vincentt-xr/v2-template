@@ -2,7 +2,7 @@
 // Scene.tsx — the agent's surface.
 // Add SDK components and R3F primitives here.
 // See GROUNDING.md for the API reference and pattern catalog.
-import { ScreenSpaceUI, ScreenTransform, TextLabel } from "@vincentt-sdks/xr-sdk";
+import { ScreenSpaceUI, ScreenTransform, TextLabel } from "@vincentt-xr/sdk";
 
 export const Scene = () => (
   <ScreenSpaceUI>
