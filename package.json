@@ -5,15 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "preview": "node scripts/preview.mjs",
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "^0.10.18",
     "@react-three/drei": "9.105.6",
     "@react-three/fiber": "8.18.0",
-    "@vincentt-sdks/xr-app-utilities": "^1.4.0",
-    "@vincentt-sdks/xr-sdk": "https://cdn.vincentt.studio/sdks/xr/xr-sdk-v1.0.0-rc-18/xr-sdk.tgz",
+    "@vincentt-xr/sdk": "2.0.0-alpha.0",
     "qrcode.react": "4.2.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
@@ -26,6 +27,7 @@
     "@types/three": "0.173.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
+    "@vincentt-xr/harness": "0.1.0",
     "esbuild": "^0.28.0",
     "esbuild-style-plugin": "^1.6.3",
     "eslint": "^8.2.0",

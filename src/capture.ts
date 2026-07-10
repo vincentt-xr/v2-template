@@ -5,8 +5,8 @@
 // uploads, and shares are all one-line follow-ups.
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { useXRContext } from "@vincentt-sdks/xr-sdk";
-import { useMediaRecorder } from "@vincentt-sdks/xr-app-utilities";
+import { useMediaRecorder } from "@vincentt-xr/sdk";
+import { useXRContext } from "@vincentt-xr/sdk/low-level";
 
 export interface CapturedMedia {
   /** Raw blob — feed to upload, fetch, FileReader, etc. */

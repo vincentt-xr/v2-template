@@ -4,12 +4,10 @@ import {
   XRProvider,
   XRScene,
   VideoBackground,
-  useXRContext,
   XRMediaSource,
-  useXRReady,
-  useXRError,
-} from "@vincentt-sdks/xr-sdk";
-import { AspectRatioContainer } from "@vincentt-sdks/xr-app-utilities";
+  AspectRatioContainer,
+} from "@vincentt-xr/sdk";
+import { useXRContext, useXRReady, useXRError } from "@vincentt-xr/sdk/low-level";
 import { PerspectiveCamera } from "@react-three/drei";
 
 import { Scene } from "./Scene";
