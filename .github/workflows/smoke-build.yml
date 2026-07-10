@@ -1,15 +1,10 @@
 name: Smoke Build
-# Builds the base template against the SDK exactly as a published project would —
-# a fresh install (resolving the real @vincentt-sdks/xr-sdk tarball from the CDN),
-# then build + typecheck. SDK_LINK is unset, so this is the TARBALL path, never the
-# local-link dev path.
+# Builds the base template against the published SDK exactly as a fresh scaffold
+# would — a frozen install (resolving @vincentt-xr/sdk from npm), then build +
+# typecheck. SDK_LINK is unset, so this is the npm path, not the local-link dev path.
 #
-# Its headline job is to guard the SDK re-pin: a PR that bumps the tarball URL in
-# package.json must also build cleanly against that new tarball before merge. The
-# frozen lockfile makes a pin bump fail here unless the lockfile was updated to
-# match the new tarball — so "bumped the URL but forgot the lockfile" is caught
-# loud, not at deploy. It also catches any app/template change that breaks the
-# production build.
+# Catches any template change that breaks the production build, and — via the frozen
+# lockfile — a dependency bump that wasn't reflected in the lockfile.
 
 on:
   pull_request:
@@ -38,10 +33,10 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Install (frozen — resolves the real SDK tarball from the CDN)
+      - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
-      - name: Build (tarball SDK, SDK_LINK unset)
+      - name: Build
         run: pnpm build
 
       - name: Typecheck
