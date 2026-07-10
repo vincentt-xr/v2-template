@@ -4,7 +4,7 @@ This file documents the **template-local helpers** that live in this project's
 `src/` (capture, gesture-hold, HTML overlays, sprite-sheet animation), plus
 project-shape notes and common patterns.
 
-The **SDK component/hook API** (`@vincentt-sdks/xr-sdk` — trackers, screen-space
+The **SDK component/hook API** (`@vincentt-xr/sdk` — trackers, screen-space
 layout, `<TextLabel>`, `<Panel>`, mesh/texture conventions) is documented in the
 **SDK grounding**, which ships with the SDK. In a running project the platform
 combines the SDK grounding with this file into the `GROUNDING.md` the agent reads,
@@ -22,7 +22,7 @@ below and R3F primitives. There is no lifecycle DSL — per-frame logic is R3F
 `<GestureTrigger>` (SDK) is one-shot. `useGestureHold` fires after a gesture has been **held** for `holdMs`, debounced so a stray misclassified frame can't latch it. It re-arms when the gesture is released, so the next hold fires again. Needs a `<GestureTracker />` (SDK) mounted.
 
 ```tsx
-import { GestureTracker } from "@vincentt-sdks/xr-sdk";
+import { GestureTracker } from "@vincentt-xr/sdk";
 import { useGestureHold } from "./gesture";
 
 <GestureTracker />;
@@ -53,7 +53,7 @@ Trigger-agnostic capture primitives. Wire them to whatever the project uses — 
 
 ```tsx
 import { usePhotoCapture, saveToDevice } from "../capture";
-import { GestureTracker, GestureTrigger } from "@vincentt-sdks/xr-sdk";
+import { GestureTracker, GestureTrigger } from "@vincentt-xr/sdk";
 
 const { capture, latest } = usePhotoCapture();
 
