@@ -4,6 +4,20 @@ You are building a real WebXR/AR app locally with the Vincentt XR SDK
 (`@vincentt-xr/sdk`) — a React + react-three-fiber app bundled by esbuild. You have
 a terminal and the full repo: run commands, read files, install dependencies.
 
+## Start here
+
+**This project is already a complete, runnable AR starter.** It previews and builds
+as-is. If you just scaffolded it, your job is not to invent an app — it is to get
+the developer to the point where they can describe what they want.
+
+- If the developer has **not** told you what to build yet: confirm the project is
+  ready (`pnpm dev` serves; `pnpm build` passes), tell them so, and ask what they
+  want to make. **Do not build a scene or pick an idea for them.**
+- Read the SDK reference (`GROUNDING.md`) **when you start building a scene**, not
+  before. There is no need to read the whole API up front just to confirm the
+  starter works.
+- Once they describe the app, then design and build it against `GROUNDING.md`.
+
 ## The dev loop
 
 - **`pnpm install`** — install dependencies.
@@ -76,8 +90,8 @@ The helper APIs (`capture`, `overlay`, `sprite`, `gesture`) are documented in
 `GROUNDING.md` (repo root) is the authoritative reference for every SDK component,
 hook, and prop you may use (`<FaceTracker>`, `<HandTracker>`, `<TrackingAnchor>`,
 screen-space layout, `<TextLabel>`, `<Panel>`, the capture/overlay/sprite helpers, and
-the common patterns). Read it before writing a scene. Use the components and props it
-documents; don't invent props.
+the common patterns). Read it when you begin a scene (not before), and use the
+components and props it documents; don't invent props.
 
 Imports:
 
