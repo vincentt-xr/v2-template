@@ -16,9 +16,27 @@ a terminal and the full repo: run commands, read files, install dependencies.
 - **`pnpm typecheck`** — `tsc --noEmit`.
 - **`pnpm build`** — production bundle to `dist/`.
 
-To publish, use the harness MCP `project_publish` verb — it uploads the built `dist/`
-and the app goes live at `<slug>.vincentt.app`. Nothing installs or builds server-side;
-publishing moves the bytes you built locally.
+## Platform commands (`vincentt`)
+
+The local-first dev loop is driven by the **`vincentt` CLI** over your shell — no MCP
+registration is needed. The developer has already run `vincentt login` (their access
+token lives in `~/.vincentt/config.json`); you just run the verbs:
+
+- **`vincentt create`** — bind this directory to a backend project (scaffolds the
+  starter into an empty dir). Writes `.vincentt/project.json`. Usually already done.
+- **`vincentt publish`** — build first (`pnpm build`), then this uploads the built
+  `dist/` and returns the live `<slug>.vincentt.app` URL. Nothing installs or builds
+  server-side; publishing moves the bytes you built locally.
+- **`vincentt logs` / `network` / `trace`** — read what the phone reported to the
+  preview relay: console (add `--errors` to filter), fetch/XHR, performance samples.
+  Add `--json` for machine-readable output. Use these to debug on-device misbehavior
+  instead of guessing.
+- **`vincentt feedback --wait`** — block for the next annotation the developer draws on
+  the phone preview (a screenshot + strokes/pins + a message), print it as JSON, and
+  exit. Loop on it (or self-schedule) to pick up on-device feedback hands-free.
+
+`pnpm preview` (above) is the one loop step that is not a `vincentt` verb — run it in the
+background; it holds the secure tunnel open until stopped.
 
 ## What you edit
 
