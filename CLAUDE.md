@@ -8,6 +8,8 @@ The SDK API reference — every component, hook, and prop you may use — is in
 **[GROUNDING.md](./GROUNDING.md)**. Read it before writing a scene, and use only the
 props it documents.
 
-Drive the platform from your shell with the **`vincentt` CLI** (`vincentt preview`,
-`vincentt publish`, `vincentt logs | network | trace`, `vincentt feedback --wait`).
-No MCP registration is needed — the CLI is the whole interface.
+Drive the platform from your shell with the **`vincentt` CLI**, invoked as
+`npx vincentt <verb>` (`npx vincentt preview | publish | logs | feedback --wait`) —
+it resolves to the project's local devDep, so no global install is needed. On first
+use the developer approves a browser sign-in; there's no separate login step and no
+MCP registration.
