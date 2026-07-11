@@ -19,20 +19,23 @@ a terminal and the full repo: run commands, read files, install dependencies.
 ## Platform commands (`vincentt`)
 
 The local-first dev loop is driven by the **`vincentt` CLI** over your shell — no MCP
-registration is needed. The developer has already run `vincentt login` (their access
-token lives in `~/.vincentt/config.json`); you just run the verbs:
+registration is needed. Invoke it as **`npx vincentt <verb>`** (the CLI is a project
+devDep, so this resolves to the local copy — no global install required). If the
+developer isn't signed in yet, the first verb opens a browser for them to approve
+(the one human step); the token then lives in `~/.vincentt/config.json` and later
+verbs run without prompting.
 
-- **`vincentt create`** — bind this directory to a backend project (scaffolds the
+- **`npx vincentt create`** — bind this directory to a backend project (scaffolds the
   starter into an empty dir). Writes `.vincentt/project.json`. Usually already done.
-- **`vincentt publish`** — build first (`pnpm build`), then this uploads the built
+- **`npx vincentt publish`** — build first (`pnpm build`), then this uploads the built
   `dist/` and returns the live `<slug>.vincentt.app` URL. Nothing installs or builds
   server-side; publishing moves the bytes you built locally.
-- **`vincentt logs` / `network` / `trace`** — read what the phone reported to the
+- **`npx vincentt logs` / `network` / `trace`** — read what the phone reported to the
   preview relay: console (add `--errors` to filter), fetch/XHR, performance samples.
   Add `--json` for machine-readable output. Use these to debug on-device misbehavior
   instead of guessing.
-- **`vincentt feedback --wait`** — block for the next annotation the developer draws on
-  the phone preview (a screenshot + strokes/pins + a message), print it as JSON, and
+- **`npx vincentt feedback --wait`** — block for the next annotation the developer draws
+  on the phone preview (a screenshot + strokes/pins + a message), print it as JSON, and
   exit. Loop on it (or self-schedule) to pick up on-device feedback hands-free.
 
 `pnpm preview` (above) is the one loop step that is not a `vincentt` verb — run it in the
