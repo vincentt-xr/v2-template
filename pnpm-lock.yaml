@@ -51,9 +51,12 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^7.0.0
         version: 7.18.0(eslint@8.57.1)(typescript@5.9.3)
-      '@vincentt-xr/harness':
-        specifier: 0.1.0
+      '@vincentt-xr/cli':
+        specifier: ^0.1.0
         version: 0.1.0(react@18.3.1)
+      '@vincentt-xr/harness':
+        specifier: ^1.0.0
+        version: 1.0.0(react@18.3.1)
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0
@@ -628,9 +631,12 @@ packages:
     peerDependencies:
       react: '>= 16.8.0'
 
-  '@vincentt-xr/harness@0.1.0':
-    resolution: {integrity: sha512-4k+TXjqlnTmb3lFrOUIYwy+r7s1LGxIT3WP/HFj4LZm4K7PfnrETl59Ami50Uorx3pm77uUxswwaDrWgmatP6Q==}
+  '@vincentt-xr/cli@0.1.0':
+    resolution: {integrity: sha512-gzNvGNHVbgMmbSjZzmoZ0YunhmXFX9cibr/oV8Ju9spy5EEUUwZ6MeaxPAYcRb1soyZxqOR54q/GC4CVQtekFA==}
     hasBin: true
+
+  '@vincentt-xr/harness@1.0.0':
+    resolution: {integrity: sha512-pByDGysKjrHNNY993YNtBpYl2RKKTCMfxX7ynMG8j/LFc2f4fuPwQqwglu1qmuGMPih0zXlsxMNzy1Ur01kynA==}
     peerDependencies:
       react: ^18.2.0
 
@@ -2872,18 +2878,23 @@ snapshots:
       '@use-gesture/core': 10.3.1
       react: 18.3.1
 
-  '@vincentt-xr/harness@0.1.0(react@18.3.1)':
+  '@vincentt-xr/cli@0.1.0(react@18.3.1)':
     dependencies:
       '@modelcontextprotocol/sdk': 1.29.0(zod@3.25.76)
+      '@vincentt-xr/harness': 1.0.0(react@18.3.1)
       cloudflared: 0.7.1
-      react: 18.3.1
       ws: 8.21.0
       zod: 3.25.76
     transitivePeerDependencies:
       - '@cfworker/json-schema'
       - bufferutil
+      - react
       - supports-color
       - utf-8-validate
+
+  '@vincentt-xr/harness@1.0.0(react@18.3.1)':
+    dependencies:
+      react: 18.3.1
 
   '@vincentt-xr/sdk@2.0.0-alpha.0(@mediapipe/tasks-vision@0.10.35)(@react-three/drei@9.105.6(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@types/react@18.3.5)(@types/three@0.173.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0)':
     dependencies:

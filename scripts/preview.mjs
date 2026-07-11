@@ -3,15 +3,15 @@
  * startPreview(), which stands up the app dev serve, the diagnostics relay, a
  * front proxy unifying them on one origin, and a cloudflared tunnel — so the phone
  * gets ONE https URL that serves both the app (secure context → live camera) and
- * the diagnostics socket. The same orchestration backs the harness MCP's
- * preview_start verb, so the CLI and the agent path stay identical.
+ * the diagnostics socket. The same orchestration backs `vincentt preview` and
+ * the MCP `preview_start` verb, so the CLI and the agent path stay identical.
  *
  * Usage: `npm run preview` (tunnel, any network). cloudflared is used for the
  * tunnel; if it isn't on PATH the harness provisions a copy automatically.
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { startPreview } from "@vincentt-xr/harness/preview";
+import { startPreview } from "@vincentt-xr/cli/preview";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
@@ -32,7 +32,7 @@ try {
 }
 
 console.log(`\n  Live preview (with diagnostics) — open on your device:\n\n  ${preview.url}\n`);
-console.log(`  Agent: point harness-mcp at the relay on localhost:${preview.relayPort}.\n`);
+console.log(`  Agent: vincentt logs | network | trace  ·  vincentt feedback --wait\n`);
 
 const stop = async () => {
   await preview.stop();
