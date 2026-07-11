@@ -27,7 +27,7 @@
     "@types/three": "0.173.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
-    "@vincentt-xr/cli": "^0.1.0",
+    "@vincentt-xr/cli": "^0.1.5",
     "@vincentt-xr/harness": "^1.0.0",
     "esbuild": "^0.28.0",
     "esbuild-style-plugin": "^1.6.3",
