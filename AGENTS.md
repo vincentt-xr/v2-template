@@ -96,6 +96,9 @@ components and props it documents; don't invent props.
 Imports:
 
 - Core components and hooks come from **`@vincentt-xr/sdk`**.
+- **Trackers** (`FaceTracker`, `HandTracker`, `BodyTracker`, `GestureTracker`,
+  `GestureTrigger`, `TrackingAnchor`, `FaceMesh`) come from **`@vincentt-xr/sdk/tracking`**
+  — not core. Importing them from `@vincentt-xr/sdk` fails with "no exported member".
 - The low-level XR context hooks (`useXRContext`, `useXRReady`, `useXRError`) come from
   **`@vincentt-xr/sdk/low-level`**.
 
