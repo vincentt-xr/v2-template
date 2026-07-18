@@ -22,7 +22,7 @@ below and R3F primitives. There is no lifecycle DSL — per-frame logic is R3F
 `<GestureTrigger>` (SDK) is one-shot. `useGestureHold` fires after a gesture has been **held** for `holdMs`, debounced so a stray misclassified frame can't latch it. It re-arms when the gesture is released, so the next hold fires again. Needs a `<GestureTracker />` (SDK) mounted.
 
 ```tsx
-import { GestureTracker } from "@vincentt-xr/sdk";
+import { GestureTracker } from "@vincentt-xr/sdk/tracking";
 import { useGestureHold } from "./gesture";
 
 <GestureTracker />;
@@ -53,7 +53,7 @@ Trigger-agnostic capture primitives. Wire them to whatever the project uses — 
 
 ```tsx
 import { usePhotoCapture, saveToDevice } from "../capture";
-import { GestureTracker, GestureTrigger } from "@vincentt-xr/sdk";
+import { GestureTracker, GestureTrigger } from "@vincentt-xr/sdk/tracking";
 
 const { capture, latest } = usePhotoCapture();
 
