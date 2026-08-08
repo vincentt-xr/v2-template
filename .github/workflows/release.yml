@@ -1,0 +1,86 @@
+name: Release
+# Moves the `latest` tag to whatever bare-semver tag was just pushed.
+#
+# `vincentt init` clones this repo at `--branch latest` (@vincentt-xr/cli), so
+# `latest` — not `main` — is what reaches a new creator. Merging to main no longer
+# ships a template; cutting a release does. That is the whole point: a bad merge
+# sits on main until someone deliberately tags it.
+#
+# Tags are BARE semver (1.0.0), no `v` prefix, matching api and console.
+#
+# `latest` is a MOVING tag, which is unusual for git but is exactly what a floating
+# release pointer is. It is force-updated here and nowhere else — never move it by
+# hand, or the pointer stops matching the version it claims to be.
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Bare-semver tag to point `latest` at (e.g. 1.0.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  move-latest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve the release tag
+        id: rel
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.ref }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          if ! git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "::error::tag ${TAG} does not exist"
+            exit 1
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-list -n1 "refs/tags/${TAG}")" >> "$GITHUB_OUTPUT"
+
+      # A scaffold is an install + build from a frozen lockfile, so that is what is
+      # verified here -- against the tagged commit, not against main. Smoke Build
+      # already gates every PR; this re-runs it at the exact tree `latest` will
+      # point at, because that tree is what every new creator gets.
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Check out the tagged tree
+        run: git checkout --force "${{ steps.rel.outputs.sha }}"
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Only now is the tag known good. Moving `latest` before this point would
+      # publish a broken template to every `vincentt init` for as long as it took
+      # someone to notice.
+      - name: Move `latest`
+        run: |
+          git tag --force latest "${{ steps.rel.outputs.sha }}"
+          git push --force origin refs/tags/latest
+          echo "latest -> ${{ steps.rel.outputs.tag }} (${{ steps.rel.outputs.sha }})" >> "$GITHUB_STEP_SUMMARY"
