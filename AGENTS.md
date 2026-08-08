@@ -23,10 +23,11 @@ the developer to the point where they can describe what they want.
 - **`pnpm install`** — install dependencies.
 - **`pnpm dev`** — esbuild dev server on `http://localhost:5173`.
 - **`pnpm preview`** — on-device preview. Builds and serves the app behind a secure
-  Cloudflare tunnel so you get one `https` URL to open on a phone. AR needs a secure
-  context for camera access, so this is how you test tracking and gestures on a real
-  device. Needs `cloudflared` (the harness provisions it automatically if it isn't on
-  `PATH`).
+  tunnel to Vincentt's own edge, so you get one `https` URL to open on a phone. AR
+  needs a secure context for camera access, so this is how you test tracking and
+  gestures on a real device. Nothing extra to install; the tunnel client ships with
+  the CLI. Requires being signed in (`vincentt login`) — the edge address is minted
+  per session by the platform.
 - **`pnpm typecheck`** — `tsc --noEmit`.
 - **`pnpm build`** — production bundle to `dist/`.
 

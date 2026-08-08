@@ -1,13 +1,14 @@
 /**
  * Live preview for on-device testing. Thin CLI wrapper over the harness's
  * startPreview(), which stands up the app dev serve, the diagnostics relay, a
- * front proxy unifying them on one origin, and a cloudflared tunnel — so the phone
+ * front proxy unifying them on one origin, and the edge tunnel client — so the phone
  * gets ONE https URL that serves both the app (secure context → live camera) and
  * the diagnostics socket. The same orchestration backs `vincentt preview` and
  * the MCP `preview_start` verb, so the CLI and the agent path stay identical.
  *
- * Usage: `npm run preview` (tunnel, any network). cloudflared is used for the
- * tunnel; if it isn't on PATH the harness provisions a copy automatically.
+ * Usage: `npm run preview` (tunnel, any network). The tunnel terminates on
+ * Vincentt's own edge, whose address is minted per session by the API, so this
+ * needs a signed-in CLI (`vincentt login`). Nothing extra to install.
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
