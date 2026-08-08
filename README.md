@@ -23,7 +23,7 @@ See `AGENTS.md` and `GROUNDING.md` for the API reference and how to author scene
 ```
 pnpm install
 pnpm dev          # esbuild dev server on :5173
-pnpm preview      # on-device preview over a secure tunnel (needs cloudflared)
+pnpm preview      # on-device preview over a secure tunnel (needs `vincentt login`)
 pnpm typecheck
 pnpm build        # production bundle to dist/
 ```
