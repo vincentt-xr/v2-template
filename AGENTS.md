@@ -49,6 +49,10 @@ verbs run without prompting.
   preview relay: console (add `--errors` to filter), fetch/XHR, performance samples.
   Add `--json` for machine-readable output. Use these to debug on-device misbehavior
   instead of guessing.
+- **`npx vincentt assets search "<description>"`** — search the platform's curated asset
+  library in plain language and get back records you can place. `assets show` / `assets add`
+  resolve ids to URLs, several at a time. See **Assets** below — the library is searched by
+  description because you cannot see the pictures.
 - **`npx vincentt feedback --wait`** — block for the next annotation the developer draws
   on the phone preview (a screenshot + strokes/pins + a message), print it as JSON, and
   exit. Loop on it (or self-schedule) to pick up on-device feedback hands-free.
@@ -118,6 +122,47 @@ Reference media by path or URL — there is no upload step.
 - **Hosted assets** — reference any absolute URL directly (`useTexture(url)`,
   `<img src={url}>`, `new Audio(url)`). For textures, prefer a downscaled WebP when one
   is available, to save bandwidth.
+
+### The platform asset library
+
+Vincentt hosts a curated library of images you can drop straight into a scene. **You
+cannot see the pictures, so the library is searched by description** — every asset carries
+a written record (what it depicts, its style, its palette, whether it has transparency)
+and those words are what you match against.
+
+```
+npx vincentt assets search "pastel pumpkin prop" --json
+npx vincentt assets add lib_7f3a2c91d4e5b6a7 lib_2b8e1a4c6d9f0e3a
+```
+
+- **`assets search "<plain language>"`** — returns ranked records as JSON. Filter with
+  `--kind prop|frame`, `--render`, `--palette`, `--limit` (max 50).
+- **`assets show <id>...` / `assets add <id>...`** — resolve ids to URLs. Both take
+  **several ids at once** and issue one call; pass every id you want in a single command
+  rather than looping.
+- **`assets add` prints URLs and writes nothing.** Reference the printed URL directly in
+  your JSX. Pass `--download` only if the project must own a local copy (an offline demo
+  or a kiosk); the default keeps the repo small and shares the CDN cache with every other
+  Vincentt experience using that asset.
+
+**Two kinds, and the shape tells you where it goes.** A `prop` is 1:1 with transparency —
+an object you place in a scene. A `frame` is 9:16 with a transparent centre — a
+full-screen overlay on the camera feed. The record's `kind`, `aspect` and `has_alpha`
+fields are read from the file itself, so they are always true.
+
+**Rules that matter:**
+
+1. **Only ever reference an id the tool returned.** Ids look like `lib_` + 16 characters
+   and are not guessable. A URL you assemble yourself will 404 on the phone.
+2. **Zero results is a real answer, not a failure.** The command exits `0` with an empty
+   `results` array and a `gaps` list naming what the library does not hold. Do not retry,
+   rephrase repeatedly, or substitute something that merely looks close — tell the
+   developer what is missing and ask. The library is **props and frames**; it has no
+   wearables, face filters, 3D models, video or audio.
+3. **The library is read-only and shared.** You cannot upload to it, and nothing in it
+   belongs to one project. For project-specific media, use `public/`.
+4. **A published URL is permanent.** An asset can leave search results, but a URL already
+   in a shipped experience keeps serving.
 
 ## Communicating
 
