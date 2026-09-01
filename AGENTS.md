@@ -40,8 +40,9 @@ developer isn't signed in yet, the first verb opens a browser for them to approv
 (the one human step); the token then lives in `~/.vincentt/config.json` and later
 verbs run without prompting.
 
-- **`npx vincentt create`** — bind this directory to a backend project (scaffolds the
-  starter into an empty dir). Writes `.vincentt/project.json`. Usually already done.
+- **`npx vincentt create`** — register this project with the platform and reserve its address,
+  binding the folder by writing `.vincentt/project.json`. Requires being signed in. It does
+  **not** scaffold: an empty folder needs `npx vincentt init` first. Usually already done.
 - **`npx vincentt publish`** — build first (`pnpm build`), then this uploads the built
   `dist/` and returns the live `<slug>.vincentt.app` URL. Nothing installs or builds
   server-side; publishing moves the bytes you built locally.
@@ -49,12 +50,58 @@ verbs run without prompting.
   preview relay: console (add `--errors` to filter), fetch/XHR, performance samples.
   Add `--json` for machine-readable output. Use these to debug on-device misbehavior
   instead of guessing.
-- **`npx vincentt feedback --wait`** — block for the next annotation the developer draws
-  on the phone preview (a screenshot + strokes/pins + a message), print it as JSON, and
-  exit. Loop on it (or self-schedule) to pick up on-device feedback hands-free.
+- **`npx vincentt feedback --wait`** — block until the developer draws an annotation on the
+  phone preview (a screenshot + strokes/pins + a message), print every annotation waiting as
+  one JSON object per line, and exit. See **Waiting for the phone** below for how to park on
+  it.
 
 `pnpm preview` (above) is the one loop step that is not a `vincentt` verb — run it in the
 background; it holds the secure tunnel open until stopped.
+
+## Waiting for the phone
+
+`npx vincentt feedback --wait` blocks until the developer sends something from the phone
+preview, then prints it and exits. It is the one step in this loop where you wait on a person.
+
+**Blocking costs nothing while it waits.** No model turn is spent, no timer runs, nothing is
+polled. The process is parked on a single open request. This is worth stating because the
+opposite assumption — that waiting is expensive and checking repeatedly is cheap — is exactly
+backwards here, and acting on it is expensive.
+
+### How it exits
+
+| Exit | What happened | What to do |
+|---|---|---|
+| **0** | One or more annotations were printed, one JSON object per line on stdout. | Read them and take up the work. |
+| **64** | The window passed with nothing waiting. Nothing was printed. The preview is still live. | Run the same command again. Nothing was missed and nothing is re-read. |
+| **65** | The preview ended. Nothing more can arrive on it. | A preview has to be running before there is anything to wait on. |
+| **1** | A usage error or a fault. The reason is on stderr. | Read stderr. |
+
+`--timeout <seconds>` sets the window (default 300).
+
+### Which of these two applies to you
+
+Decide by what **you** can do, not by what you are:
+
+- **If your host can wake you when a blocked command produces output** — run the command and
+  let it block. You will be woken with the annotations on stdout.
+
+- **If your host has no way to wake you on output** — start the command somewhere you can
+  return to, and return to it. Each return either finds it still blocked (nothing to do, come
+  back again) or finds it finished, with an exit code from the table above.
+
+Either way, on **64** the correct next step is the same command again. That is the whole loop:
+park, handle whatever exit you get, park again. On **65**, stop — the channel is closed until a
+preview is running again.
+
+### Two things that are true of both
+
+- **Every annotation is handed over exactly once.** A position is kept on disk and advances
+  only after a line is printed. Repeating the command after 64 re-reads nothing and skips
+  nothing, so you never need to track what you have already seen, and there is no flag for
+  asking about older ones.
+- **Several annotations can arrive at once.** If the developer walks around sending three, one
+  run hands over all three, as three lines. Read every line on stdout, not the first one.
 
 ## What you edit
 
