@@ -40,9 +40,13 @@ developer isn't signed in yet, the first verb opens a browser for them to approv
 (the one human step); the token then lives in `~/.vincentt/config.json` and later
 verbs run without prompting.
 
-- **`npx vincentt create`** — register this project with the platform and reserve its address,
-  binding the folder by writing `.vincentt/project.json`. Requires being signed in. It does
-  **not** scaffold: an empty folder needs `npx vincentt init` first. Usually already done.
+- **`npx vincentt create [name]`** — register this project with the platform and reserve its
+  address, binding the folder by writing `.vincentt/project.json`. In an **empty** folder it
+  scaffolds the starter first, then registers. In a folder that is already a Vincentt app it
+  only registers. In any other non-empty folder it refuses and says what to run. Requires being
+  signed in for the registering half; the scaffolding half never does. Usually already done.
+- **`npx vincentt init <dir>`** — scaffold the starter with **no account at all**. `create`
+  covers the common case; this is the route when there is no account to sign in with.
 - **`npx vincentt publish`** — build first (`pnpm build`), then this uploads the built
   `dist/` and returns the live `<slug>.vincentt.app` URL. Nothing installs or builds
   server-side; publishing moves the bytes you built locally.
