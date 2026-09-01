@@ -76,6 +76,53 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # The same grounding assertions Smoke Build runs on the branch, re-run here
+      # against the TAGGED tree. These steps sit after `Check out the tagged tree`
+      # deliberately: placed before it they would inspect main, and `latest` --
+      # not main -- is what reaches a creator. A check that does not run at the
+      # tag does not protect the artifact.
+      #
+      # The filename list is read from .github/pointers.txt, the same file
+      # smoke-build.yml reads, so a second host's pointer is one line in one
+      # place and is checked on the branch AND at the tag.
+      - name: Pointers carry no content
+        run: |
+          if [ ! -f .github/pointers.txt ]; then
+            echo "::error::.github/pointers.txt is missing — the pointer checks would silently pass with nothing checked."
+            exit 1
+          fi
+          while read -r f; do
+            [ -n "$f" ] || continue
+            lines=$(wc -l < "$f")
+            bytes=$(wc -c < "$f")
+            if [ "$lines" -gt 12 ]; then
+              echo "::error file=$f::pointer is $lines lines (max 12) — it has grown content. The loop contract is AGENTS.md."
+              exit 1
+            fi
+            if [ "$bytes" -gt 1200 ]; then
+              echo "::error file=$f::pointer is $bytes bytes (max 1200) — it has grown content. The loop contract is AGENTS.md."
+              exit 1
+            fi
+            if grep -qE '(npx )?vincentt [a-z]+' "$f"; then
+              echo "::error file=$f::pointer names a vincentt verb — a verb list is the loop contract's job, not a pointer's."
+              exit 1
+            fi
+          done < .github/pointers.txt
+
+      - name: The loop contract names no host
+        run: |
+          if grep -qiE 'claude|cursor|codex|copilot|self-schedule' AGENTS.md; then
+            echo "::error file=AGENTS.md::the loop contract names a host or the withdrawn self-schedule path (B-F3-5 tripwire a/b)."
+            exit 1
+          fi
+
+      - name: The verb list does not claim create scaffolds
+        run: |
+          if grep -qiE 'create.*scaffold|scaffolds the starter' AGENTS.md; then
+            echo "::error file=AGENTS.md::the verb list claims \`create\` scaffolds. It registers and binds; \`init\` scaffolds (f2 D-Create-never-scaffolds)."
+            exit 1
+          fi
+
       # Only now is the tag known good. Moving `latest` before this point would
       # publish a broken template to every `vincentt init` for as long as it took
       # someone to notice.
