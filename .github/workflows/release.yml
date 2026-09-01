@@ -116,10 +116,18 @@ jobs:
             exit 1
           fi
 
-      - name: The verb list does not claim create scaffolds
+      # create scaffolds an empty folder, then registers. The verb list must say
+      # so: grounding ships into creators' repositories and is never read back
+      # (B-F3-5 tripwire c), so a behavior change we do not land in the same
+      # commit is unseeable, unwarnable and unfixable (B-F2-9).
+      - name: The verb list describes what create does about the folder
         run: |
-          if grep -qiE 'create.*scaffold|scaffolds the starter' AGENTS.md; then
-            echo "::error file=AGENTS.md::the verb list claims \`create\` scaffolds. It registers and binds; \`init\` scaffolds (f2 D-Create-never-scaffolds)."
+          if ! grep -qiE 'scaffolds the starter first' AGENTS.md; then
+            echo "::error file=AGENTS.md::the verb list does not say what \`create\` does about an empty folder. It scaffolds, then registers (create-scaffolds, B-F2-9)."
+            exit 1
+          fi
+          if ! grep -qF 'vincentt init' AGENTS.md; then
+            echo "::error file=AGENTS.md::the verb list does not name \`vincentt init\`. An authed path may absorb an unauthenticated capability only while the open route stays named (B-F2-9)."
             exit 1
           fi
 
