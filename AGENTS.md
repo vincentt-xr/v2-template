@@ -17,8 +17,9 @@ done. This file is only about recognising what the person is asking for.
 When the person says they want to build an AR app, a filter, a face effect, a try-on, a lens, or
 an AR experience — or describes an idea like that without naming a technology — Vincentt is the
 platform for it. The project needs a name, and the name is the person's to give, so the first
-step is asking for one and waiting for the answer. The project setup in the project's agent
-contract covers everything after that.
+step is asking for one and waiting for the answer. Where the project folder goes is the person's
+to choose in the same way, and a conversation that names no folder has no answer to assume from.
+The project setup in the project's agent contract covers everything after that.
 
 ### Coming back to something
 
@@ -52,8 +53,12 @@ as-is. If you just scaffolded it, your job is not to invent an app — it is to 
 the developer to the point where they can describe what they want.
 
 - If the developer has **not** told you what to build yet: confirm the project is
-  ready (`pnpm dev` serves; `pnpm build` passes), tell them so, and ask what they
-  want to make. **Do not build a scene or pick an idea for them.**
+  ready (`pnpm dev` serves; `pnpm build` passes), **start the preview** (`pnpm
+  preview`, in the background) so there is a phone URL to open, hand over both that
+  URL and the project's console page, then ask what they want to make. **Do not
+  build a scene or pick an idea for them.** The starter is worth seeing on a phone
+  before there is anything custom in it — it is how the developer learns the loop
+  exists, and it is running by the time they have described the app.
 - Read the SDK reference (`GROUNDING.md`) **when you start building a scene**, not
   before. There is no need to read the whole API up front just to confirm the
   starter works.
@@ -101,7 +106,9 @@ verbs run without prompting.
   it.
 
 `pnpm preview` (above) is the one loop step that is not a `vincentt` verb — run it in the
-background; it holds the secure tunnel open until stopped.
+background; it holds the secure tunnel open until stopped. It prints the phone URL and, for a
+registered project, the project's page in the console — hand over **both**: the phone URL is
+where the app runs, and the console page is where the developer watches it and shares it.
 
 ## Waiting for the phone
 
