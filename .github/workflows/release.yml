@@ -131,6 +131,14 @@ jobs:
             exit 1
           fi
 
+      # The recognition section is GENERATED from recognition.md in vincentt-xr/agent-plugin. A
+      # hand-edit here would put a sentence in every creator's tree without putting it in the
+      # file that also feeds the package. Run at the TAG, because a check not run at the tag does
+      # not protect the artifact -- and because the agent-plugin's own release gate refuses to
+      # publish unless the tag carries this exact section.
+      - name: The recognition section is generated, not authored
+        run: node scripts/check-recognition.mjs
+
       # Only now is the tag known good. Moving `latest` before this point would
       # publish a broken template to every `vincentt init` for as long as it took
       # someone to notice.
