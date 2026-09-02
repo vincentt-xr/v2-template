@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unknown-property */
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   XRProvider,
   XRScene,
@@ -12,6 +12,11 @@ import { PerspectiveCamera } from "@react-three/drei";
 
 import { Scene } from "./Scene";
 import { PreviewAnchors } from "./PreviewAnchors";
+import { chooseMediaSource, isFramed, pickFramedDefault } from "./framed";
+import type { MediaSourceEnv } from "./framed";
+import { streamFromImageUrl, streamFromVideoUrl } from "./mediaStream";
+import { MediaSourceControl } from "./MediaSourceControl";
+import type { MediaPreset } from "./MediaSourceControl";
 
 // Fallback clip for the "video" source when no VITE_INPUT_URL is supplied.
 // Referenced by URL (not bundled) so it stays out of the published bundle —
@@ -24,73 +29,73 @@ const FALLBACK_VIDEO_URL =
  * Picks the media source and starts the XR session. Runs once on mount.
  *
  * VITE_INPUT_SOURCE controls the source:
- *   - "webcam" (default): live getUserMedia
+ *   - "webcam" (default): live getUserMedia — UNLESS this app is framed, see below
  *   - "video": loop VITE_INPUT_URL (or FALLBACK_VIDEO_URL if unset)
  *   - "photo": draw VITE_INPUT_URL to a canvas as a static 1-frame stream
  *
  * Photo/video sources are pre-mirrored to cancel the SDK's selfie flip.
+ *
+ * FRAMED: the webcam default is replaced by an SDK video preset. A framed app
+ * has no camera grant (the embedder delegates none, deliberately), so starting
+ * on the webcam would open with a permission error whose advice cannot work.
+ * A configured source is never overridden — see `chooseMediaSource`.
  */
-const MediaSourceBinder = () => {
+export const MediaSourceBinder = ({
+  onSourceSelected,
+  env = import.meta.env,
+}: {
+  onSourceSelected?: (p: MediaPreset) => void;
+  /** Injectable so the configured branches are drivable; defaults to the build's env. */
+  env?: MediaSourceEnv;
+}) => {
   const { session } = useXRContext();
 
   useEffect(() => {
     let cancelled = false;
-    let rafId = 0;
+    let stopVideo: (() => void) | undefined;
 
     const init = async () => {
-      const inputSource = import.meta.env.VITE_INPUT_SOURCE;
-      const inputUrl = import.meta.env.VITE_INPUT_URL;
+      const choice = chooseMediaSource(
+        { VITE_INPUT_SOURCE: env.VITE_INPUT_SOURCE, VITE_INPUT_URL: env.VITE_INPUT_URL },
+        isFramed(),
+      );
 
-      if (inputSource === "video") {
-        const video = document.createElement("video");
-        video.crossOrigin = "anonymous";
-        video.src = inputUrl || FALLBACK_VIDEO_URL;
-        video.loop = true;
-        video.muted = true;
-        video.autoplay = true;
-        video.playsInline = true;
-        await video.play();
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) throw new Error("2d canvas context unavailable");
-        const draw = () => {
-          if (cancelled) return;
-          ctx.save();
-          ctx.scale(-1, 1);
-          ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
-          ctx.restore();
-          rafId = requestAnimationFrame(draw);
-        };
-        draw();
-        const stream = (
-          canvas as HTMLCanvasElement & { captureStream: (fps?: number) => MediaStream }
-        ).captureStream();
+      // The switcher is controlled and holds no source state of its own, so the
+      // app announces what it actually bound. Without this the control has no
+      // value to render and stays hidden — and in the framed case it is what
+      // makes the preset APPEAR SELECTED rather than the control claiming
+      // "Webcam" while a preset plays.
+      if (choice.kind === "video") {
+        const url = choice.url || FALLBACK_VIDEO_URL;
+        const handle = await streamFromVideoUrl(url);
+        stopVideo = handle.stop;
+        if (cancelled) return;
+        await session.setMediaSource({ source: XRMediaSource.STREAM, stream: handle.stream });
+        onSourceSelected?.({ id: "configured", kind: "video", label: "Configured input", url });
+      } else if (choice.kind === "framedPreset") {
+        // Dynamic import: the preset module carries 12 CDN URLs and must not
+        // reach a production bundle through a static import from app source.
+        const { sdkVideoMediaSources } = await import("@vincentt-xr/sdk/debug-ui/media-source");
+        const preset = pickFramedDefault(sdkVideoMediaSources);
+        if (!preset?.url) throw new Error("no video preset available for the framed default");
+        const handle = await streamFromVideoUrl(preset.url);
+        stopVideo = handle.stop;
+        if (cancelled) return;
+        await session.setMediaSource({ source: XRMediaSource.STREAM, stream: handle.stream });
+        onSourceSelected?.(preset);
+      } else if (choice.kind === "photo") {
+        const stream = await streamFromImageUrl(choice.url);
+        if (cancelled) return;
         await session.setMediaSource({ source: XRMediaSource.STREAM, stream });
-      } else if (inputSource === "photo" && inputUrl) {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        await new Promise<void>((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = () => reject(new Error(`failed to load ${inputUrl}`));
-          img.src = inputUrl;
+        onSourceSelected?.({
+          id: "configured",
+          kind: "image",
+          label: "Configured input",
+          url: choice.url,
         });
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) throw new Error("2d canvas context unavailable");
-        ctx.scale(-1, 1);
-        ctx.drawImage(img, -canvas.width, 0);
-        const stream = (
-          canvas as HTMLCanvasElement & {
-            captureStream: (frameRate?: number) => MediaStream;
-          }
-        ).captureStream(0);
-        await session.setMediaSource({ source: XRMediaSource.STREAM, stream });
       } else {
         await session.setMediaSource({ source: XRMediaSource.WEBCAM });
+        onSourceSelected?.({ id: "webcam", kind: "webcam", label: "Webcam" });
       }
 
       if (cancelled) return;
@@ -101,7 +106,7 @@ const MediaSourceBinder = () => {
 
     return () => {
       cancelled = true;
-      if (rafId) cancelAnimationFrame(rafId);
+      stopVideo?.();
     };
     // Runs once — session is stable for the app's lifetime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -165,6 +170,33 @@ const CameraError = () => {
 
 const Shell = () => {
   const ready = useXRReady();
+  const { session } = useXRContext();
+
+  // The app owns the selected source; the switcher only renders it. That is what
+  // makes the framed default APPEAR SELECTED instead of the control claiming
+  // "Webcam" while a preset plays.
+  const [selected, setSelected] = useState<MediaPreset | null>(null);
+
+  const applySource = useCallback(
+    (next: MediaPreset) => {
+      setSelected(next);
+      const apply = async () => {
+        if (next.kind === "webcam") {
+          await session.setMediaSource({ source: XRMediaSource.WEBCAM });
+          return;
+        }
+        if (!next.url) return;
+        const stream =
+          next.kind === "image"
+            ? await streamFromImageUrl(next.url)
+            : (await streamFromVideoUrl(next.url)).stream;
+        await session.setMediaSource({ source: XRMediaSource.STREAM, stream });
+      };
+      apply();
+    },
+    [session],
+  );
+
   return (
     <AspectRatioContainer>
       <XRScene
@@ -173,7 +205,7 @@ const Shell = () => {
         loadingTransitionDuration={1000}
         style={{ width: "100%", height: "100%" }}
       >
-        <MediaSourceBinder />
+        <MediaSourceBinder onSourceSelected={setSelected} />
         <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={45} />
         <VideoBackground
           segmentationMask={undefined}
@@ -185,6 +217,7 @@ const Shell = () => {
         <Scene />
         <PreviewAnchors />
       </XRScene>
+      <MediaSourceControl value={selected} onChange={applySource} />
     </AspectRatioContainer>
   );
 };
