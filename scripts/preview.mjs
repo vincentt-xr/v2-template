@@ -1,43 +1,50 @@
 /**
- * Live preview for on-device testing. Thin CLI wrapper over the harness's
- * startPreview(), which stands up the app dev serve, the diagnostics relay, a
- * front proxy unifying them on one origin, and the edge tunnel client — so the phone
- * gets ONE https URL that serves both the app (secure context → live camera) and
- * the diagnostics socket. The same orchestration backs `vincentt preview` and
- * the MCP `preview_start` verb, so the CLI and the agent path stay identical.
+ * Live preview for on-device testing — a thin wrapper over `vincentt preview`.
+ *
+ * The CLI owns the whole orchestration: it resolves this folder's project
+ * binding and the machine config, mints the session, then stands up the app dev
+ * serve, the diagnostics relay, a front proxy unifying them on one origin, and
+ * the edge tunnel client — so the phone gets ONE https URL that serves both the
+ * app (secure context → live camera) and the diagnostics socket.
+ *
+ * This script deliberately does NOT call the CLI's startPreview() directly.
+ * That entry point takes an already-resolved config and projectId, so calling it
+ * from here meant re-implementing the CLI's binding and config resolution in the
+ * template — where it silently drifted and broke every scaffolded project's
+ * `npm run preview`. Spawning the command is what keeps the two paths identical.
+ *
+ * The CLI runs the app with `npm run dev`, which is this template's dev script.
  *
  * Usage: `npm run preview` (tunnel, any network). The tunnel terminates on
  * Vincentt's own edge, whose address is minted per session by the API, so this
  * needs a signed-in CLI (`vincentt login`). Nothing extra to install.
  */
 import path from "node:path";
+import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { startPreview } from "@vincentt-xr/cli/preview";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
-let preview;
-try {
-  preview = await startPreview({
-    projectCwd: root,
-    appPort: Number(process.env.PORT) || 5173,
-    frontPort: Number(process.env.PREVIEW_PORT) || 5190,
-    // The app's dev serve reads $PORT; run it directly so build output stays visible.
-    devCommand: ["node", "scripts/dev.mjs"],
-    appStdio: "inherit",
-    onLog: (m) => console.log(m),
-  });
-} catch (err) {
-  console.error(`\n  ✗ ${err.message}\n`);
+const args = ["preview"];
+if (process.env.PORT) args.push("--port", process.env.PORT);
+
+const child = spawn("vincentt", args, { cwd: root, stdio: "inherit" });
+
+child.on("error", (err) => {
+  const missing = err.code === "ENOENT";
+  console.error(
+    missing
+      ? "\n  ✗ The vincentt command was not found.\n\n" +
+          "    npm i -g @vincentt-xr/cli\n" +
+          "    vincentt login\n"
+      : `\n  ✗ ${err.message}\n`,
+  );
   process.exit(1);
-}
+});
 
-console.log(`\n  Live preview (with diagnostics) — open on your device:\n\n  ${preview.url}\n`);
-console.log(`  Agent: vincentt logs | network | trace  ·  vincentt feedback --wait\n`);
-
-const stop = async () => {
-  await preview.stop();
-  process.exit(0);
-};
-process.on("SIGINT", stop);
-process.on("SIGTERM", stop);
+// Ctrl-C reaches the child directly (same process group), and it runs its own
+// teardown — ending the preview session and taking the address offline. Exiting
+// only once it has is what keeps a stop from being reported before it happened.
+child.on("exit", (code, signal) => {
+  process.exit(signal ? 1 : (code ?? 0));
+});
