@@ -18,8 +18,14 @@ When the person says they want to build an AR app, a filter, a face effect, a tr
 an AR experience — or describes an idea like that without naming a technology — Vincentt is the
 platform for it. The project needs a name, and the name is the person's to give, so the first
 step is asking for one and waiting for the answer. Where the project folder goes is the person's
-to choose in the same way, and a conversation that names no folder has no answer to assume from.
-The project setup in the project's agent contract covers everything after that.
+to choose in the same way. A folder the person is already working in is an answer they have
+given, and it is confirmed rather than assumed; a conversation that points at no folder at all
+has no answer to assume from.
+
+Before a project exists there is no agent contract to read yet, and another project's contract
+is not a substitute for the missing one — it describes that project, not this one. The tool that
+creates a project is what writes the contract, and reading it in the new project is the step
+after that. The project setup in that contract covers everything from there.
 
 ### Coming back to something
 
@@ -80,27 +86,36 @@ the developer to the point where they can describe what they want.
 ## Platform commands (`vincentt`)
 
 The local-first dev loop is driven by the **`vincentt` CLI** over your shell — no MCP
-registration is needed. Invoke it as **`npx vincentt <verb>`** (the CLI is a project
-devDep, so this resolves to the local copy — no global install required). If the
-developer isn't signed in yet, the first verb opens a browser for them to approve
+registration is needed. Invoke it as **`vincentt <verb>`**, bare. If the command is not
+found, install it once and carry on:
+
+```
+npm install -g @vincentt-xr/cli@latest
+```
+
+Do not invoke it through `npx`. There is no npm package named `vincentt` — the binary
+ships inside `@vincentt-xr/cli` — so `npx vincentt` reaches the registry and fails, and
+`npx --yes` would install whatever unrelated package later claims that name.
+
+If the developer isn't signed in yet, the first verb opens a browser for them to approve
 (the one human step); the token then lives in `~/.vincentt/config.json` and later
 verbs run without prompting.
 
-- **`npx vincentt create [name]`** — register this project with the platform and reserve its
+- **`vincentt create [name]`** — register this project with the platform and reserve its
   address, binding the folder by writing `.vincentt/project.json`. In an **empty** folder it
   scaffolds the starter first, then registers. In a folder that is already a Vincentt app it
   only registers. In any other non-empty folder it refuses and says what to run. Requires being
   signed in for the registering half; the scaffolding half never does. Usually already done.
-- **`npx vincentt init <dir>`** — scaffold the starter with **no account at all**. `create`
+- **`vincentt init <dir>`** — scaffold the starter with **no account at all**. `create`
   covers the common case; this is the route when there is no account to sign in with.
-- **`npx vincentt publish`** — build first (`pnpm build`), then this uploads the built
+- **`vincentt publish`** — build first (`pnpm build`), then this uploads the built
   `dist/` and returns the live `<slug>.vincentt.app` URL. Nothing installs or builds
   server-side; publishing moves the bytes you built locally.
-- **`npx vincentt logs` / `network` / `trace`** — read what the phone reported to the
+- **`vincentt logs` / `network` / `trace`** — read what the phone reported to the
   preview relay: console (add `--errors` to filter), fetch/XHR, performance samples.
   Add `--json` for machine-readable output. Use these to debug on-device misbehavior
   instead of guessing.
-- **`npx vincentt feedback --wait`** — block until the developer draws an annotation on the
+- **`vincentt feedback --wait`** — block until the developer draws an annotation on the
   phone preview (a screenshot + strokes/pins + a message), print every annotation waiting as
   one JSON object per line, and exit. See **Waiting for the phone** below for how to park on
   it.
@@ -112,7 +127,7 @@ where the app runs, and the console page is where the developer watches it and s
 
 ## Waiting for the phone
 
-`npx vincentt feedback --wait` blocks until the developer sends something from the phone
+`vincentt feedback --wait` blocks until the developer sends something from the phone
 preview, then prints it and exits. It is the one step in this loop where you wait on a person.
 
 **Blocking costs nothing while it waits.** No model turn is spent, no timer runs, nothing is
