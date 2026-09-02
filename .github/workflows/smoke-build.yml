@@ -105,3 +105,9 @@ jobs:
             echo "::error file=AGENTS.md::the verb list does not name \`vincentt init\`. An authed path may absorb an unauthenticated capability only while the open route stays named (B-F2-9)."
             exit 1
           fi
+
+      # The recognition section is GENERATED from recognition.md in vincentt-xr/agent-plugin.
+      # Checked on the branch as well as at the tag, so a hand-edit is caught in review rather
+      # than at release.
+      - name: The recognition section is generated, not authored
+        run: node scripts/check-recognition.mjs
