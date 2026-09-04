@@ -53,15 +53,10 @@ export type MediaSourceChoice =
  *
  * A creator who CONFIGURED a source keeps it, framed or not — overriding a
  * deliberate config pointed at client footage would hide work they did. Only
- * the webcam default branch is framing-aware, and in a frame it never selects
- * the webcam BY CONSTRUCTION rather than by care. That is what makes the
- * frame's absent `allow` attribute cost nothing: with no `getUserMedia` on the
- * startup path there is no permission to be denied, so the whole-scene camera
- * error is unreachable *at startup*.
- *
- * It is NOT unreachable once the media switcher is mounted — the switcher's own
- * Webcam entry would still fire one. That door is closed separately, by
- * `switcherSources` dropping the webcam entries from the list.
+ * the webcam default branch is framing-aware: a framed app opens on a preset
+ * rather than raising a permission prompt nobody asked for, so the creator sees
+ * the tracker running the moment the frame loads. The camera remains reachable
+ * on demand, since the frame now delegates it.
  */
 export const chooseMediaSource = (env: MediaSourceEnv, framed: boolean): MediaSourceChoice => {
   if (env.VITE_INPUT_SOURCE === "video") return { kind: "video", url: env.VITE_INPUT_URL };
@@ -80,21 +75,59 @@ export const chooseMediaSource = (env: MediaSourceEnv, framed: boolean): MediaSo
 export const pickFramedDefault = <T extends { kind: string }>(presets: T[]): T | undefined =>
   presets.find((p) => p.kind === "video");
 
+/** The announce's kind vocabulary. The console renders these; the SDK does not use them. */
+export type AnnouncedPresetKind = "video" | "image" | "camera";
+
+/** One preset as it travels to the console. `url` is deliberately absent. */
+export type AnnouncedPreset = {
+  id: string;
+  label: string;
+  kind: AnnouncedPresetKind;
+  mirrored: boolean;
+};
+
 /**
- * The source list handed to the switcher.
- *
- * In a frame the webcam entries are dropped. The switcher fires its Webcam
- * entry immediately with no confirmation, and in a frame there is no camera
- * permission by design — so one tap would replace the whole scene with "Allow
- * camera access in your browser, then refresh the page", advice that can never
- * work because the permission was withheld deliberately.
- *
- * Known and deliberate: the switcher's kind TABS are hardcoded and are not
- * derived from this list, so the Camera tab still renders and reads "No camera
- * source" when tapped. That dead tab is accepted rather than fixed — fixing it
- * means editing the SDK, and this feature budgets the SDK at zero change. The
- * destructive half is what mattered and it is closed: tapping Camera selects
- * nothing, so no `getUserMedia` and no unrecoverable scene.
+ * The SDK's kind vocabulary is not the wire's: the SDK says `webcam`, the
+ * channel says `camera`. Translating here rather than at the console keeps the
+ * SDK at zero change and keeps the console free of SDK vocabulary.
  */
-export const switcherSources = <T extends { kind: string }>(sources: T[], framed: boolean): T[] =>
-  framed ? sources.filter((s) => s.kind !== "webcam") : sources;
+const ANNOUNCED_KIND: Record<string, AnnouncedPresetKind> = {
+  video: "video",
+  image: "image",
+  webcam: "camera",
+};
+
+/**
+ * Whether the creator sees this source mirrored.
+ *
+ * DERIVED FROM `kind`, because the SDK's preset type carries no such field —
+ * mirroring is a session-level flag there, not a property of a preset. The
+ * derivation is not a guess: `mediaStream.ts` pre-mirrors every non-webcam
+ * source to cancel the SDK's selfie flip, so a webcam ends up mirrored on
+ * screen and a clip or a still ends up drawn as filmed. That asymmetry is what
+ * the console's mirror mark reports.
+ *
+ * If the SDK ever declares mirroring per preset, this is the one line to delete.
+ */
+const isMirrored = (kind: AnnouncedPresetKind): boolean => kind === "camera";
+
+/**
+ * The app's preset list, in the shape the console is announced.
+ *
+ * `url` is dropped ON PURPOSE and this is a security property, not a trim: the
+ * console names an `id` and the app resolves it against the SDK list it already
+ * holds, so a creator-controlled URL never reaches console chrome to be
+ * rendered as an `href`, a `src`, or a thumbnail.
+ *
+ * A preset whose kind is outside the closed vocabulary is DROPPED rather than
+ * passed through, so an SDK that adds a kind cannot put an unrenderable entry
+ * into console chrome.
+ */
+export const announcedPresets = <T extends { id: string; kind: string; label: string }>(
+  presets: T[],
+): AnnouncedPreset[] =>
+  presets.flatMap((p) => {
+    const kind = ANNOUNCED_KIND[p.kind];
+    if (!kind) return [];
+    return [{ id: p.id, label: p.label, kind, mirrored: isMirrored(kind) }];
+  });
