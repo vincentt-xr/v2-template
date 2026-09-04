@@ -41,8 +41,13 @@ is the one who resolves that, not an assumption about which they meant.
 
 When the person asks to see it, try it, test it on a device, show a client, or get it on their
 phone, a preview is what they are asking for. A preview is what makes the work reachable at an
-address a phone can open, and the project's agent contract names the command. The address belongs
-in the reply as soon as it exists, because the person is waiting to open it.
+address a phone can open, and the project's agent contract names the command. A preview produces
+two addresses, and only one of them belongs in the reply: the project's page in the console,
+which carries the phone link, the code that scans to it, and the view of the device. The other is
+already on that page, so a reply carrying both hands the person a choice at the moment they want
+an address rather than a decision. That one address belongs in the reply as soon as it exists,
+because the person is waiting to open it, and it is written there plainly rather than as
+something to copy — the person is reaching for a phone, not for a clipboard.
 
 ### Finishing
 
@@ -62,11 +67,11 @@ the developer to the point where they can describe what they want.
 
 - If the developer has **not** told you what to build yet: confirm the project is
   ready (`pnpm dev` serves; `pnpm build` passes), **start the preview** (`pnpm
-  preview`, in the background) so there is a phone URL to open, hand over both that
-  URL and the project's console page, then ask what they want to make. **Do not
-  build a scene or pick an idea for them.** The starter is worth seeing on a phone
-  before there is anything custom in it — it is how the developer learns the loop
-  exists, and it is running by the time they have described the app.
+  preview`, in the background), hand over the project's console page, then ask what
+  they want to make. **Do not build a scene or pick an idea for them.** The starter
+  is worth seeing on a phone before there is anything custom in it — it is how the
+  developer learns the loop exists, and it is running by the time they have
+  described the app.
 - Read the SDK reference (`GROUNDING.md`) **when you start building a scene**, not
   before. There is no need to read the whole API up front just to confirm the
   starter works.
@@ -137,8 +142,16 @@ verbs run without prompting.
 
 `pnpm preview` (above) is the one loop step that is not a `vincentt` verb — run it in the
 background; it holds the secure tunnel open until stopped. It prints the phone URL and, for a
-registered project, the project's page in the console — hand over **both**: the phone URL is
-where the app runs, and the console page is where the developer watches it and shares it.
+registered project, the project's page in the console.
+
+**Hand over the console page, and nothing else.** It is the one address the developer needs
+from you: it carries the phone link and its QR, it is where they watch the device, and it is
+what they send to anyone else. The phone URL is already on that page, so repeating it in the
+reply gives the developer two addresses to choose between at the moment they want one.
+
+**Put it in the reply as a bare URL on its own line — no backticks, no code fence, no
+`Console:` label.** A URL in code formatting renders as something to copy; a bare one renders
+as something to click, and the developer is reaching for their phone, not their clipboard.
 
 ## Waiting for the phone
 
