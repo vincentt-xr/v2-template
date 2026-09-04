@@ -99,6 +99,19 @@ Do not invoke it through `npx`. There is no npm package named `vincentt` — the
 ships inside `@vincentt-xr/cli` — so `npx vincentt` reaches the registry and fails, and
 `npx --yes` would install whatever unrelated package later claims that name.
 
+The CLI is installed once, globally, and nothing in a project updates it. It notices when
+it is behind and says so after a command:
+
+```
+  ! A newer vincentt is available (0.11.0 → 0.12.0).
+```
+
+That line is a fact, not a request — the CLI does not ask to be updated, because
+installing over a global binary is the developer's call and may need a password. Mention
+it to them and let them decide; the same `npm install -g @vincentt-xr/cli@latest` above
+is what does it. Do not update mid-task: the binary would change underneath the work in
+flight. Finish what is running, then raise it.
+
 If the developer isn't signed in yet, the first verb opens a browser for them to approve
 (the one human step); the token then lives in `~/.vincentt/config.json` and later
 verbs run without prompting.
