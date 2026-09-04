@@ -60,6 +60,13 @@ conversation is not a request. A passing test is not a request. A successful pub
 request. A demo that appeared to go well is not a request. Nothing other than the person saying
 so ends a preview, because someone may still be holding a phone that goes dark when it does.
 
+The same rule holds in reverse, for a preview that ends without being asked to stop here. A
+preview the person ended somewhere else is a decision they already made, and the command that
+was holding it says on its way out that it has ended and what ended it. That is a thing to
+report, not a thing to undo: starting a replacement overrides the decision, and the address
+everyone was given stops being the address. Nothing about an ended preview asks for a new one,
+and the person is the one who asks.
+
 <!-- END recognition -->
 
 ## Start here
@@ -159,6 +166,30 @@ at the wrong screen — the phone is reached *from* this page, by scanning it.
 **Put it in the reply as a bare URL on its own line — no backticks, no code fence, no
 `Console:` label.** A URL in code formatting renders as something to copy; a bare one renders
 as something to click, and the developer is reaching for their phone, not their clipboard.
+
+### When the preview ends while you are working
+
+`pnpm preview` holds the tunnel open until something ends it, and it prints why on the way out.
+**A preview that ends is not a command that failed.** It is usually the developer stopping it —
+from the console, from another terminal, or by closing the one it was running in.
+
+**Read the last block it printed and say what it says. Do not start another one.**
+
+- `✓ Preview stopped. The link no longer works.` — someone stopped it on this account. Say so
+  and stop there. **This is the common case and it is not an error**: the developer chose it,
+  often from the console page you just handed them.
+- `✓ Preview stopped — 12-hour maximum reached.` — it ran its full life. Say so.
+- `✗ Preview ended — …` — something went wrong; relay the line as printed.
+
+**Starting a new preview because the old one ended is the wrong move**, even when the developer
+has not said anything since. It overrides a deliberate stop, it mints a new link so every phone
+already holding one needs a re-scan, and it makes the reason you were about to report untrue by
+the time you report it. Wait to be asked.
+
+**A `✓` is not a failure to retry.** Re-running `pnpm preview` on a folder whose preview is
+already running attaches instead of minting, so a retry loop does not even produce a second
+preview — it supersedes the session it just attached to and reports `superseded`, which reads as
+something breaking when nothing was.
 
 ## Waiting for the phone
 
