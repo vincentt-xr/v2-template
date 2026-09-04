@@ -12,9 +12,10 @@ import { PerspectiveCamera } from "@react-three/drei";
 
 import { Scene } from "./Scene";
 import { PreviewAnchors } from "./PreviewAnchors";
-import { chooseMediaSource, isFramed, pickFramedDefault } from "./framed";
+import { announcedPresets, chooseMediaSource, isFramed, pickFramedDefault } from "./framed";
 import type { MediaSourceEnv } from "./framed";
 import { streamFromImageUrl, streamFromVideoUrl } from "./mediaStream";
+import { openConsoleChannel } from "@vincentt-xr/harness";
 import { MediaSourceControl } from "./MediaSourceControl";
 import type { MediaPreset } from "./MediaSourceControl";
 
@@ -201,6 +202,38 @@ const Shell = () => {
     },
     [session],
   );
+
+  // THE CONSOLE'S CHANNEL, framed only.
+  //
+  // `openConsoleChannel` no-ops when unframed, so the guard here is about not
+  // paying for the SDK import rather than about correctness. The presets come
+  // from the same module the in-app switcher uses; only the data is needed, and
+  // the switcher component itself is never loaded on this path.
+  //
+  // `applySource` is reused verbatim: the console names a preset id and the app
+  // performs exactly the swap it would have performed from its own control. The
+  // console never holds the stream, which is the property the whole design rests
+  // on.
+  useEffect(() => {
+    if (!isFramed()) return undefined;
+    let close: (() => void) | undefined;
+    let cancelled = false;
+    void import("@vincentt-xr/sdk/debug-ui/media-source").then((mod) => {
+      if (cancelled) return;
+      const presets = mod.defaultMediaSources as unknown as MediaPreset[];
+      close = openConsoleChannel({
+        presets: announcedPresets(presets),
+        onSetMediaSource: (id) => {
+          const preset = presets.find((p) => p.id === id);
+          if (preset) applySource(preset);
+        },
+      });
+    });
+    return () => {
+      cancelled = true;
+      close?.();
+    };
+  }, [applySource]);
 
   return (
     <AspectRatioContainer>
