@@ -147,6 +147,14 @@ verbs run without prompting.
   scaffolds the starter first, then registers. In a folder that is already a Vincentt app it
   only registers. In any other non-empty folder it refuses and says what to run. Requires being
   signed in for the registering half; the scaffolding half never does. Usually already done.
+- **`vincentt projects`** — list the projects on the account: their ids, their names, their
+  addresses, and **where each one lives on this machine**, when this machine has worked on it
+  before. Reach for it when you need to know which project the developer means, or where it is.
+  A project the machine has no folder for says so plainly rather than leaving a gap. Add `--json`
+  for machine-readable output. Requires being signed in.
+- **`vincentt link <project-id>`** — bind this folder to a project that already exists, by the id
+  the listing prints. Use it in a folder that is not bound to anything yet — a fresh clone, a
+  folder that lost its binding, or a project created in the console.
 - **`vincentt init <dir>`** — scaffold the starter with **no account at all**. `create`
   covers the common case; this is the route when there is no account to sign in with.
 - **`vincentt publish`** — build first (`pnpm build`), then this uploads the built
@@ -160,6 +168,44 @@ verbs run without prompting.
   phone preview (a screenshot + strokes/pins + a message), print every annotation waiting as
   one JSON object per line, and exit. See **Waiting for the phone** below for how to park on
   it.
+
+### Picking up a project
+
+**Start by finding out which project this folder is.** `.vincentt/project.json` in the project
+folder names it. If it is there, the folder is bound and you already have your answer — say which
+project it is, and if the developer named a different one, ask them which they meant rather than
+switching for them.
+
+**If there is no such file, the folder is not bound to anything.** Do not guess from the folder's
+name and do not assume the only project on the account is the one they meant. Run `vincentt
+projects` and read what comes back.
+
+**The listing reports where a project is. It does not go there.** Nothing about a folder appearing
+in the output makes it the working directory. Do not `cd` into it, do not open it, do not run
+anything in it, and do not tell the developer you have. Say the path and let them decide. This
+holds in all three cases below.
+
+- **One folder listed for the project they named** — that is where it lives. Say the path and ask
+  whether to carry on there.
+- **More than one folder listed** — the project is in several places on this machine, and which
+  one they mean is theirs to say. **Show every one as a numbered list and ask which**, so the
+  answer is a number rather than a path they have to copy back. The numbers are yours for asking
+  with; they are not a ranking, and the listing's order is not one either. If there are more than a
+  handful, say how many there are and still show them all — picking the newest, or the shortest
+  path, or the first three, is a guess that is wrong exactly when it matters.
+- **`no folder known on this machine`** — ask the developer where it is. If the folder you are
+  already in looks like that project (it has the app's source and no binding — a fresh clone, or a
+  folder that lost one), offer to bind it instead, with `vincentt link <project-id>` using the id
+  from the listing. That message is a real answer and not a failure: the project exists on the
+  account, and this machine has no record of a folder for it — it has not been worked on here, or
+  it was worked on somewhere the machine no longer knows about.
+
+**What comes back is where the project was last worked, not proof of anything.** A folder is
+reported only if it still holds that project's binding when the listing runs, so a path that no
+longer holds it is never handed to you. Everything after that is authorized the same way it always
+is — the folder is a shortcut to the right directory, not permission to be in it. And it is where
+the project *was* worked, not where it *must* be worked: if the developer names a different place,
+that place is right and the listing is stale.
 
 `pnpm preview` (above) is the one loop step that is not a `vincentt` verb — run it in the
 background; it holds the secure tunnel open until stopped. It prints the phone URL and, for a

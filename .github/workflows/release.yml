@@ -131,6 +131,33 @@ jobs:
             exit 1
           fi
 
+      # The recognition section promises the contract says how to find out which project a folder
+      # is, and what to do in each case. Run at the TAG as well as on the branch: the tag is what
+      # `init` clones, so a contract that lost the guidance between review and release would ship
+      # into every creator's repository and is never read back to be repaired (B-F3-5 tripwire c).
+      - name: The contract answers the recognition section's coming-back promise
+        run: |
+          if ! grep -qF 'vincentt projects' AGENTS.md; then
+            echo "::error file=AGENTS.md::the verb list does not name \`vincentt projects\`. The recognition section promises the contract says how to find out which project a folder is; the listing verb is that answer (B-F2-9)."
+            exit 1
+          fi
+          if ! grep -qF 'vincentt link <project-id>' AGENTS.md; then
+            echo "::error file=AGENTS.md::the contract does not name \`vincentt link <project-id>\`. It is the remedy the unknown case points at, and without it that branch has no next step (B-F2-9)."
+            exit 1
+          fi
+          if ! grep -qF '### Picking up a project' AGENTS.md; then
+            echo "::error file=AGENTS.md::the contract carries no \`Picking up a project\` guidance. Naming the verb without saying what to do with its three answers leaves the recognition section's promise unkept (B-F2-9)."
+            exit 1
+          fi
+          if ! grep -qF 'no folder known on this machine' AGENTS.md; then
+            echo "::error file=AGENTS.md::the contract does not repeat the CLI's unknown-case string verbatim. An agent matching output must find the same words here (B-F2-9)."
+            exit 1
+          fi
+          if ! grep -qF 'It does not go there.' AGENTS.md; then
+            echo "::error file=AGENTS.md::the contract does not say the listing reports a location without going there. An agent handed a path is the reader most likely to \`cd\` into it."
+            exit 1
+          fi
+
       # The recognition section is GENERATED from recognition.md in vincentt-xr/agent-plugin. A
       # hand-edit here would put a sentence in every creator's tree without putting it in the
       # file that also feeds the package. Run at the TAG, because a check not run at the tag does
