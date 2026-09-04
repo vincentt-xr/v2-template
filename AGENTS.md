@@ -89,6 +89,17 @@ the developer to the point where they can describe what they want.
 
 ## The dev loop
 
+**Every command below runs in the project folder — the one holding this file.** Not the folder
+you started the conversation in, and not its parent. A background command especially: it does not
+inherit a directory you changed earlier in the conversation, so pass the project folder to it
+explicitly rather than assuming the shell is still there.
+
+Getting this wrong does not look like a path error. `pnpm preview` in a parent folder exits
+non-zero and reads as the preview having failed, and the same mistake in a folder that happens to
+hold another Vincentt project starts a preview for **that** project — reported as a working
+preview, at an address for someone else's app. Check where you are before the first command and
+after anything that could have moved you.
+
 - **`pnpm install`** — install dependencies.
 - **`pnpm dev`** — esbuild dev server on `http://localhost:5173`.
 - **`pnpm preview`** — on-device preview. Builds and serves the app behind a secure
@@ -166,6 +177,12 @@ at the wrong screen — the phone is reached *from* this page, by scanning it.
 **Put it in the reply as a bare URL on its own line — no backticks, no code fence, no
 `Console:` label.** A URL in code formatting renders as something to copy; a bare one renders
 as something to click, and the developer is reaching for their phone, not their clipboard.
+
+**The console page is the only link in the reply. Everything else is named, not linked.** A
+project, a folder, or a file is written as plain text — `christmas-booth-10`, not
+`[christmas-booth-10](christmas-booth-10)`. A markdown link whose target is a bare folder name
+points at nothing: it renders as a link, invites a click, and goes nowhere. If a path is worth
+giving, give the path itself.
 
 ### When the preview ends while you are working
 
