@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { chooseMediaSource, isFramed, pickFramedDefault, switcherSources } from "./framed";
+import { announcedPresets, chooseMediaSource, isFramed, pickFramedDefault } from "./framed";
 
 const TOP = { name: "top" };
 
@@ -121,26 +121,45 @@ describe("pickFramedDefault", () => {
   });
 });
 
-describe("switcherSources", () => {
+describe("announcedPresets", () => {
   const presets = [
-    { id: "webcam", kind: "webcam" },
-    { id: "sdk-video-1", kind: "video" },
-    { id: "sdk-image-1", kind: "image" },
+    { id: "webcam", kind: "webcam", label: "Webcam", url: undefined },
+    { id: "sdk-video-1", kind: "video", label: "Head tilt", url: "https://cdn.test/v1.mp4" },
+    { id: "sdk-image-1", kind: "image", label: "Portrait", url: "https://cdn.test/i1.jpg" },
   ];
 
-  it("drops the webcam entries when framed", () => {
-    expect(switcherSources(presets, true).map((p) => p.id)).toEqual([
-      "sdk-video-1",
-      "sdk-image-1",
+  it("translates the SDK's `webcam` to the wire's `camera`", () => {
+    expect(announcedPresets(presets).map((p) => p.kind)).toEqual(["camera", "video", "image"]);
+  });
+
+  it("never puts a url on the wire, whatever the SDK carries", () => {
+    announcedPresets(presets).forEach((announced) => {
+      expect(Object.keys(announced).sort()).toEqual(["id", "kind", "label", "mirrored"]);
+    });
+  });
+
+  it("marks the camera mirrored and everything else not", () => {
+    const byId = Object.fromEntries(announcedPresets(presets).map((p) => [p.id, p.mirrored]));
+    expect(byId).toEqual({ webcam: true, "sdk-video-1": false, "sdk-image-1": false });
+  });
+
+  it("preserves id, label and the announced order", () => {
+    expect(announcedPresets(presets).map((p) => [p.id, p.label])).toEqual([
+      ["webcam", "Webcam"],
+      ["sdk-video-1", "Head tilt"],
+      ["sdk-image-1", "Portrait"],
     ]);
   });
 
-  it("leaves the list untouched when unframed", () => {
-    expect(switcherSources(presets, false)).toBe(presets);
+  it("drops a kind outside the closed vocabulary rather than passing it through", () => {
+    // An SDK that adds a kind must not be able to put an entry the console
+    // cannot render into console chrome.
+    const withUnknown = [...presets, { id: "future", kind: "hologram", label: "Hologram" }];
+    expect(announcedPresets(withUnknown).map((p) => p.id)).not.toContain("future");
+    expect(announcedPresets(withUnknown)).toHaveLength(3);
   });
 
-  it("drops every webcam entry, not just the first", () => {
-    const many = [...presets, { id: "webcam-2", kind: "webcam" }];
-    expect(switcherSources(many, true).some((p) => p.kind === "webcam")).toBe(false);
+  it("is empty for an empty list, not undefined", () => {
+    expect(announcedPresets([])).toEqual([]);
   });
 });

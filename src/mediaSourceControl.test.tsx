@@ -1,15 +1,16 @@
-// The framed switcher, rendered. Two properties:
+// The in-app switcher's mount rule, pinned in BOTH directions.
 //
-//  1. THE SWITCHER AGREES — the rendered selection is the framed preset, not
-//     Webcam. The switcher is controlled and holds no source state, so this is
-//     the app's value showing through rather than the control claiming one.
-//  2. THE WEBCAM SOURCES ARE FILTERED when framed.
+// FRAMED it renders nothing: the console draws the source control in its own
+// chrome beside the frame, so an in-app mount would be the creator's second
+// switcher in one workspace.
 //
-// The dead Camera TAB is deliberately NOT asserted away: the switcher's kind
-// tabs are hardcoded and are not derived from the sources list, so the tab
-// remains and reads "No camera source". That is documented, not fixed — the SDK
-// stays at zero change. What matters, and what is asserted here, is the
-// REACHABLE behavior: no webcam is selectable and no tap reaches getUserMedia.
+// UNFRAMED it renders exactly as it always has. That arm is the case, not a
+// courtesy — "gated, not deleted" is a claim about two states, and a build that
+// deleted the control outright satisfies the framed arm perfectly.
+//
+// The webcam entry is no longer filtered in either direction. The frame now
+// carries a per-session camera delegation, so the tap that used to dead-end on
+// unrecoverable "Allow camera access" advice raises a real prompt instead.
 
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -46,31 +47,69 @@ const openPanel = async () => {
   fab.click();
 };
 
-describe("MediaSourceControl · framed", () => {
-  it("renders the framed preset as the selection, not Webcam", async () => {
-    frameIt();
-    render(<MediaSourceControl value={FRAMED_PRESET} onChange={vi.fn()} />);
+const settle = async () => {
+  // The mount is gated before a dynamic import, so "nothing appeared" has to be
+  // asserted after the microtask that import would have resolved on. Without
+  // this the framed assertions pass against a control that simply had not
+  // finished loading yet.
+  await waitFor(() => expect(document.body).toBeTruthy());
+  await Promise.resolve();
+};
 
-    await openPanel();
-    const select = await screen.findByRole("combobox");
-    expect((select as HTMLSelectElement).value).toBe(FRAMED_PRESET.id);
-    expect((select as HTMLSelectElement).value).not.toBe("webcam");
+describe("MediaSourceControl · framed", () => {
+  it("mounts NO node — the console owns the control outside the frame", async () => {
+    frameIt();
+    const { container } = render(<MediaSourceControl value={FRAMED_PRESET} onChange={vi.fn()} />);
+
+    await settle();
+    expect(container.firstChild).toBeNull();
+    expect(document.querySelector('[title="Open Media Menu"]')).toBeNull();
   });
 
-  it("offers no webcam option, so none can be selected", async () => {
+  it("renders nothing even with a configured source the app bound itself", async () => {
+    frameIt();
+    const configured = {
+      id: "configured",
+      kind: "video",
+      label: "Configured input",
+      url: "https://example.test/client-footage.mp4",
+    };
+    render(<MediaSourceControl value={configured} onChange={vi.fn()} />);
+
+    await settle();
+    expect(document.querySelector('[title="Open Media Menu"]')).toBeNull();
+  });
+
+  it("never reaches getUserMedia, since nothing is mounted to tap", async () => {
     frameIt();
     render(<MediaSourceControl value={FRAMED_PRESET} onChange={vi.fn()} />);
+
+    await settle();
+    expect(getUserMedia).not.toHaveBeenCalled();
+  });
+});
+
+describe("MediaSourceControl · unframed", () => {
+  it("mounts the switcher — the positive control that makes the framed arm mean something", async () => {
+    render(<MediaSourceControl value={defaultMediaSources[0]} onChange={vi.fn()} />);
+
+    await openPanel();
+    expect(await screen.findByRole("combobox")).toBeTruthy();
+  });
+
+  it("keeps the webcam entry, unchanged from today", async () => {
+    render(<MediaSourceControl value={defaultMediaSources[0]} onChange={vi.fn()} />);
 
     await openPanel();
     await screen.findByRole("combobox");
-    const optionValues = screen
-      .getAllByRole("option")
-      .map((o) => (o as HTMLOptionElement).value);
-    expect(optionValues).not.toContain("webcam");
+    const optionValues = screen.getAllByRole("option").map((o) => (o as HTMLOptionElement).value);
+    expect(optionValues).toContain("webcam");
   });
 
-  it("a configured source is shown as selected without re-admitting a webcam entry", async () => {
-    frameIt();
+  it("shows a configured source as selected, alongside the SDK's own presets", async () => {
+    // The SDK's switcher lists options per kind TAB, so the video tab shows the
+    // video presets — the webcam entry lives under its own tab and is asserted
+    // by the webcam test above, not here.
     const configured = {
       id: "configured",
       kind: "video",
@@ -82,60 +121,18 @@ describe("MediaSourceControl · framed", () => {
     await openPanel();
     const select = (await screen.findByRole("combobox")) as HTMLSelectElement;
     expect(select.value).toBe("configured");
-    expect([...select.options].map((o) => o.value)).not.toContain("webcam");
-  });
-
-  it("a webcam value cannot re-admit a webcam entry when framed", async () => {
-    // Structural, not incidental: the framed filter is re-applied after the
-    // app's own value is prepended, so no path puts a webcam back in the list.
-    frameIt();
-    const webcam = { id: "webcam", kind: "webcam", label: "Webcam" };
-    render(<MediaSourceControl value={webcam} onChange={vi.fn()} />);
-
-    await openPanel();
-    const options = screen.queryAllByRole("option").map((o) => (o as HTMLOptionElement).value);
-    expect(options).not.toContain("webcam");
-  });
-
-  it("tapping the dead Camera tab selects nothing and never reaches getUserMedia", async () => {
-    // QA-F13-G14's reachable behavior. The tab is present (hardcoded in the SDK)
-    // and is expected to be present — asserting its ABSENCE would fail against a
-    // correct build and push someone to edit the SDK.
-    frameIt();
-    const onChange = vi.fn();
-    render(<MediaSourceControl value={FRAMED_PRESET} onChange={onChange} />);
-
-    await openPanel();
-    const cameraTab = await screen.findByTitle("Webcam");
-    cameraTab.click();
-
-    await screen.findByText("No camera source");
-    expect(onChange).not.toHaveBeenCalled();
-    expect(getUserMedia).not.toHaveBeenCalled();
-  });
-});
-
-describe("MediaSourceControl · unframed", () => {
-  it("keeps the webcam entry, unchanged from today", async () => {
-    render(<MediaSourceControl value={defaultMediaSources[0]} onChange={vi.fn()} />);
-
-    await openPanel();
-    await screen.findByRole("combobox");
-    const optionValues = screen
-      .getAllByRole("option")
-      .map((o) => (o as HTMLOptionElement).value);
-    expect(optionValues).toContain("webcam");
+    expect([...select.options].map((o) => o.value)).toContain("sdk-video-1");
   });
 });
 
 describe("MediaSourceControl · production", () => {
   it("mounts nothing when disabled, so a published bundle never loads the switcher", async () => {
-    frameIt();
     const { container } = render(
       <MediaSourceControl value={FRAMED_PRESET} onChange={vi.fn()} enabled={false} />,
     );
 
-    await waitFor(() => expect(container).toBeTruthy());
+    await settle();
+    expect(container.firstChild).toBeNull();
     expect(document.querySelector('[title="Open Media Menu"]')).toBeNull();
   });
 });

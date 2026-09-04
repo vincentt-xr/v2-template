@@ -192,7 +192,12 @@ const Shell = () => {
             : (await streamFromVideoUrl(next.url)).stream;
         await session.setMediaSource({ source: XRMediaSource.STREAM, stream });
       };
-      apply();
+      // The SDK rethrows after writing the failure to the session store, so the
+      // error screen paints from that store either way and this catch is only
+      // here to keep the rethrow from surfacing as an unhandled rejection.
+      // Reachable since the frame gained a camera grant: the webcam entry used
+      // to be filtered out before any tap could reach getUserMedia.
+      void apply().catch(() => {});
     },
     [session],
   );

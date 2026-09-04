@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ComponentType } from "react";
 
-import { isFramed, switcherSources } from "./framed";
+import { isFramed } from "./framed";
 
 // The SDK's runtime media switcher — the control a creator swaps inputs with
 // while the app is running.
@@ -12,6 +12,12 @@ import { isFramed, switcherSources } from "./framed";
 // harness mounts its overlays as bare DOM outside React and deliberately holds
 // no reference to the session, so it cannot be the owner. The app can, and the
 // app already owns the startup source decision.
+//
+// FRAMED: this renders NOTHING. The console draws the source control in its own
+// chrome beside the frame, so mounting here too would give the creator two
+// switchers in one workspace. GATED, NOT DELETED — an unframed local preview
+// (`vincentt preview` opened directly) has no console chrome around it to take
+// over, so it keeps the in-app switcher.
 //
 // DYNAMIC IMPORT BEHIND A CONSTANT GUARD, never a static import. The preset
 // module carries 12 CDN URLs and the switcher pulls in an icon dependency. A
@@ -44,9 +50,12 @@ export const MediaSourceControl = ({
 }) => {
   const [loaded, setLoaded] = useState<SwitcherModule | null>(null);
   const framed = isFramed();
+  // The framing check gates the IMPORT, not just the render, so a framed app
+  // never fetches the switcher chunk it would only throw away.
+  const mounts = enabled && !framed;
 
   useEffect(() => {
-    if (!enabled) return undefined;
+    if (!mounts) return undefined;
     let cancelled = false;
     import("@vincentt-xr/sdk/debug-ui/media-source").then((mod) => {
       if (cancelled) return;
@@ -58,34 +67,20 @@ export const MediaSourceControl = ({
     return () => {
       cancelled = true;
     };
-  }, [enabled]);
+  }, [mounts]);
 
-  // FRAMED: the webcam entries are dropped. The switcher fires its Webcam entry
-  // immediately with no confirmation, and a framed app has no camera grant by
-  // design — so one tap would replace the whole scene with "Allow camera access
-  // in your browser, then refresh the page", advice that can never work because
-  // the permission was withheld deliberately.
-  //
-  // Known and deliberate: the switcher's kind TABS are hardcoded and are NOT
-  // derived from this list, so a dead Camera tab remains and reads "No camera
-  // source" when tapped. Accepted rather than fixed — fixing it means editing
-  // the SDK, which this feature budgets at zero change. The destructive half is
-  // what mattered and it is closed: tapping Camera selects nothing, so there is
-  // no getUserMedia call and no unrecoverable scene.
   const sources = useMemo(() => {
     if (!loaded) return [];
-    const list = switcherSources(loaded.presets, framed);
     // A source the app bound from its own config is not in the SDK's preset
     // list, so it is prepended — otherwise the control would render with
-    // nothing selected while that source is plainly playing. The framed filter
-    // is re-applied to the result so this can never put a webcam entry back.
-    if (value && !list.some((s) => s.id === value.id)) {
-      return switcherSources([value, ...list], framed);
+    // nothing selected while that source is plainly playing.
+    if (value && !loaded.presets.some((s) => s.id === value.id)) {
+      return [value, ...loaded.presets];
     }
-    return list;
-  }, [loaded, framed, value]);
+    return loaded.presets;
+  }, [loaded, value]);
 
-  if (!loaded || !value || sources.length === 0) return null;
+  if (!mounts || !loaded || !value || sources.length === 0) return null;
 
   const { Switcher } = loaded;
   return <Switcher value={value} onChange={onChange} sources={sources} />;
