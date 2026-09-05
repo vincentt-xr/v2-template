@@ -361,6 +361,39 @@ Reference media by path or URL — there is no upload step.
 - **Hosted assets** — reference any absolute URL directly (`useTexture(url)`,
   `<img src={url}>`, `new Audio(url)`). For textures, prefer a downscaled WebP when one
   is available, to save bandwidth.
+- **The curated library** — the platform serves a corpus of ready-made visuals you can
+  search from the shell. Reach for it when the developer asks for a visual you would
+  otherwise have to fake with a box geometry or a solid-colour plane.
+
+### Searching the curated library
+
+```
+vincentt assets search "<what you want>"    [--kind prop|frame] [--limit N]
+vincentt assets show <id> [<id>…]           everything known about an asset
+vincentt assets add <id> [<id>…]            print the URLs to reference from your source
+```
+
+Search takes plain language — `vincentt assets search "cute food"` — and prints matching
+records with their ids and URLs. `add` prints URLs and, by default, **writes nothing to
+disk**; pass `--download` if you want local copies. If the developer hands you asset ids
+directly, `vincentt assets show <id>` resolves them to URLs and placement facts.
+
+**`kind` is the placement contract, and it is the field to read first.**
+
+- `prop` — a free-standing object. Place it in the scene, parent it to a tracker, scale
+  it to taste.
+- `frame` — a full-screen overlay. Stretch it edge-to-edge and **never** parent it to a
+  tracker.
+- **No `kind` field at all** means the asset was not classifiable. Do not guess a
+  placement — prefer one that carries a kind.
+
+Check `has_alpha` before putting anything over the camera feed: an opaque asset used as
+a frame will white out the video.
+
+The library is a convenience, never a dependency. It holds **props and frames** — it has
+no wearables or face-filter assets, so a query for those correctly returns nothing. If a
+search comes back empty or the platform is unreachable, say so and fall back to local
+files under `public/`; the project still builds, previews, and publishes either way.
 
 ## Communicating
 

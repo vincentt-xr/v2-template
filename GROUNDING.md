@@ -292,6 +292,7 @@ Each pattern names which primitives compose it (SDK components + template helper
 ## Notes
 
 - `VideoBackground`, camera, and lighting are already mounted in `src/App.tsx`. Do NOT add a second background plane — it covers the camera.
-- Assets are referenced by **URL** (uploaded-asset or curated-library CDN URLs); read `src/assets/manifest.json` / `src/assets/library-manifest.json` for what's available.
+- Assets are referenced by **URL**. For the platform's curated library, run
+  `vincentt assets search "<what you want>"` — see the Assets section in `AGENTS.md`.
 - Tracker components self-register — no `registerXRPipeline` call needed.
 - Always name your meshes — `name="..."` enables runtime lookup and visual-feedback editing.
