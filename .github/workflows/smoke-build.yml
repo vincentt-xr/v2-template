@@ -141,6 +141,13 @@ jobs:
       - name: The recognition section is generated, not authored
         run: node scripts/check-recognition.mjs
 
+      # The create-endings section describes what `vincentt create` returns, which is behavior
+      # owned by @vincentt-xr/cli in vincentt-xr/toolchain. Its suite asserts the CLI ends the way
+      # the fixture says; this asserts AGENTS.md says the same thing. Neither side can drift alone
+      # without going red. No fetch — the tracked copy is the whole point (B-F2-9(b)).
+      - name: The create-endings section matches the CLI's fixture
+        run: node scripts/check-create-endings.mjs
+
       # QA-F2-G34 assertion B. The step above checks the BRANCH; this one checks
       # what `vincentt init` ACTUALLY CLONES, which is the moving `latest` tag and
       # not this branch. Three outcomes: PASS, BLOCKED (the tag predates the

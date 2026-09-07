@@ -166,6 +166,14 @@ jobs:
       - name: The recognition section is generated, not authored
         run: node scripts/check-recognition.mjs
 
+      # The create-endings section describes what `vincentt create` returns -- behavior owned by
+      # @vincentt-xr/cli in vincentt-xr/toolchain, asserted there against the same fixture. Run at
+      # the TAG for the same reason as the check above: the tag is what `vincentt init` clones, so
+      # a section correct only on the branch does not protect the artifact creators receive. This
+      # is the artifact that was wrong about `create` for weeks (B-F2-9(b)).
+      - name: The create-endings section matches the CLI's fixture
+        run: node scripts/check-create-endings.mjs
+
       # Only now is the tag known good. Moving `latest` before this point would
       # publish a broken template to every `vincentt init` for as long as it took
       # someone to notice.
