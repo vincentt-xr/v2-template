@@ -1,5 +1,6 @@
 /* eslint-disable react/no-unknown-property */
 import { useCallback, useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   XRProvider,
   XRScene,
@@ -169,7 +170,7 @@ const CameraError = () => {
   );
 };
 
-const Shell = () => {
+export const Shell = () => {
   const ready = useXRReady();
   const { session } = useXRContext();
 
@@ -178,8 +179,30 @@ const Shell = () => {
   // "Webcam" while a preset plays.
   const [selected, setSelected] = useState<MediaPreset | null>(null);
 
+  // Held freezes the PICTURE, not the experience. The whole visible composite is
+  // one canvas — the clip plays into an offscreen canvas, is captureStream()-ed,
+  // and the SDK blits it into a texture drawn INSIDE this r3f scene — so halting
+  // the render loop alone freezes everything on screen. The media RAF loop, the
+  // blit and the trackers keep running deliberately: stopping a camera track can
+  // need a fresh permission gesture to restart, and rebinding a tracker is the
+  // delicate path. The cost is that release JUMPS to where the world now is
+  // rather than resuming from the frozen instant.
+  const [paused, setPaused] = useState(false);
+
   const applySource = useCallback(
     (next: MediaPreset) => {
+      // RELEASE FIRST, THEN APPLY. A swap performed while the render loop is
+      // stopped lands behind a frozen picture, so the creator sees the media
+      // control do nothing.
+      //
+      // `flushSync` is load-bearing, not defensive. Calling `setPaused(false)`
+      // before `apply()` is NOT sufficient: it only queues a re-render, which
+      // React runs after this handler returns, while `apply()` reaches
+      // `setMediaSource` in a microtask that wins the race. The canvas would then
+      // take the new source while still mounted with `frameloop: 'never'` — the
+      // one-frame-behind-the-freeze this ordering exists to prevent. Flushing
+      // commits the released frameloop before the swap is started.
+      flushSync(() => setPaused(false));
       setSelected(next);
       const apply = async () => {
         if (next.kind === "webcam") {
@@ -227,6 +250,11 @@ const Shell = () => {
           const preset = presets.find((p) => p.id === id);
           if (preset) applySource(preset);
         },
+        // Supplying this handler is ALSO what declares `render-hold` in the
+        // announce — the harness derives the capability from the wiring rather
+        // than from a list passed beside it, so an app cannot advertise a hold it
+        // does not perform. The console has no ack to detect that with.
+        onSetRenderHold: setPaused,
       });
     });
     return () => {
@@ -242,6 +270,13 @@ const Shell = () => {
         errorComponent={<CameraError />}
         loadingTransitionDuration={1000}
         style={{ width: "100%", height: "100%" }}
+        // `canvasProps`, NOT a bare `frameloop` — this is `<XRScene>`, the SDK's
+        // component, which owns the `<Canvas>`; r3f's prop does not exist here.
+        // The SDK spreads this AFTER its own gl defaults, so this value wins.
+        // A later path needing `preserveDrawingBuffer` (a screenshot, an
+        // annotation capture) merges into `canvasProps.gl` rather than replacing
+        // `canvasProps`, which would drop the freeze.
+        canvasProps={{ frameloop: paused ? "never" : "always" }}
       >
         <MediaSourceBinder onSourceSelected={setSelected} />
         <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={45} />
