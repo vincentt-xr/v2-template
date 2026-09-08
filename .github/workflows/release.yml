@@ -158,6 +158,17 @@ jobs:
             exit 1
           fi
 
+      # The zone manifest at the TAG is the one every `vincentt upgrade` reads to decide
+      # what it may overwrite in a creator's repository. This job accepts
+      # workflow_dispatch with an arbitrary ref and force-moves `latest`, so `latest` is
+      # a single-actor lever over that manifest -- which is exactly why the same checks
+      # smoke-build.yml runs on the branch are re-run here against the tagged tree.
+      #
+      # One failure refuses the WHOLE manifest, and this step runs before `Move latest`,
+      # so a refused manifest never becomes the artifact.
+      - name: The zone manifest is complete and passes the floor
+        run: node scripts/check-zone-manifest.mjs
+
       # The recognition section is GENERATED from recognition.md in vincentt-xr/agent-plugin. A
       # hand-edit here would put a sentence in every creator's tree without putting it in the
       # file that also feeds the package. Run at the TAG, because a check not run at the tag does

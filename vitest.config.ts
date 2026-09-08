@@ -16,6 +16,9 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    include: ["src/**/*.test.{ts,tsx}"],
+    // scripts/ is included so the zone-manifest validator has tests. A test for it
+    // may not live in src/: every src/* file must be classified in
+    // .vincentt-template.json and would therefore ship into every creator's repo.
+    include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.mjs"],
   },
 });
