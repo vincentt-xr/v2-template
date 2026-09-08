@@ -251,6 +251,30 @@ function trackedFiles(cwd) {
 // every upgrade trusts. The manifest diff must never be buried in a content
 // change: the human review of that diff is what the unicode and deny-name rules
 // exist to protect.
+//
+// THE RULE IS "NOT BURIED IN A CONTENT CHANGE", NOT "ALONE IN A COMMIT", and the
+// distinction is forced by how this repo merges. It is SQUASH-ONLY (merge commits
+// and rebase are both disabled), so a branch that carefully puts the manifest in
+// its own commit arrives on `main` as ONE commit containing everything. An
+// own-commit rule is therefore unsatisfiable here by construction: it refused
+// f17's own release, and it would refuse every future manifest edit the same way
+// — which is worse than no rule, because a check that cannot pass gets deleted
+// rather than fixed.
+//
+// What actually protects the review is narrower still, and the first attempt at
+// this got it wrong in an instructive way. "The manifest must not move alongside
+// any file it classifies" is ALSO unsatisfiable: adding a source file requires
+// classifying it in the same change, or the completeness check above refuses the
+// manifest for leaving it unlisted. Two rules that contradict each other on the
+// ordinary case are worse than the single rule they replaced.
+//
+// The hazard is not a file being ADDED and classified — that is transparent, and
+// the completeness check forces it. The hazard is an EXISTING file being MOVED
+// BETWEEN ZONES in the same change that edits it: the zone flip is what decides
+// whether an upgrade may overwrite a creator's file, and burying it under a
+// content diff is how it escapes review. So the check compares the manifest
+// against its own previous version and refuses only a REASSIGNMENT that rides
+// along with an edit to the reassigned file.
 function checkOwnCommit(cwd) {
   let sha;
   try {
@@ -272,12 +296,54 @@ function checkOwnCommit(cwd) {
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
 
-  const others = files.filter((f) => f !== MANIFEST);
-  if (others.length > 0) {
+  // Read the manifest as it was BEFORE this commit. A first commit has no parent
+  // version, so there is no reassignment to find and nothing to refuse.
+  let previous;
+  try {
+    previous = JSON.parse(
+      execFileSync('git', ['show', `${sha}~1:${MANIFEST}`], {
+        cwd,
+        encoding: 'utf8',
+        // The FIRST commit introducing the manifest has no previous version, which
+        // is the normal case rather than an error. Keep git's complaint off stderr
+        // so a passing run says only that it passed.
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }),
+    );
+  } catch {
+    return [];
+  }
+
+  const zoneOf = (m, f) => {
+    if ((m.platform ?? []).includes(f)) return 'platform';
+    if ((m.creator ?? []).includes(f)) return 'creator';
+    return undefined;
+  };
+
+  let current;
+  try {
+    current = JSON.parse(readFileSync(join(cwd, MANIFEST), 'utf8'));
+  } catch {
+    return [];
+  }
+
+  const touched = new Set(files);
+  const buried = [];
+  for (const f of new Set([...(previous.platform ?? []), ...(previous.creator ?? [])])) {
+    const was = zoneOf(previous, f);
+    const now = zoneOf(current, f);
+    // A REASSIGNMENT (platform <-> creator) whose own file is edited in the same
+    // commit. A removal is not a reassignment: `now` is undefined, and the
+    // completeness check owns whether that is legal.
+    if (was && now && was !== now && touched.has(f)) buried.push(`${f} (${was} -> ${now})`);
+  }
+
+  if (buried.length > 0) {
     return [
-      `the commit that last touched ${MANIFEST} (${sha.slice(0, 8)}) also touches ` +
-        `${others.length} other file(s): ${others.slice(0, 10).join(', ')}` +
-        `${others.length > 10 ? ', ...' : ''}. The manifest change must be its own commit.`,
+      `the commit that last touched ${MANIFEST} (${sha.slice(0, 8)}) MOVES ${buried.length} ` +
+        `file(s) between zones while also editing them: ${buried.join(', ')}. A zone flip ` +
+        `decides whether an upgrade may overwrite that file, so it is the one diff a human ` +
+        `must review on its own. Land the reassignment separately from the content change.`,
     ];
   }
   return [];
