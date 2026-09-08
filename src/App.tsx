@@ -9,6 +9,7 @@ import {
   AspectRatioContainer,
 } from "@vincentt-xr/sdk";
 import { useXRContext, useXRReady, useXRError } from "@vincentt-xr/sdk/low-level";
+import { mountViewerBeacon, reportSession } from "@vincentt-xr/analytics";
 import { PerspectiveCamera } from "@react-three/drei";
 
 import { Scene } from "./Scene";
@@ -172,6 +173,7 @@ const CameraError = () => {
 
 export const Shell = () => {
   const ready = useXRReady();
+  const reason = useXRError()?.reason;
   const { session } = useXRContext();
 
   // The app owns the selected source; the switcher only renders it. That is what
@@ -225,6 +227,26 @@ export const Shell = () => {
     },
     [session],
   );
+
+  // THE VIEWER BEACON.
+  //
+  // It lives in this never-edited shell because a creator forks the template and
+  // diverges immediately — anything in a file they edit is unpatchable in every
+  // creator's private copy.
+  //
+  // It takes no options and reads no environment: the endpoint is a literal inside
+  // the package, so a creator's unrelated local API-URL setting can never redirect
+  // their viewers' reports. It is inert off a published address, which is why
+  // nothing is sent in dev, in preview, or on a creator's own domain.
+  useEffect(() => mountViewerBeacon(), []);
+
+  // `reportSession` is a second call rather than an argument to the mount because
+  // the beacon package takes ZERO dependencies — including no `react` — so it
+  // cannot read the SDK's hooks itself. This component is already inside
+  // `<XRProvider>`, which is what makes the read possible at all.
+  useEffect(() => {
+    reportSession({ ready, reason });
+  }, [ready, reason]);
 
   // THE CONSOLE'S CHANNEL, framed only.
   //
