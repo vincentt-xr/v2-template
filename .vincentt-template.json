@@ -20,6 +20,7 @@
     "src/qa.f13-g11-g14.test.tsx",
     "src/qa.f13-g13-treeshake.test.ts",
     "src/qa_f13_g45_render_hold.test.tsx",
+    "src/viewerBeacon.test.tsx",
     "index.html",
     "package.json",
     "tsconfig.json",
