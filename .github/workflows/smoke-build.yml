@@ -135,6 +135,19 @@ jobs:
             exit 1
           fi
 
+      # The zone manifest decides which files a template upgrade may overwrite in a
+      # creator's repository. Checked on the branch AND at the tag (release.yml runs
+      # the same script against the tagged tree): a check that does not run at the
+      # tag does not protect the artifact.
+      #
+      # One failure refuses the WHOLE manifest. Fetch depth must be full so the
+      # own-commit check can read the manifest's history.
+      - name: Fetch history for the manifest own-commit check
+        run: git fetch --unshallow || true
+
+      - name: The zone manifest is complete and passes the floor
+        run: node scripts/check-zone-manifest.mjs
+
       # The recognition section is GENERATED from recognition.md in vincentt-xr/agent-plugin.
       # Checked on the branch as well as at the tag, so a hand-edit is caught in review rather
       # than at release.
