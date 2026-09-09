@@ -70,6 +70,44 @@ export function aliasMap(root = repoRoot) {
   };
 }
 
+// The three hosts a viewer beacon may be sent to, as literals. This list IS the
+// constraint: `@vincentt-xr/analytics` ships a pre-built dist, so the endpoint can
+// only be chosen at the creator's build, and the value must not be free-form.
+// A creator's own repo config naming an arbitrary host would redirect their
+// viewers' beacons to it, and a published bundle is unfixable afterward.
+//
+// Keyed by environment rather than parsed, so nothing here matches or derives a
+// host. The publish apexes NEST (`vincentt.app` is a suffix of
+// `staging.vincentt.app`), which is exactly why this is a lookup and not a suffix
+// test — see internal/meter/host.go in the api repo for what that costs.
+//
+// This prevents a MISTAKE, not an attacker: the creator owns this build and can
+// edit dist by hand. That is true of every byte in the bundle. Do not describe
+// this as a security boundary.
+const BEACON_ENDPOINTS = {
+  production: "https://api.vincentt.studio/v/beacon",
+  staging: "https://api.staging.vincentt.studio/v/beacon",
+  dev: "https://api.dev.vincentt.studio/v/beacon",
+};
+
+// Unset means production, so an ordinary creator build is byte-identical to the
+// one that shipped before this existed. An unrecognized value FAILS THE BUILD
+// rather than falling back: a typo'd `VINCENTT_ENV=stagng` that silently built a
+// production beacon is the failure this whole change exists to remove.
+function beaconEndpointDefine() {
+  const env = process.env.VINCENTT_ENV;
+  if (!env) return {};
+  const endpoint = BEACON_ENDPOINTS[env];
+  if (!endpoint) {
+    throw new Error(
+      `VINCENTT_ENV=${JSON.stringify(env)} is not a known environment. ` +
+        `Expected one of: ${Object.keys(BEACON_ENDPOINTS).join(", ")}. ` +
+        `Leave it unset for a normal production build.`,
+    );
+  }
+  return { "globalThis.__VCT_BEACON__": JSON.stringify(endpoint) };
+}
+
 export function buildOptions({ mode = "production", root = repoRoot } = {}) {
   const prod = mode === "production";
   return {
@@ -113,6 +151,7 @@ export function buildOptions({ mode = "production", root = repoRoot } = {}) {
         DEV: !prod,
         BASE_URL: "/",
       }),
+      ...beaconEndpointDefine(),
     },
     plugins: [
       stylePlugin({ postcss: { plugins: [require("@tailwindcss/postcss")] } }),

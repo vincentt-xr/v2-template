@@ -18,8 +18,8 @@ importers:
         specifier: 8.18.0
         version: 8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0)
       '@vincentt-xr/analytics':
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^0.3.0
+        version: 0.3.0
       '@vincentt-xr/harness':
         specifier: ^1.5.0
         version: 1.5.0(react@18.3.1)
@@ -993,8 +993,8 @@ packages:
     peerDependencies:
       react: '>= 16.8.0'
 
-  '@vincentt-xr/analytics@0.2.0':
-    resolution: {integrity: sha512-vMO6qYy1R/OJjzBZMaDm1SUaBAjXi8zLwihVJ849QJAqVO1x2/tKRx6YGYsyAXBLFLPDv10sW8KG7TDmw812ng==}
+  '@vincentt-xr/analytics@0.3.0':
+    resolution: {integrity: sha512-LfwlvQwK1ZAQ81KSSPC/QYlAdiol6tUxYHnqylgHXLtY0xldXoduUMSxCfFUSXyBP0pe8zdXIQww8sys2q7raQ==}
 
   '@vincentt-xr/harness@1.5.0':
     resolution: {integrity: sha512-uFVtj91qfkBJZESupifLip4gNU64Ee/xxU1vtlbF9oGx5b6dwIgUpAzu8MkK/tzef1XPdzdYrAkF1PqWRQ7M7Q==}
@@ -3743,7 +3743,7 @@ snapshots:
       '@use-gesture/core': 10.3.1
       react: 18.3.1
 
-  '@vincentt-xr/analytics@0.2.0': {}
+  '@vincentt-xr/analytics@0.3.0': {}
 
   '@vincentt-xr/harness@1.5.0(react@18.3.1)':
     dependencies:
