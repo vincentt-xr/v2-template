@@ -159,10 +159,11 @@ the developer to the point where they can describe what they want.
   is worth seeing on a phone before there is anything custom in it — it is how the
   developer learns the loop exists, and it is running by the time they have
   described the app.
-- Read the SDK reference (`GROUNDING.md`) **when you start building a scene**, not
-  before. There is no need to read the whole API up front just to confirm the
-  starter works.
-- Once they describe the app, then design and build it against `GROUNDING.md`.
+- Read the grounding files **when you start building a scene**, not before — the
+  template's `GROUNDING.md` and the SDK's own at
+  `node_modules/@vincentt-xr/sdk/GROUNDING.md`. There is no need to read the whole
+  API up front just to confirm the starter works.
+- Once they describe the app, then design and build it against both.
 
 ## The dev loop
 
@@ -437,27 +438,41 @@ requires it, and know why).
 The helper APIs (`capture`, `overlay`, `sprite`, `gesture`) are documented in
 `GROUNDING.md` — import and use them, don't re-implement them.
 
-## The SDK API lives in GROUNDING.md
+## The SDK API lives in the SDK's own grounding
 
-`GROUNDING.md` (repo root) is the authoritative reference for every SDK component,
-hook, and prop you may use (`<FaceTracker>`, `<HandTracker>`, `<TrackingAnchor>`,
-screen-space layout, `<TextLabel>`, `<Panel>`, the capture/overlay/sprite helpers, and
-the common patterns). Read it when you begin a scene (not before), and use the
-components and props it documents; don't invent props.
+There are **two** grounding files, and nothing merges them:
 
-Imports:
+- **`GROUNDING.md`** (repo root) documents only this template's local helpers —
+  capture, overlay, sprite, gesture — plus project notes and patterns.
+- **`node_modules/@vincentt-xr/sdk/GROUNDING.md`** is the authoritative reference
+  for every SDK component, hook, and prop (`<FaceTracker>`, `<HandTracker>`,
+  `<TrackingAnchor>`, screen-space layout, `<TextLabel>`, `<Panel>`). It is much
+  the larger of the two.
 
-- Core components and hooks come from **`@vincentt-xr/sdk`**.
+Read both when you begin a scene (not before), and use the components and props
+they document; don't invent props. Longer-form SDK guides and examples ship beside
+it in `node_modules/@vincentt-xr/sdk/docs/`.
+
+Imports — the SDK is split into task-domain doors, and a symbol imported from the
+wrong one fails with "no exported member":
+
+- Core components and hooks come from **`@vincentt-xr/sdk`** — including the runtime
+  renderers (`Transform3D`, `MeshRenderer`), `SpriteAnimation`, and the capture
+  hooks (`useFrameCapture`, `useMediaRecorder`).
 - **Trackers** (`FaceTracker`, `HandTracker`, `BodyTracker`, `GestureTracker`,
-  `GestureTrigger`, `TrackingAnchor`, `FaceMesh`) come from **`@vincentt-xr/sdk/tracking`**
-  — not core. Importing them from `@vincentt-xr/sdk` fails with "no exported member".
+  `GestureTrigger`, `TrackingAnchor`, `FaceMesh`, `Segmentation`) come from
+  **`@vincentt-xr/sdk/tracking`** — not core.
+- **Face deep config** (FaceMesh materials, retouch, head-binding) comes from
+  **`@vincentt-xr/sdk/face-effects`**.
+- **Scene-object authoring state** (types, factories, store operations, render
+  groups) comes from **`@vincentt-xr/sdk/scene-object`**.
 - The low-level XR context hooks (`useXRContext`, `useXRReady`, `useXRError`) come from
   **`@vincentt-xr/sdk/low-level`**.
 
-`GROUNDING.md` shows the exact import for each API. You *can* read `node_modules`, but
-prefer `GROUNDING.md` — the published `.d.ts` types can lag or omit props, and the
-bundle is minified. If something you need isn't in `GROUNDING.md` and isn't clearly in
-the types, ask rather than guessing a prop into existence.
+The SDK grounding shows the exact import for each API. You *can* read the `.d.ts`
+files, but prefer the grounding — the published types can lag or omit props, and the
+bundle is minified. If something you need isn't in either grounding and isn't clearly
+in the types, ask rather than guessing a prop into existence.
 
 ## Assets
 

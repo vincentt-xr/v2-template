@@ -5,15 +5,51 @@ This file documents the **template-local helpers** that live in this project's
 project-shape notes and common patterns.
 
 The **SDK component/hook API** (`@vincentt-xr/sdk` — trackers, screen-space
-layout, `<TextLabel>`, `<Panel>`, mesh/texture conventions) is documented in the
-**SDK grounding**, which ships with the SDK. In a running project the platform
-combines the SDK grounding with this file into the `GROUNDING.md` the agent reads,
-so the agent sees one complete reference. (Developing locally across both repos?
-The SDK API reference is `xr-sdk/GROUNDING.md` in your sibling checkout.)
+layout, `<TextLabel>`, `<Panel>`, mesh/texture conventions) is **not** in this
+file. It ships inside the SDK package, and in this project it is on disk at:
+
+```
+node_modules/@vincentt-xr/sdk/GROUNDING.md
+```
+
+Read that file when you begin a scene. It is the authoritative reference for
+every SDK component, hook, and prop, and it is far larger than this one — this
+file covers only the template-local helpers. Nothing merges the two: if you have
+read only this file, you have not yet seen the SDK API.
+
+The same package also ships longer-form docs beside it in
+`node_modules/@vincentt-xr/sdk/docs/` (guides, examples, per-API pages, and a
+migration guide). Reach for those when the grounding reference is too terse.
 
 Edit `src/Scene.tsx`. Compose the SDK components/hooks with the template helpers
 below and R3F primitives. There is no lifecycle DSL — per-frame logic is R3F
 `useFrame`, per-mount setup is `useEffect`, both inside the scene component.
+
+---
+
+## SDK import doors
+
+The SDK is split into task-domain entry points. A symbol imported from the wrong
+door fails with "no exported member". The SDK grounding shows the literal import
+for each API; this is the map of which door to open.
+
+- **`@vincentt-xr/sdk`** — core: providers, scene, screen-space layout, runtime
+  renderers (`Transform3D`, `MeshRenderer`, `SceneObjectRenderer`), `TextLabel`,
+  `Panel`, `SpriteAnimation`, `VideoBackground`, `AspectRatioContainer`,
+  capture/share (`useFrameCapture`, `useMediaRecorder`, `dataURLtoFile`), audio.
+- **`@vincentt-xr/sdk/tracking`** — trackers: `FaceTracker`, `HandTracker`,
+  `GestureTracker`, `BodyTracker`, `Segmentation`, `TrackingAnchor`,
+  `GestureTrigger`, the bare `FaceMesh`, `useFaceResults`.
+- **`@vincentt-xr/sdk/face-effects`** — face deep: FaceMesh material config,
+  retouch, canonical mesh, head-binding.
+- **`@vincentt-xr/sdk/scene-object`** — public authoring state: scene-object and
+  component types, factories, selectors, immutable store operations, and the
+  render-group API.
+- **`@vincentt-xr/sdk/low-level`** — escape hatch: raw model-node reads, selector
+  hooks, custom-tracker plumbing (`useXRContext`, `useXRReady`, `useXRError`).
+  Reach here only when core + tracking can't express it.
+
+Trackers self-register when mounted — no `registerXRPipeline` call.
 
 ---
 
@@ -116,7 +152,13 @@ if (!shared) {
 }
 ```
 
-For a low-level synchronous alternative, the SDK's `session.captureFrame(): string` returns a raw `data:image/png;base64,...` string. Prefer `usePhotoCapture()` for everything else — it manages the latest preview, returns a `Blob` for uploads, and keeps the photo/video API shapes symmetric.
+These template hooks are thin wrappers over the SDK's own capture surface
+(`useMediaRecorder`, `useFrameCapture`, `dataURLtoFile` — all on the core door).
+Prefer the template hooks: they manage the latest preview, return a `Blob` for
+uploads, and keep the photo/video API shapes symmetric. Go direct to the SDK hooks
+only when you need recorder state the wrappers don't expose.
+
+For a low-level synchronous alternative, the SDK's `session.captureFrame(): string` returns a raw `data:image/png;base64,...` string.
 
 ---
 
@@ -195,7 +237,26 @@ The same applies to a `useVideoCapture()` `latest` preview — wrap the `<video>
 
 ## Sprite-sheet animation — from `src/sprite.tsx`
 
-A sprite sheet is one image holding a grid of animation frames. Use it for countdowns, animated stickers, mascots, and particle bursts — anything frame-by-frame. Two tiers:
+A sprite sheet is one image holding a grid of animation frames. Use it for countdowns, animated stickers, mascots, and particle bursts — anything frame-by-frame.
+
+> **The SDK also ships a sprite player — `<SpriteAnimation>` (core door).** The two
+> are not interchangeable, so pick by where the sprite lives:
+>
+> - **Screen-space overlay** (a frame border, an instruction graphic, anything
+>   anchored to the viewport) — use the SDK's `<SpriteAnimation sheet={{ url, cols,
+>   rows, frames, fps }} anchors={...} />`. It must live inside a `<ScreenSpaceUI>`,
+>   defaults to full-screen, and contain-fits via `contentAspect`.
+> - **World-space, or anything needing per-frame control** (a sticker pinned to a
+>   landmark inside `<TrackingAnchor>`, a one-shot countdown with `onComplete`, a
+>   particle burst) — use the template's `<SpriteSheet>` / `useSpriteSheet` /
+>   `useInstancedSpriteUV` below. The SDK component has no world-space, no `loop`,
+>   no `playing`, and no `onComplete`.
+>
+> Note the prop shapes differ: the SDK takes one `sheet` object (`cols`/`rows`/
+> `frames` plus a `url` it loads itself); the template takes a loaded `texture` plus
+> flat `columns`/`rows`/`frameCount`. Don't mix them.
+
+Two tiers:
 
 ### `<SpriteSheet>` — a single animated sprite (the common case)
 
