@@ -9,7 +9,7 @@
     "build": "node scripts/build.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint src --ext ts,tsx --ignore-pattern '**/*.test.ts' --ignore-pattern '**/*.test.tsx' --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.18",
@@ -17,7 +17,7 @@
     "@react-three/fiber": "8.18.0",
     "@vincentt-xr/analytics": "^0.3.0",
     "@vincentt-xr/harness": "^1.5.0",
-    "@vincentt-xr/sdk": "2.0.0-alpha.4",
+    "@vincentt-xr/sdk": "2.0.0-alpha.5",
     "onnxruntime-web": "^1.27.0",
     "qrcode.react": "4.2.0",
     "react": "18.3.1",

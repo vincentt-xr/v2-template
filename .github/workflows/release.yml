@@ -76,6 +76,12 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
       # The same grounding assertions Smoke Build runs on the branch, re-run here
       # against the TAGGED tree. These steps sit after `Check out the tagged tree`
       # deliberately: placed before it they would inspect main, and `latest` --

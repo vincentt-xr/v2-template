@@ -187,6 +187,8 @@ after anything that could have moved you.
   the CLI. Requires being signed in (`vincentt login`) — the edge address is minted
   per session by the platform.
 - **`pnpm typecheck`** — `tsc --noEmit`.
+- **`pnpm lint`** — lint the platform source with the template's ESLint rules.
+- **`pnpm test`** — run the platform and QA test suites.
 - **`pnpm build`** — production bundle to `dist/`.
 
 ## Platform commands (`vincentt`)
@@ -199,9 +201,10 @@ found, install it once and carry on:
 npm install -g @vincentt-xr/cli@latest
 ```
 
-Do not invoke it through `npx`. There is no npm package named `vincentt` — the binary
-ships inside `@vincentt-xr/cli` — so `npx vincentt` reaches the registry and fails, and
-`npx --yes` would install whatever unrelated package later claims that name.
+Prefer the installed `vincentt` binary. If it is not available, use
+`npx @vincentt-xr/cli <verb>` as the no-install fallback. Never use `npx vincentt`:
+there is no npm package with that name, so it reaches the registry and may install an
+unrelated package.
 
 The CLI is installed once, globally, and nothing in a project updates it. It notices when
 it is behind and says so after a command:
@@ -446,7 +449,7 @@ There are **two** grounding files, and nothing merges them:
   capture, overlay, sprite, gesture — plus project notes and patterns.
 - **`node_modules/@vincentt-xr/sdk/GROUNDING.md`** is the authoritative reference
   for every SDK component, hook, and prop (`<FaceTracker>`, `<HandTracker>`,
-  `<TrackingAnchor>`, screen-space layout, `<TextLabel>`, `<Panel>`). It is much
+  `<TrackingAnchor>`, screen-space layout, `<ScreenText>`, `<Panel>`). It is much
   the larger of the two.
 
 Read both when you begin a scene (not before), and use the components and props

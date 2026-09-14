@@ -10,6 +10,7 @@ import {
 } from "@vincentt-xr/sdk";
 import { useXRContext, useXRReady, useXRError } from "@vincentt-xr/sdk/low-level";
 import { mountViewerBeacon, reportSession } from "@vincentt-xr/analytics";
+import { openConsoleChannel } from "@vincentt-xr/harness";
 import { PerspectiveCamera } from "@react-three/drei";
 
 import { Scene } from "./Scene";
@@ -17,7 +18,6 @@ import { PreviewAnchors } from "./PreviewAnchors";
 import { announcedPresets, chooseMediaSource, isFramed, pickFramedDefault } from "./framed";
 import type { MediaSourceEnv } from "./framed";
 import { streamFromImageUrl, streamFromVideoUrl } from "./mediaStream";
-import { openConsoleChannel } from "@vincentt-xr/harness";
 import { MediaSourceControl } from "./MediaSourceControl";
 import type { MediaPreset } from "./MediaSourceControl";
 

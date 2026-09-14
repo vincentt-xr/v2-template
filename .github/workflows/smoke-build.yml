@@ -42,6 +42,12 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
       # A host's conventional filename may exist only as a POINTER (B-F3-5
       # tripwire c). A pointer that has grown content is a second contract, and
       # the host holding the longer one is the privileged host. These two checks

@@ -5,25 +5,38 @@ This file documents the **template-local helpers** that live in this project's
 project-shape notes and common patterns.
 
 The **SDK component/hook API** (`@vincentt-xr/sdk` — trackers, screen-space
-layout, `<TextLabel>`, `<Panel>`, mesh/texture conventions) is **not** in this
+layout, `<ScreenText>`, `<Panel>`, mesh/texture conventions) is **not** in this
 file. It ships inside the SDK package, and in this project it is on disk at:
 
 ```
 node_modules/@vincentt-xr/sdk/GROUNDING.md
 ```
 
+This template currently pins `@vincentt-xr/sdk` to `2.0.0-alpha.5`. When that
+version changes, re-check the installed SDK grounding and update examples against
+the installed package rather than assuming older component behavior.
+
 Read that file when you begin a scene. It is the authoritative reference for
 every SDK component, hook, and prop, and it is far larger than this one — this
 file covers only the template-local helpers. Nothing merges the two: if you have
 read only this file, you have not yet seen the SDK API.
+
+Run `pnpm install` first if the SDK grounding file is missing. The installed
+package's grounding is authoritative for the exact SDK version in this project.
 
 The same package also ships longer-form docs beside it in
 `node_modules/@vincentt-xr/sdk/docs/` (guides, examples, per-API pages, and a
 migration guide). Reach for those when the grounding reference is too terse.
 
 Edit `src/Scene.tsx`. Compose the SDK components/hooks with the template helpers
-below and R3F primitives. There is no lifecycle DSL — per-frame logic is R3F
-`useFrame`, per-mount setup is `useEffect`, both inside the scene component.
+below and R3F primitives. Use `<ScreenSpaceUI>` with `<ScreenText>` for ordinary
+screen copy; use `<ScreenTransform>` when explicit authored transform/layout is
+needed. There is no lifecycle DSL — per-frame logic is R3F `useFrame`, per-mount
+setup is `useEffect`, both inside the scene component.
+
+`App.tsx` already owns the platform shell. Do not add another `XRProvider`,
+`XRScene`, `AspectRatioContainer`, `VideoBackground`, `PerspectiveCamera`,
+media-source binder, or platform diagnostics inside `Scene.tsx`.
 
 ---
 
@@ -34,7 +47,7 @@ door fails with "no exported member". The SDK grounding shows the literal import
 for each API; this is the map of which door to open.
 
 - **`@vincentt-xr/sdk`** — core: providers, scene, screen-space layout, runtime
-  renderers (`Transform3D`, `MeshRenderer`, `SceneObjectRenderer`), `TextLabel`,
+  renderers (`Transform3D`, `MeshRenderer`, `SceneObjectRenderer`), `ScreenText`,
   `Panel`, `SpriteAnimation`, `VideoBackground`, `AspectRatioContainer`,
   capture/share (`useFrameCapture`, `useMediaRecorder`, `dataURLtoFile`), audio.
 - **`@vincentt-xr/sdk/tracking`** — trackers: `FaceTracker`, `HandTracker`,
@@ -50,6 +63,41 @@ for each API; this is the map of which door to open.
   Reach here only when core + tracking can't express it.
 
 Trackers self-register when mounted — no `registerXRPipeline` call.
+
+## Tracking bounding boxes — from `src/FaceBoundingBox.tsx` and `src/HandBoundingBox.tsx`
+
+The starter includes two reusable screen-space components:
+
+```tsx
+import { FaceBoundingBox } from "./FaceBoundingBox";
+import { HandBoundingBox } from "./HandBoundingBox";
+
+<FaceBoundingBox />
+<HandBoundingBox />
+```
+
+The SDK supplies the tracking data and `ScreenShape`; these template components
+turn that data into visible rectangle outlines. `FaceBoundingBox` reads the
+blessed `useFaceInfo` bounds. `HandBoundingBox` reads the official hand model
+node through `@vincentt-xr/sdk/low-level` because the SDK does not expose a
+production `HandBoundingBox` component on an app-facing entry point. It converts
+the SDK's normalized tracking coordinates with `normalizedToScreenPixels`, so
+the overlay follows the platform's viewport fitting and does not mirror or crop
+the camera feed a second time.
+
+Both components are screen-space overlays and accept `color`, `padding`,
+`opacity`, `strokeWidth`, and `renderOrder`. `HandBoundingBox` additionally
+accepts `hand="left" | "right" | "both"`; omit it to show both hands. They
+acquire the shared tracking models themselves. Add `FaceTracker` or
+`HandTracker` separately only when you need to attach tracked 3D children or
+use tracker contexts.
+
+## Footer HUD — from `src/FooterHud.tsx`
+
+Use `<FooterHud />` for the small HTML footer. It uses Drei's R3F `<Html>`
+bridge, spans the full canvas width at the bottom edge, respects the device
+safe area, uses subtle entrance/shimmer motion, and lets camera gestures pass
+through.
 
 ---
 
@@ -88,7 +136,7 @@ Trigger-agnostic capture primitives. Wire them to whatever the project uses — 
 ### `usePhotoCapture()` — single-shot photo from the live R3F render
 
 ```tsx
-import { usePhotoCapture, saveToDevice } from "../capture";
+import { usePhotoCapture, saveToDevice } from "./capture";
 import { GestureTracker, GestureTrigger } from "@vincentt-xr/sdk/tracking";
 
 const { capture, latest } = usePhotoCapture();
@@ -102,21 +150,27 @@ const { capture, latest } = usePhotoCapture();
   }}
 />
 
+const LatestPreview = ({ dataUrl }: { dataUrl: string }) => {
+  const texture = useTexture(dataUrl);
+
+  return (
+    <ScreenTransform anchors={{ left: 0.4, right: 0.9, top: 0.9, bottom: 0.6 }}>
+      <mesh name="thumb">
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial map={texture} />
+      </mesh>
+    </ScreenTransform>
+  );
+};
+
 // optional preview thumbnail (R3F mesh)
-{latest && (
-  <ScreenTransform anchors={{ left: 0.4, right: 0.9, top: 0.9, bottom: 0.6 }}>
-    <mesh name="thumb">
-      <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial map={useTexture(latest.dataUrl)} />
-    </mesh>
-  </ScreenTransform>
-)}
+{latest && <LatestPreview dataUrl={latest.dataUrl} />}
 ```
 
 ### `useVideoCapture({ audio? })` — record the live canvas to a video blob
 
 ```tsx
-import { useVideoCapture, saveToDevice } from "../capture";
+import { useVideoCapture, saveToDevice } from "./capture";
 
 const { start, stop, isRecording } = useVideoCapture({ audio: true });
 
@@ -131,14 +185,14 @@ const { start, stop, isRecording } = useVideoCapture({ audio: true });
 
 ### `saveToDevice(media, filename)` — browser download
 
-Mobile: surfaces the share / save sheet. Desktop: writes to `~/Downloads`. Kiosk contexts usually want to upload `media.blob` to a server instead — skip this helper and `fetch(uploadUrl, { method: "POST", body: media.blob })`.
+Mobile: triggers the browser or OS save/share flow. Desktop: triggers a browser download to the user's configured download location. Kiosk contexts usually want to upload `media.blob` to a server instead — skip this helper and `fetch(uploadUrl, { method: "POST", body: media.blob })`.
 
 ### `shareMedia(media, opts?)` — native share sheet
 
 Opens the OS share sheet (Instagram / WhatsApp / Messages) on devices that support the Web Share API with files; falls back to a download elsewhere. Returns `{ shared }` so you can branch — e.g. show a "scan to get it on your phone" QR when the native sheet isn't available.
 
 ```tsx
-import { useVideoCapture, shareMedia } from "../capture";
+import { useVideoCapture, shareMedia } from "./capture";
 
 const { stop } = useVideoCapture();
 
@@ -171,7 +225,7 @@ Overlays render as plain DOM positioned over the canvas, inside the portrait fra
 ### `<Overlay corner margin interactive>` — positioned DOM layer
 
 ```tsx
-import { Overlay, QRCode } from "../overlay";
+import { Overlay, QRCode } from "./overlay";
 
 // "Scan to open on your phone" — kiosk entry point
 <Overlay corner="bottom-right" margin={32}>
@@ -184,8 +238,8 @@ import { Overlay, QRCode } from "../overlay";
 ### `<QRCode value size light dark padded>` — crisp scannable QR
 
 ```tsx
-import { usePhotoCapture, shareMedia } from "../capture";
-import { Overlay, QRCode } from "../overlay";
+import { usePhotoCapture, shareMedia } from "./capture";
+import { Overlay, QRCode } from "./overlay";
 import { useState } from "react";
 
 const { capture } = usePhotoCapture();
@@ -216,8 +270,8 @@ Renders as SVG (sharp at any size). `padded` (default true) draws a white quiet-
 `<Overlay>` bridges out of the canvas via a wrapper that shrink-wraps its content. Text and `<QRCode>` carry their own intrinsic size, so they render fine. A bare `<img>` or `<video>` does **not** — it collapses to ~0px (just its border) and looks invisible. Wrap media in a `div` with explicit `width` + `height`, give it `overflow: hidden`, and let the media fill it:
 
 ```tsx
-import { usePhotoCapture } from "../capture";
-import { Overlay } from "../overlay";
+import { usePhotoCapture } from "./capture";
+import { Overlay } from "./overlay";
 
 const { latest } = usePhotoCapture();
 
