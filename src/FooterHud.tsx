@@ -1,10 +1,6 @@
 import type { CSSProperties } from "react";
 import { Html } from "@react-three/drei";
 
-type FooterHudProps = {
-  text?: string;
-};
-
 const footerBarStyle: CSSProperties = {
   position: "absolute",
   right: 0,
@@ -41,13 +37,11 @@ const footerContentStyle: CSSProperties = {
 };
 
 /** A full-width, camera-safe HTML footer rendered through R3F's <Html> bridge. */
-export const FooterHud = ({
-  text = "made with ❤️ by vincentt",
-}: FooterHudProps) => (
+export const FooterHud = () => (
   <Html fullscreen zIndexRange={[20, 0]} pointerEvents="none">
-    <div aria-label={text} style={footerBarStyle}>
+    <div aria-label="made with ❤️ by vincentt" style={footerBarStyle}>
       <div className="footer-hud__content" style={footerContentStyle}>
-        {text}
+        made with ❤️ by vincentt
       </div>
       <div className="footer-hud__shimmer" aria-hidden="true" />
     </div>

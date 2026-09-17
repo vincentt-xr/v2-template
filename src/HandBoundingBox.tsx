@@ -13,7 +13,7 @@ import {
 
 export type HandBoundingBoxProps = {
   hand?: "left" | "right" | "both";
-  color?: string;
+  color?: string | "auto";
   padding?: number;
   opacity?: number;
   strokeWidth?: number;
@@ -75,8 +75,8 @@ const boxesSignature = (boxes: HandBox[]) =>
     )
     .join("|");
 
-const handColor = (handedness: HandBox["handedness"], fallback: string) => {
-  if (fallback !== "auto") return fallback;
+const handColor = (handedness: HandBox["handedness"], color: string | "auto") => {
+  if (color !== "auto") return color;
   if (handedness === "left") return "#22d3ee";
   if (handedness === "right") return "#f59e0b";
   return "#a78bfa";
@@ -98,7 +98,7 @@ export const HandBoundingBox = ({
   const signatureRef = useRef("");
 
   useEffect(() => {
-    let frameId = 0;
+    let timeoutId = 0;
 
     if (!ready || !node) {
       signatureRef.current = "";
@@ -113,11 +113,11 @@ export const HandBoundingBox = ({
         signatureRef.current = signature;
         setBoxes(next);
       }
-      frameId = window.requestAnimationFrame(tick);
+      timeoutId = window.setTimeout(tick, 1000 / 24);
     };
 
     tick();
-    return () => window.cancelAnimationFrame(frameId);
+    return () => window.clearTimeout(timeoutId);
   }, [hand, node, ready]);
 
   const transforms = useMemo(
