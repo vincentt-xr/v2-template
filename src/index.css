@@ -57,6 +57,55 @@
   }
 }
 
+@keyframes footerHudEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes footerHudShimmer {
+  0%,
+  55% {
+    opacity: 0;
+    transform: translateX(-120%);
+  }
+  65% {
+    opacity: 0.8;
+  }
+  82%,
+  100% {
+    opacity: 0;
+    transform: translateX(260%);
+  }
+}
+
+.footer-hud__content {
+  animation: footerHudEnter 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.footer-hud__shimmer {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 28%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #38bdf8, #a78bfa, transparent);
+  filter: blur(0.3px);
+  animation: footerHudShimmer 6s ease-in-out 1.2s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-hud__content,
+  .footer-hud__shimmer {
+    animation: none;
+  }
+}
+
 html[data-theme="dark"] {
   --color-bg-app: #0b0d12;
   --color-bg-card: rgba(15, 18, 26, 0.7);

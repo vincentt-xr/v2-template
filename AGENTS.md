@@ -187,6 +187,8 @@ after anything that could have moved you.
   the CLI. Requires being signed in (`vincentt login`) — the edge address is minted
   per session by the platform.
 - **`pnpm typecheck`** — `tsc --noEmit`.
+- **`pnpm lint`** — lint the platform source with the template's ESLint rules.
+- **`pnpm test`** — run the platform and QA test suites.
 - **`pnpm build`** — production bundle to `dist/`.
 
 ## Platform commands (`vincentt`)
@@ -446,7 +448,7 @@ There are **two** grounding files, and nothing merges them:
   capture, overlay, sprite, gesture — plus project notes and patterns.
 - **`node_modules/@vincentt-xr/sdk/GROUNDING.md`** is the authoritative reference
   for every SDK component, hook, and prop (`<FaceTracker>`, `<HandTracker>`,
-  `<TrackingAnchor>`, screen-space layout, `<TextLabel>`, `<Panel>`). It is much
+  `<TrackingAnchor>`, screen-space layout, `<ScreenText>`, `<Panel>`). It is much
   the larger of the two.
 
 Read both when you begin a scene (not before), and use the components and props

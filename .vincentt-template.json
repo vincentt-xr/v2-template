@@ -29,6 +29,9 @@
     "esbuild.config.mjs"
   ],
   "creator": [
-    "src/Scene.tsx"
+    "src/Scene.tsx",
+    "src/FaceBoundingBox.tsx",
+    "src/FooterHud.tsx",
+    "src/HandBoundingBox.tsx"
   ]
 }
