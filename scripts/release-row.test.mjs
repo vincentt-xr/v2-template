@@ -240,14 +240,20 @@ describe('tokenEnvVar', () => {
 
 describe('buildBody', () => {
   it('is identical across targets — the body does not vary by env', () => {
-    const entry = { required: false, summary: 'No action required.', notes: [] };
-    const body = buildBody('1.5.5', entry);
-    expect(body).toEqual({
-      component: 'template',
-      version: '1.5.5',
-      migration: { required: false, summary: 'No action required.', notes: [] },
-      source: { repo: 'vincentt-xr/v2-template', sha: '', runId: '' },
-    });
+    vi.stubEnv('GITHUB_SHA', 'abc123');
+    vi.stubEnv('GITHUB_RUN_ID', '42');
+    try {
+      const entry = { required: false, summary: 'No action required.', notes: [] };
+      const body = buildBody('1.5.5', entry);
+      expect(body).toEqual({
+        component: 'template',
+        version: '1.5.5',
+        migration: { required: false, summary: 'No action required.', notes: [] },
+        source: { repo: 'vincentt-xr/v2-template', sha: 'abc123', runId: '42' },
+      });
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });
 
