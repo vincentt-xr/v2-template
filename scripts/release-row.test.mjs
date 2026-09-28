@@ -15,6 +15,7 @@ import {
   tokenEnvVar,
   buildBody,
   postRelease,
+  parseArgs,
 } from './release-row.mjs';
 
 describe('parseEntryBlock — the happy path', () => {
@@ -169,6 +170,64 @@ describe('parseTargets', () => {
 
   it('throws on a pair with no "="', () => {
     expect(() => parseTargets('staging')).toThrow();
+  });
+});
+
+describe('parseArgs', () => {
+  it('parses a bare version with no flags', () => {
+    expect(parseArgs(['1.5.6'])).toEqual({
+      version: '1.5.6',
+      dryRun: false,
+      migrationPath: undefined,
+    });
+  });
+
+  it('parses --dry-run alongside the version, in either order', () => {
+    expect(parseArgs(['1.5.6', '--dry-run'])).toEqual({
+      version: '1.5.6',
+      dryRun: true,
+      migrationPath: undefined,
+    });
+    expect(parseArgs(['--dry-run', '1.5.6'])).toEqual({
+      version: '1.5.6',
+      dryRun: true,
+      migrationPath: undefined,
+    });
+  });
+
+  it('parses --migration <path>, in either order relative to the version', () => {
+    expect(parseArgs(['1.5.6', '--migration', '/tmp/x/MIGRATION.md'])).toEqual({
+      version: '1.5.6',
+      dryRun: false,
+      migrationPath: '/tmp/x/MIGRATION.md',
+    });
+    expect(parseArgs(['--migration', '/tmp/x/MIGRATION.md', '1.5.6'])).toEqual({
+      version: '1.5.6',
+      dryRun: false,
+      migrationPath: '/tmp/x/MIGRATION.md',
+    });
+  });
+
+  it('never sniffs the --migration value as the version', () => {
+    const { version, migrationPath } = parseArgs(['--migration', '1.5.6', '9.9.9']);
+    expect(migrationPath).toBe('1.5.6');
+    expect(version).toBe('9.9.9');
+  });
+
+  it('combines --dry-run and --migration together', () => {
+    expect(parseArgs(['1.5.6', '--dry-run', '--migration', '/tmp/x/MIGRATION.md'])).toEqual({
+      version: '1.5.6',
+      dryRun: true,
+      migrationPath: '/tmp/x/MIGRATION.md',
+    });
+  });
+
+  it('throws when --migration has no value after it', () => {
+    expect(() => parseArgs(['1.5.6', '--migration'])).toThrow(/requires a path argument/);
+  });
+
+  it('leaves version undefined when none is given', () => {
+    expect(parseArgs(['--dry-run']).version).toBeUndefined();
   });
 });
 

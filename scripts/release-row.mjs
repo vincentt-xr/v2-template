@@ -13,6 +13,13 @@
 // bounds-checks, no network, no secrets needed — so `latest` never moves for a
 // tag with no valid note), and once for real after `latest` has moved, against
 // every target in RELEASE_ROWS_TARGETS.
+//
+// --migration <path> reads the note from an explicit file instead of
+// MIGRATION.md in the cwd. release.yml passes this pointed at a copy taken
+// from origin/main, not from the tagged tree: the note is reviewed via PR into
+// main and is append-only per version, so main's copy is the reviewed source
+// for ANY tag — including one cut before this file existed, which the tagged
+// tree can never carry.
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -237,22 +244,54 @@ function formatResult(result) {
   }
 }
 
-async function main() {
-  const args = process.argv.slice(2);
-  const dryRun = args.includes('--dry-run');
-  const version = args.find((a) => !a.startsWith('--'));
+/**
+ * Parses argv into `{version, dryRun, migrationPath}`. `--migration` takes the
+ * very next argv entry as its value (never sniffed as the version), and a
+ * trailing `--migration` with nothing after it is a usage error rather than a
+ * silently-ignored flag.
+ */
+export function parseArgs(argv) {
+  const dryRun = argv.includes('--dry-run');
+  const migrationIdx = argv.indexOf('--migration');
+  let migrationPath;
+  if (migrationIdx !== -1) {
+    migrationPath = argv[migrationIdx + 1];
+    if (!migrationPath) {
+      throw new Error('--migration requires a path argument');
+    }
+  }
+  const version = argv.find((a, i) => {
+    if (a.startsWith('--')) return false;
+    if (i > 0 && argv[i - 1] === '--migration') return false;
+    return true;
+  });
+  return { version, dryRun, migrationPath };
+}
 
-  if (!version) {
-    console.error('usage: release-row.mjs <version> [--dry-run]');
+async function main() {
+  let version;
+  let dryRun;
+  let migrationPath;
+  try {
+    ({ version, dryRun, migrationPath } = parseArgs(process.argv.slice(2)));
+  } catch (err) {
+    console.error(`release-row: ${err.message}`);
     process.exit(1);
   }
 
-  const migrationPath = resolve(process.cwd(), MIGRATION_FILE);
+  if (!version) {
+    console.error('usage: release-row.mjs <version> [--dry-run] [--migration <path>]');
+    process.exit(1);
+  }
+
+  const resolvedMigrationPath = migrationPath
+    ? resolve(migrationPath)
+    : resolve(process.cwd(), MIGRATION_FILE);
   let content;
   try {
-    content = readFileSync(migrationPath, 'utf8');
+    content = readFileSync(resolvedMigrationPath, 'utf8');
   } catch (err) {
-    console.error(`release-row: could not read ${MIGRATION_FILE}: ${err.message}`);
+    console.error(`release-row: could not read ${resolvedMigrationPath}: ${err.message}`);
     process.exit(1);
   }
 

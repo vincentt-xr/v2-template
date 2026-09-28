@@ -64,15 +64,32 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      # Taken from origin/main, NOT from the tagged tree: the note is reviewed
+      # via PR into main and is append-only per version, so main's copy is the
+      # reviewed source for ANY tag. Every tag before this PR carries neither
+      # file at all, so reading them from the tag would fail the one-time
+      # bootstrap (workflow_dispatch on an old tag) forever. The initial
+      # checkout above already ran with fetch-depth 0 ("all history for all
+      # branches and tags"), so origin/main is already present; `git fetch` is
+      # a cheap no-op guard in case that ever changes.
+      - name: Prepare the release-row script and note from main
+        run: |
+          mkdir -p "$RUNNER_TEMP/release-row"
+          git fetch origin main
+          git show origin/main:scripts/release-row.mjs > "$RUNNER_TEMP/release-row/release-row.mjs"
+          git show origin/main:MIGRATION.md > "$RUNNER_TEMP/release-row/MIGRATION.md"
+
       - name: Check out the tagged tree
         run: git checkout --force "${{ steps.rel.outputs.sha }}"
 
       # An early gate, ahead of install/build: a tag with no valid migration
       # note must never reach `latest`. --dry-run only parses and bounds-checks
-      # MIGRATION.md (f17 §2.4) — no network, no secrets needed, so this runs
+      # the note (f17 §2.4) — no network, no secrets needed, so this runs
       # before the credentialed write step below and fails fast on a bad note.
       - name: A migration note exists for the release tag
-        run: node scripts/release-row.mjs "${{ steps.rel.outputs.tag }}" --dry-run
+        run: |
+          node "$RUNNER_TEMP/release-row/release-row.mjs" "${{ steps.rel.outputs.tag }}" \
+            --migration "$RUNNER_TEMP/release-row/MIGRATION.md" --dry-run
 
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile
@@ -222,4 +239,6 @@ jobs:
           # WRONG for workflow_dispatch (it would be main's HEAD, not the
           # tag's). steps.rel.outputs.sha is resolved for both trigger paths.
           GITHUB_SHA: ${{ steps.rel.outputs.sha }}
-        run: node scripts/release-row.mjs "${{ steps.rel.outputs.tag }}"
+        run: |
+          node "$RUNNER_TEMP/release-row/release-row.mjs" "${{ steps.rel.outputs.tag }}" \
+            --migration "$RUNNER_TEMP/release-row/MIGRATION.md"
