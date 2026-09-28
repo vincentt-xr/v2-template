@@ -48,3 +48,13 @@ it manually decouples the pointer from the version it claims to be.
 Creators can pin a specific version — `vincentt init --template 1.0.0` — which is the escape
 hatch when a release turns out to be bad. That is why the version tags are immutable and only
 `latest` moves.
+
+### `MIGRATION.md` and the platform release row
+
+Root `MIGRATION.md` carries one entry per released tag, newest first, authored in the same
+PR as the change: `required: true|false`, a one-line summary, and optional notes bullets.
+`required: false` means no consumer action is needed, never that the entry was skipped. The
+Release workflow refuses to move `latest` for a tag with no valid entry, then — once `latest`
+has moved — posts that entry as this release's row to the platform (`POST
+/platform/releases`, component `template`), via `scripts/release-row.mjs`. That row is what
+`vincentt outdated` reads back to tell a creator's agent what changed and what to do about it.
