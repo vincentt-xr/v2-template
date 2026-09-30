@@ -5,6 +5,11 @@ Per release tag, newest first. Read by the platform's own version surface
 outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
+## 1.5.7
+required: false
+No action required.
+- Release tooling only: the starter now carries two checks for the template's own release tags and its `latest` pointer. They run only in the template repository and do nothing in a creator's project.
+
 ## 1.5.6
 required: false
 No action required.

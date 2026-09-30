@@ -49,6 +49,12 @@ jobs:
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-list -n1 "refs/tags/${TAG}")" >> "$GITHUB_OUTPUT"
 
+      # Runs from the workflow's own tree, before the tagged tree is checked out.
+      # workflow_dispatch takes any ref, so this is also what stops `latest`
+      # being pointed at a branch-only commit or a non-release tag.
+      - name: The release tag is bare semver and on main
+        run: bash scripts/tag-guard.sh "${{ steps.rel.outputs.tag }}"
+
       # A scaffold is an install + build from a frozen lockfile, so that is what is
       # verified here -- against the tagged commit, not against main. Smoke Build
       # already gates every PR; this re-runs it at the exact tree `latest` will
