@@ -4,6 +4,7 @@
 // not npm's `latest` dist-tag (a package shipped and the template never
 // followed). Reads the repo this file lives in; tags must be fetched.
 import { execFileSync } from 'node:child_process';
+import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const POINTER = 'latest';
@@ -77,10 +78,9 @@ export function pinFailures(locked, distLatest) {
   return failures;
 }
 
-const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
-
 function git(...args) {
-  return execFileSync('git', ['-C', REPO_ROOT, ...args], {
+  const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+  return execFileSync('git', ['-C', root, ...args], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'ignore'],
   }).trim();
