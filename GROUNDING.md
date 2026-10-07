@@ -64,6 +64,14 @@ for each API; this is the map of which door to open.
 
 Trackers self-register when mounted — no `registerXRPipeline` call.
 
+## Mobile acceptance before release
+
+Use the development-only shell controls and the complete physical-device
+[mobile XR acceptance harness](docs/mobile-xr-acceptance.md) before shipping a
+template change. Its automated commands catch repository regressions; its
+on-device checklist covers camera permission recovery, source and tracker
+restart, orientation, touch, canvas capture, and overlay alignment.
+
 ## Coordinate contract — declare the source before placing anything
 
 The SDK's [screen-space coordinate API](https://github.com/vincentt-xr/sdk/blob/main/docs/api/screen-space-coordinates.mdx)
