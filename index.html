@@ -27,21 +27,9 @@
       })();
     </script>
 
-    <!-- The tracking runtime and the face model the starting scene mounts. These
-         must match the URLs the SDK requests exactly, or each is downloaded twice. -->
+    <!-- Tracking files come from here. They are not preloaded: on a slow link a
+         multi-megabyte preload competes with the scripts the first paint needs. -->
     <link rel="preconnect" href="https://cdn.vincentt.studio" crossorigin />
-    <link
-      rel="preload"
-      href="https://cdn.vincentt.studio/assets/xr/wasm/vision_wasm_internal.wasm"
-      as="fetch"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="https://cdn.vincentt.studio/assets/xr/models/face_tracking.task"
-      as="fetch"
-      crossorigin
-    />
 
     <title>XR App - Vincentt</title>
     <meta name="description" content="An AR experience built with Vincentt" />

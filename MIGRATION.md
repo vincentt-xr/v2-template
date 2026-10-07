@@ -10,7 +10,7 @@ required: false
 No action required.
 - A brand-new scaffold's starting scene now runs face tracking only; the hand bounding box still ships but is not mounted. The scene is creator-owned, so an existing project keeps whatever trackers it already mounts.
 - The page no longer loads the Poppins font from Google Fonts, because nothing in the template uses it. A project that styled its own text with Poppins now falls back to the system font unless it loads the font itself.
-- The page now preconnects to the platform CDN and preloads the tracking runtime and the face model, so a project whose scene does not use face tracking still downloads the face model.
+- The page now opens its connection to the platform CDN early, so the tracking files do not wait on connection setup when they are requested.
 - Production builds now preload the entry's static script chunks. This is in the build script, which an upgrade does not replace, so only new scaffolds get it.
 
 ## 1.5.7
