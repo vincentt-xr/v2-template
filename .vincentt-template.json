@@ -6,6 +6,7 @@
     "src/PreviewAnchors.tsx",
     "src/mediaStream.ts",
     "src/MediaSourceControl.tsx",
+    "src/MobileXRAcceptanceHarness.tsx",
     "src/framed.ts",
     "src/capture.ts",
     "src/gesture.ts",
