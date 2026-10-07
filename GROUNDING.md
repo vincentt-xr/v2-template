@@ -151,6 +151,39 @@ is the advanced render-group reference; [Portrait Photobooth](https://github.com
 shows delegated experience state. Follow their data ownership, not their exact
 assets or scene behavior.
 
+## Assets and frame-loop performance
+
+Use an asset path that matches its ownership. Put public, URL-addressable files
+under `public/` and reference them from root (`/assets/frame.png`); use a static
+ES module import for a scene-owned image, GIF, font, audio file, or model so the
+bundler fingerprints it and reports a missing file at build time. Pass a loaded
+`THREE.Texture` to `ScreenImage` or `SpriteSheet`; use a managed video/canvas
+texture only when its frames must change at runtime. GIFs work through
+`ScreenImage`'s GIF source or a sprite-sheet atlas. Do not use an alpha video
+as a mobile overlay; use an alpha WebP/PNG atlas instead.
+
+Preload assets that the first visible scene cannot work without, and defer
+optional assets until the phase that needs them. A deferred import must be
+behind the condition that makes it useful. Dispose manually created textures,
+materials, audio nodes, timers, object URLs, and event listeners in an effect
+cleanup; R3F disposes JSX-owned geometry and materials on unmount.
+
+Keep repeated geometry, screen transforms, palette entries, and level layouts
+as shared constants or data arrays, then map them into components. This gives
+every repeated item the same coordinate and render rules, avoids copy/paste
+drift, and lets a single phase/state value select the active data. Do not create
+new vectors, textures, arrays, or React callbacks every frame.
+
+`useFrame` is for mutable visual work: update refs, uniforms, mesh transforms,
+or typed arrays there. React state is for a visible event or structural change:
+a phase transition, score update, selected asset, or completed capture. If a
+per-frame value needs to appear in the DOM, throttle or publish only meaningful
+changes instead of calling a React setter at camera frame rate.
+
+Working patterns: [Jungle sprite-sheet and ref updates](https://github.com/vincentt-xr/Jungle-themed-AR-Experience/blob/main/src/sprite.tsx),
+[connect-pair data-driven board](https://github.com/vincentt-xr/connect-pair-game/blob/main/src/gameData.ts),
+and the template's own `src/sprite.tsx` frame-loop implementation.
+
 ## Mobile acceptance before release
 
 Use the development-only shell controls and the complete physical-device
