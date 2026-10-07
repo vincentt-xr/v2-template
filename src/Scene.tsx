@@ -17,7 +17,6 @@ import {
 
 import { FaceBoundingBox } from "./FaceBoundingBox";
 import { FooterHud } from "./FooterHud";
-import { HandBoundingBox } from "./HandBoundingBox";
 
 const HELLO_TRANSFORM: ScreenTransform2DSettings = {
   enabled: true,
@@ -36,7 +35,6 @@ const HELLO_TRANSFORM: ScreenTransform2DSettings = {
 export const Scene = () => (
   <>
     <FaceBoundingBox />
-    <HandBoundingBox />
     <FooterHud />
     <ScreenSpaceUI>
       <ScreenText

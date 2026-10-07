@@ -464,6 +464,11 @@ wrong one fails with "no exported member":
 - **Trackers** (`FaceTracker`, `HandTracker`, `BodyTracker`, `GestureTracker`,
   `GestureTrigger`, `TrackingAnchor`, `FaceMesh`, `Segmentation`) come from
   **`@vincentt-xr/sdk/tracking`** — not core.
+  The starting scene runs **face tracking only; hands are off by default**. To add
+  hands, add `import { HandBoundingBox } from "./HandBoundingBox";` and
+  `<HandBoundingBox />` to `src/Scene.tsx`. Add a tracker only when the scene needs it:
+  each one adds its own model download (the hand model is ~7.8 MB) and its own wasm
+  compile on the phone.
 - **Face deep config** (FaceMesh materials, retouch, head-binding) comes from
   **`@vincentt-xr/sdk/face-effects`**.
 - **Scene-object authoring state** (types, factories, store operations, render
