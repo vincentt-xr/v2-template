@@ -114,6 +114,43 @@ later R3F pass, and DOM content is intentionally absent from canvas capture.
 Verified references: [depth-lens camera shader](https://github.com/vincentt-xr/depth-lens/blob/main/src/Scene.tsx)
 and [connect-pair interactive DOM HUD](https://github.com/vincentt-xr/connect-pair-game/blob/main/src/Game.tsx).
 
+## Choose a scene architecture and state model
+
+Keep the protected `App.tsx` shell responsible for session, camera, media, and
+the one R3F canvas. Put experience composition in `Scene.tsx`, then choose the
+smallest architecture that matches the scene:
+
+- **Direct composition:** one fixed effect or a few related meshes. Compose
+  tracker components, `ScreenSpaceUI`, and R3F nodes directly in `Scene.tsx`.
+- **Delegated components:** an effect has its own lifecycle, assets, or input
+  contract. Extract a named component and pass explicit props; the parent owns
+  phase transitions and user-visible state.
+- **DOM-first flow:** forms, games, QR handoff, or accessibility-first controls.
+  Use `<Html>` / `Overlay` for DOM interaction and keep AR meshes as visual or
+  tracking support. Do not place raw DOM inside the R3F scene.
+- **Data-driven render groups:** only for editor-like, reorderable, or layered
+  scenes. Use the scene-object store, `createRenderPlan`,
+  `SequentialRenderPasses`, and `SceneObjectRenderer`; do not introduce render
+  groups for a fixed two-mesh scene.
+
+Use React state for values the user must see or that determine React structure:
+phase, selected asset, score, visibility, and serialized scene data. Keep
+per-frame counters, smoothed landmarks, object references, cooldowns, and
+material uniforms in `useRef` and mutate them in `useFrame`. Promote a value to
+React state only when a visible UI or component tree must change. This avoids a
+render loop triggering React renders at camera frame rate.
+
+Lazy-load a module when it is optional at startup, large, and isolated behind a
+stable boundary: debug-only controls, a one-time scene, or a media-source
+picker are good candidates. Keep startup-critical tracker, camera, and first
+scene modules static. Gate the import itself, not only its rendered output, and
+provide a `Suspense` fallback that does not obscure the camera.
+
+The [Jungle themed AR scene](https://github.com/vincentt-xr/Jungle-themed-AR-Experience/blob/main/src/Scene.tsx)
+is the advanced render-group reference; [Portrait Photobooth](https://github.com/vincentt-xr/portrait-photobooth/blob/main/src/Scene.tsx)
+shows delegated experience state. Follow their data ownership, not their exact
+assets or scene behavior.
+
 ## Mobile acceptance before release
 
 Use the development-only shell controls and the complete physical-device
