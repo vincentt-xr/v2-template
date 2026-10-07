@@ -64,6 +64,56 @@ for each API; this is the map of which door to open.
 
 Trackers self-register when mounted — no `registerXRPipeline` call.
 
+## Camera effects, render layers, and DOM HUDs
+
+`App.tsx` owns the one `VideoBackground` at `renderOrder={-999}`. Do not add a
+second camera plane in `Scene.tsx`. For a camera-image effect, read the already
+composed SDK texture with `useXRCameraTexture`, render nothing until it exists,
+and put the custom full-screen material immediately above the background.
+
+```tsx
+import { useXRCameraTexture } from "@vincentt-xr/sdk/low-level";
+
+const CameraEffect = () => {
+  const cameraTexture = useXRCameraTexture();
+  if (!cameraTexture) return null; // tracker/media startup and source swaps
+
+  return (
+    <mesh position={[0, 0, -0.98]} renderOrder={-998}>
+      <planeGeometry args={[2, 2]} />
+      <shaderMaterial
+        uniforms={{ cameraTexture: { value: cameraTexture } }}
+        vertexShader={vertexShader}
+        fragmentShader={fragmentShader}
+        depthTest={false}
+        depthWrite={false}
+        toneMapped={false}
+      />
+    </mesh>
+  );
+};
+```
+
+Use the same camera texture for a face-bound shader, but keep ordinary 3D
+depth testing enabled so the mesh respects its own geometry. A translucent face
+effect uses `transparent` with `depthWrite={false}`; add `alphaTest` only for a
+deliberate hard cutout. Opaque 3D meshes normally keep both `depthTest` and
+`depthWrite` enabled. `renderOrder` orders work within a render call; it does
+not replace material depth settings or impose a universal order across opaque
+and transparent queues.
+
+For UI that must be captured in screenshots and recordings, prefer
+`ScreenSpaceUI`, `ScreenText`, `ScreenImage`, or `ScreenShape`. Use the DOM
+`<Overlay>` helper only for browser-native controls, QR codes, or other content
+that must remain HTML. It starts with `pointerEvents="none"` and an `Html`
+`zIndexRange`, so it cannot block camera gestures. Set `interactive` only for a
+visible control with a deliberate touch target, then return it to noninteractive
+when hidden. DOM z-index determines DOM stacking only; it cannot draw over a
+later R3F pass, and DOM content is intentionally absent from canvas capture.
+
+Verified references: [depth-lens camera shader](https://github.com/vincentt-xr/depth-lens/blob/main/src/Scene.tsx)
+and [connect-pair interactive DOM HUD](https://github.com/vincentt-xr/connect-pair-game/blob/main/src/Game.tsx).
+
 ## Mobile acceptance before release
 
 Use the development-only shell controls and the complete physical-device
