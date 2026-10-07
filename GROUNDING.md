@@ -66,15 +66,22 @@ Trackers self-register when mounted — no `registerXRPipeline` call.
 
 ## Tracking bounding boxes — from `src/FaceBoundingBox.tsx` and `src/HandBoundingBox.tsx`
 
-The starter includes two reusable screen-space components:
+The starter includes two reusable screen-space components. **The starting scene
+runs face tracking only: hands are off by default.** `src/Scene.tsx` mounts
+`<FaceBoundingBox />`; `src/HandBoundingBox.tsx` ships in the project but is not
+mounted.
+
+To add hands, add this import and this one line to `src/Scene.tsx`:
 
 ```tsx
-import { FaceBoundingBox } from "./FaceBoundingBox";
 import { HandBoundingBox } from "./HandBoundingBox";
 
-<FaceBoundingBox />
 <HandBoundingBox />
 ```
+
+Add hands only when the scene needs them. Each tracker adds its own model
+download (the hand model is ~7.8 MB) and its own wasm compile on the phone, so
+a second tracker costs the viewer that much more on first load and in memory.
 
 The SDK supplies the tracking data and `ScreenShape`; these template components
 turn that data into visible rectangle outlines. `FaceBoundingBox` reads the

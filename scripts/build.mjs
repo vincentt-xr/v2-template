@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import esbuild from "esbuild";
 import { buildOptions } from "../esbuild.config.mjs";
+import { staticImportClosure } from "./static-imports.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const distDir = path.join(root, "dist");
@@ -23,19 +24,32 @@ try {
   if (e.code !== "ENOENT") throw e;
 }
 
-let js = "";
+const { outputs } = result.metafile;
+const urlOf = (out) =>
+  "/" + path.relative(distDir, path.resolve(out)).split(path.sep).join("/");
+
+let entry = "";
 let css = "";
-for (const [out, meta] of Object.entries(result.metafile.outputs)) {
-  const rel =
-    "/" + path.relative(distDir, path.resolve(out)).split(path.sep).join("/");
-  if (meta.entryPoint?.endsWith("main.tsx") && rel.endsWith(".js")) js = rel;
-  if (rel.endsWith(".css")) css = rel;
+for (const [out, meta] of Object.entries(outputs)) {
+  if (meta.entryPoint?.endsWith("main.tsx") && out.endsWith(".js")) entry = out;
+  if (out.endsWith(".css")) css = urlOf(out);
 }
+const js = urlOf(entry);
+
+// The entry's static imports are otherwise discovered only after the entry has
+// downloaded and parsed. Dynamic imports are left out on purpose: they are
+// code-split so a visitor who never takes that path never downloads them.
+const head = [
+  ...(css ? [`<link rel="stylesheet" href="${css}" />`] : []),
+  ...staticImportClosure(outputs, entry).map(
+    (out) => `<link rel="modulepreload" href="${urlOf(out)}" />`,
+  ),
+];
 
 let html = await fs.readFile(path.join(root, "index.html"), "utf8");
 html = html.replace(
   /<link[^>]+href="\/src\/index\.css"[^>]*>/,
-  css ? `<link rel="stylesheet" href="${css}" />` : "",
+  head.join("\n    "),
 );
 html = html.replace(
   /<script[^>]+src="\/src\/main\.tsx"[^>]*><\/script>/,
