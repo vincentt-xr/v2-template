@@ -64,6 +64,59 @@ for each API; this is the map of which door to open.
 
 Trackers self-register when mounted — no `registerXRPipeline` call.
 
+## Coordinate contract — declare the source before placing anything
+
+Screen primitives use SDK design pixels by default: a 720×1280 canvas with its
+origin at the centre and positive Y upward. Screen-pixel helpers map that canvas
+across the full live viewport on each axis; it is not a letterboxed camera
+coordinate system. `ScreenTransform2DSettings` is intentionally contain-fitted
+so serialized editor layouts preserve their authored aspect ratio. Keep an
+image's aspect ratio with its fit mode inside its screen rectangle, never by
+adding manual crop or mirror math to its position.
+
+| Source data                                | Origin and axes                            | Convert once with                                                                            |
+| ------------------------------------------ | ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Face landmark or bounds from `useFaceInfo` | normalized tracker input; top-left, Y down | `normalizedToScreenPixels({ point, viewportSize })`                                          |
+| Low-level hand, gesture, or body point     | centre-origin; X right, Y up               | `trackerPointToScreenPixels({ point, viewportSize })` in SDK versions that export it         |
+| DOM pointer/client point                   | viewport top-left, Y down                  | `clientToScreenPixels({ point, rect })`                                                      |
+| Camera-media pixel                         | source-media top-left, Y down              | `mediaToScreenPixels({ point, layout, mirrored })`                                           |
+| World point                                | Three.js world space                       | `worldToScreenPixels({ point, camera, viewportSize })`; hide when depth is outside `[-1, 1]` |
+
+**Convert a point once only.** The helper owns origin flipping, viewport mapping,
+and any mirror/crop rule in its contract. Do not apply a second `1 - x`, manual
+cover crop, or top-left/centre conversion afterward.
+
+This template currently pins SDK `2.0.0-alpha.5`, which does not yet export
+`trackerPointToScreenPixels`. Its `HandBoundingBox` retains the compatible
+fallback: transformed tracker point → normalized top-left point →
+`normalizedToScreenPixels`. When upgrading to an SDK version that exports the
+helper, replace that fallback rather than keeping two conversion paths.
+
+## Choose the screen primitive before writing layout code
+
+- **`ScreenText`**: ordinary prompts, scores, instructions, and labels. Use its
+  canvas `position` and `size` for authored design-pixel layouts.
+- **`ScreenImage`**: raster images, GIFs, photo placeholders, and textured 2D
+  overlays. It owns the screen transform; use `fit` for content aspect.
+- **`ScreenShape`**: editable vector rectangles, circles, and lines. Use it for
+  outlines, masks, and debug geometry; line endpoints are normalized within the
+  shape, not design pixels.
+- **`ScreenTransform`**: a responsive anchor rectangle for lower-level custom
+  mesh or text composition. Anchors are `[-1, 1]`, centre-origin, Y up.
+- **`ScreenTransform2DSettings`**: serialized/editor-compatible pixel layouts
+  for `ScreenText` and `ScreenShape`. Resolve or merge these through SDK helpers;
+  do not reproduce its mapping math in an app.
+
+## Tracker choice
+
+Use `useFaceInfo` or `useFaceDetection` for face logic and screen overlays;
+their landmarks and bounds are normalized tracker-input values. Use
+`TrackingAnchor` for straightforward 3D attachment to a named face, hand, or
+body landmark. Read a low-level tracker node only for bespoke skeletons, cursors,
+pinch measurements, or custom gesture state. Mount only the trackers the scene
+uses, choose `targetFps` deliberately, keep per-frame values in refs, and use
+React state only for visible phase or HUD changes.
+
 ## Tracking bounding boxes — from `src/FaceBoundingBox.tsx` and `src/HandBoundingBox.tsx`
 
 The starter includes two reusable screen-space components. **The starting scene
@@ -76,7 +129,7 @@ To add hands, add this import and this one line to `src/Scene.tsx`:
 ```tsx
 import { HandBoundingBox } from "./HandBoundingBox";
 
-<HandBoundingBox />
+<HandBoundingBox />;
 ```
 
 Add hands only when the scene needs them. Each tracker adds its own model
@@ -87,9 +140,11 @@ The SDK supplies the tracking data and `ScreenShape`; these template components
 turn that data into visible rectangle outlines. `FaceBoundingBox` reads the
 blessed `useFaceInfo` bounds. `HandBoundingBox` reads the official hand model
 node through `@vincentt-xr/sdk/low-level` because the SDK does not expose a
-production `HandBoundingBox` component on an app-facing entry point. It converts
-the SDK's normalized tracking coordinates with `normalizedToScreenPixels`, so
-the overlay follows the platform's viewport fitting and does not mirror or crop
+production `HandBoundingBox` component on an app-facing entry point. Its low-level
+points are transformed tracker coordinates, not normalized tracker input. In the
+currently pinned SDK it converts them once to normalized top-left coordinates and
+then calls `normalizedToScreenPixels`; after the SDK upgrade described above it
+will call `trackerPointToScreenPixels` directly. Neither route mirrors or crops
 the camera feed a second time.
 
 Both components are screen-space overlays and accept `color`, `padding`,
@@ -237,7 +292,7 @@ import { Overlay, QRCode } from "./overlay";
 // "Scan to open on your phone" — kiosk entry point
 <Overlay corner="bottom-right" margin={32}>
   <QRCode value="https://myapp.vincentt.app" size={180} />
-</Overlay>
+</Overlay>;
 ```
 
 `corner` is one of `top-left | top-right | bottom-left | bottom-right | center` (default `bottom-right`). `interactive` (default false) lets pointer events through so the overlay never blocks gestures; set it `true` only for a tappable control on a touch kiosk.
@@ -263,11 +318,13 @@ const onSnap = async () => {
   }
 };
 
-{shareUrl && (
-  <Overlay corner="center">
-    <QRCode value={shareUrl} size={220} />
-  </Overlay>
-)}
+{
+  shareUrl && (
+    <Overlay corner="center">
+      <QRCode value={shareUrl} size={220} />
+    </Overlay>
+  );
+}
 ```
 
 Renders as SVG (sharp at any size). `padded` (default true) draws a white quiet-zone card so the code stays scannable over a busy camera feed. QR is **display/encode only** — there is no camera-side QR scanning in the template.
@@ -283,13 +340,31 @@ import { Overlay } from "./overlay";
 const { latest } = usePhotoCapture();
 
 // preview the last photo, bottom-left
-{latest && (
-  <Overlay corner="bottom-left" margin={20}>
-    <div style={{ width: 110, height: 146, overflow: "hidden", borderRadius: 10, border: "2px solid #fff" }}>
-      <img src={latest.dataUrl} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-    </div>
-  </Overlay>
-)}
+{
+  latest && (
+    <Overlay corner="bottom-left" margin={20}>
+      <div
+        style={{
+          width: 110,
+          height: 146,
+          overflow: "hidden",
+          borderRadius: 10,
+          border: "2px solid #fff",
+        }}
+      >
+        <img
+          src={latest.dataUrl}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+          }}
+        />
+      </div>
+    </Overlay>
+  );
+}
 ```
 
 The same applies to a `useVideoCapture()` `latest` preview — wrap the `<video>` in a sized `div`. (To preview captures as a 3D plane instead, use `useTexture(latest.dataUrl)` on a `<mesh>` inside `<ScreenSpaceUI>` — see the capture section.)
@@ -305,7 +380,7 @@ A sprite sheet is one image holding a grid of animation frames. Use it for count
 >
 > - **Screen-space overlay** (a frame border, an instruction graphic, anything
 >   anchored to the viewport) — use the SDK's `<SpriteAnimation sheet={{ url, cols,
->   rows, frames, fps }} anchors={...} />`. It must live inside a `<ScreenSpaceUI>`,
+rows, frames, fps }} anchors={...} />`. It must live inside a `<ScreenSpaceUI>`,
 >   defaults to full-screen, and contain-fits via `contentAspect`.
 > - **World-space, or anything needing per-frame control** (a sticker pinned to a
 >   landmark inside `<TrackingAnchor>`, a one-shot countdown with `onComplete`, a
@@ -355,7 +430,12 @@ For many sprites in one draw call (confetti, sparkles). It gives you only the re
 ```tsx
 import { useInstancedSpriteUV } from "./sprite";
 
-const sprite = useInstancedSpriteUV({ texture: confettiSheet, columns: 4, rows: 4, count: 1500 });
+const sprite = useInstancedSpriteUV({
+  texture: confettiSheet,
+  columns: 4,
+  rows: 4,
+  count: 1500,
+});
 
 useEffect(() => {
   const g = meshRef.current.geometry;
@@ -365,14 +445,14 @@ useEffect(() => {
 
 useFrame((_s, delta) => {
   // your physics: move each instance's matrix, set its cell + alpha
-  sprite.setCell(i, cellIndex);          // which sheet cell this instance shows
-  sprite.alpha.setX(i, fade);            // per-instance fade
+  sprite.setCell(i, cellIndex); // which sheet cell this instance shows
+  sprite.alpha.setX(i, fade); // per-instance fade
   sprite.alpha.needsUpdate = true;
 });
 
 <instancedMesh ref={meshRef} args={[undefined, sprite.material, 1500]}>
   <planeGeometry args={[0.1, 0.1]} />
-</instancedMesh>
+</instancedMesh>;
 ```
 
 ---
