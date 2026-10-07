@@ -66,6 +66,11 @@ Trackers self-register when mounted — no `registerXRPipeline` call.
 
 ## Coordinate contract — declare the source before placing anything
 
+The SDK's [screen-space coordinate API](https://github.com/vincentt-xr/sdk/blob/main/docs/api/screen-space-coordinates.mdx)
+is the source of truth for conversion ownership. This section records only the
+template's pinned-SDK compatibility rule; update it when the template changes
+SDK version instead of copying another coordinate implementation here.
+
 Screen primitives use SDK design pixels by default: a 720×1280 canvas with its
 origin at the centre and positive Y upward. Screen-pixel helpers map that canvas
 across the full live viewport on each axis; it is not a letterboxed camera
