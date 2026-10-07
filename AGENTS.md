@@ -270,6 +270,11 @@ holding.
   covers sign-in started then abandoned, the address already being taken, no workspace resolving,
   and a missing name. Each of these is fixable with something you can type right now: a different
   `--name`, a chosen workspace, the missing flag, or completing the sign-in.
+- **`4` — not signed in.** The folder already held an app, so this invocation wrote no source,
+  and there is no account on this machine and no terminal to sign in from. No address was
+  reserved. This is the same code every other verb returns when it needs an account. The remedy
+  is `vincentt login` at a terminal with a browser, then the same `create` again; the CLI prints
+  both.
 
 The distinction that matters: **`3` means you have a working project and `1` means you do not.**
 A run that already scaffolded the source never reports `1` for want of an account.
@@ -352,8 +357,8 @@ from the console, from another terminal, or by closing the one it was running in
 - `✓ Preview stopped. The link no longer works.` — someone stopped it on this account. Say so
   and stop there. **This is the common case and it is not an error**: the developer chose it,
   often from the console page you just handed them.
-- `✓ Preview stopped — 12-hour maximum reached.` — it ran its full life. Say so.
-- `✗ Preview ended — …` — something went wrong; relay the line as printed.
+- `✓ Preview stopped. 12-hour maximum reached.` — it ran its full life. Say so.
+- `✗ Preview ended. …` — something went wrong; relay the line as printed.
 
 **Starting a new preview because the old one ended is the wrong move**, even when the developer
 has not said anything since. It overrides a deliberate stop, it mints a new link so every phone
