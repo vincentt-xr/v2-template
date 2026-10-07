@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unknown-property */
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   XRProvider,
@@ -27,6 +27,15 @@ import type { MediaPreset } from "./MediaSourceControl";
 // always passes a real VITE_INPUT_URL, so this is a dev/last-resort fallback.
 const FALLBACK_VIDEO_URL =
   "https://cdn.vincentt.studio/assets/preview/v2/videos/Head_tilt_woman.mp4";
+const MOBILE_XR_ACCEPTANCE_HARNESS_ENABLED =
+  (globalThis as { VCT_MOBILE_XR_ACCEPTANCE_HARNESS?: boolean })
+    .VCT_MOBILE_XR_ACCEPTANCE_HARNESS === true;
+const MobileXRAcceptanceHarness = MOBILE_XR_ACCEPTANCE_HARNESS_ENABLED
+  ? lazy(async () => ({
+      default: (await import("./MobileXRAcceptanceHarness"))
+        .MobileXRAcceptanceHarness,
+    }))
+  : null;
 
 /**
  * Picks the media source and starts the XR session. Runs once on mount.
@@ -173,7 +182,8 @@ const CameraError = () => {
 
 export const Shell = () => {
   const ready = useXRReady();
-  const reason = useXRError()?.reason;
+  const xrError = useXRError();
+  const reason = xrError?.reason;
   const { session } = useXRContext();
 
   // The app owns the selected source; the switcher only renders it. That is what
@@ -313,6 +323,11 @@ export const Shell = () => {
         <PreviewAnchors />
       </XRScene>
       <MediaSourceControl value={selected} onChange={applySource} />
+      {MobileXRAcceptanceHarness ? (
+        <Suspense fallback={null}>
+          <MobileXRAcceptanceHarness ready={ready} error={xrError?.message} />
+        </Suspense>
+      ) : null}
     </AspectRatioContainer>
   );
 };

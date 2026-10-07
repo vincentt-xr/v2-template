@@ -143,6 +143,9 @@ export function buildOptions({ mode = "production", root = repoRoot } = {}) {
       "process.env.NODE_ENV": JSON.stringify(
         prod ? "production" : "development",
       ),
+      "globalThis.VCT_MOBILE_XR_ACCEPTANCE_HARNESS": JSON.stringify(
+        process.env.VITE_MOBILE_XR_ACCEPTANCE_HARNESS === "true",
+      ),
       // The template's _core config helpers read Vite's import.meta.env, which
       // esbuild doesn't provide — inject a populated object so the app mounts.
       "import.meta.env": JSON.stringify({
