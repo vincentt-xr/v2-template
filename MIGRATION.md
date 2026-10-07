@@ -12,6 +12,7 @@ No action required.
 - The page no longer loads the Poppins font from Google Fonts, because nothing in the template uses it. A project that styled its own text with Poppins now falls back to the system font unless it loads the font itself.
 - The page now opens its connection to the platform CDN early, so the tracking files do not wait on connection setup when they are requested.
 - Production builds now preload the entry's static script chunks. This is in the build script, which an upgrade does not replace, so only new scaffolds get it.
+- The agent contract (AGENTS.md) now says `vincentt create` exits 4 with the `vincentt login` remedy in a folder that already holds an app when there is no account and no terminal, and quotes the preview ending lines without em-dashes, matching the CLI release that ships alongside. AGENTS.md is not replaced by an upgrade, so only new scaffolds get it.
 
 ## 1.5.7
 required: false
