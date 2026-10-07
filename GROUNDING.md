@@ -184,6 +184,44 @@ Working patterns: [Jungle sprite-sheet and ref updates](https://github.com/vince
 [connect-pair data-driven board](https://github.com/vincentt-xr/connect-pair-game/blob/main/src/gameData.ts),
 and the template's own `src/sprite.tsx` frame-loop implementation.
 
+## Authoring self-review before handoff
+
+Run this list after every scene change. It is deliberately short enough to use
+in a new session; follow the linked sections when an answer is uncertain.
+
+1. **Name both coordinate spaces.** State where the input starts (DOM client,
+   normalized image, SDK tracker point, media pixel, or world point) and where
+   it must finish (design pixels, `ScreenSpaceUI`, or world space). Use the
+   [coordinate contract](#coordinate-contract--declare-the-source-before-placing-anything)
+   helper for that pair.
+2. **Convert once.** The selected SDK helper owns mirror, cover/contain crop,
+   and origin changes. Delete any second `1 - x`, CSS mirror, manual crop, or
+   Y-axis flip after that helper.
+3. **Choose the primitive deliberately.** Use `ScreenText` for copy,
+   `ScreenImage` for raster/media, `ScreenShape` for vector geometry, and a
+   `ScreenTransform` only when composing lower-level screen content. Check the
+   [screen primitive guide](#choose-the-screen-primitive-before-writing-layout-code)
+   before adding a raw plane or DOM overlay.
+4. **Mount only needed tracking.** Prefer app-facing tracker hooks/components;
+   use `TrackingAnchor` for ordinary 3D attachment and the low-level door only
+   for a custom measurement or skeleton. Declare tracker frame rate and verify
+   loss/reacquisition behavior.
+5. **Assign rendering ownership.** Keep one `VideoBackground`; choose canvas
+   screen UI when it must be captured; make DOM HUD pointer capture explicit;
+   and confirm transparency, alpha test, depth settings, and render order using
+   the [camera/rendering guide](#camera-effects-render-layers-and-dom-huds).
+6. **Check assets and frame work.** Use a supported asset path, preload only
+   first-scene requirements, clean up manual resources, share repeated layout
+   data, and keep per-frame mutation in refs rather than React setters. See
+   [assets and frame-loop performance](#assets-and-frame-loop-performance).
+7. **Cite a canonical precedent for nontrivial work.** Link a matching project
+   under `Templates/Done` (not a historical experiment), explain the property
+   being reused, and keep the new behavior scoped to the current template.
+8. **Run matching proof.** Always run `pnpm typecheck`, `pnpm lint`, `pnpm test`,
+   and `pnpm build`. Run the [mobile acceptance harness](docs/mobile-xr-acceptance.md)
+   for camera, tracker, source, responsive-layout, touch, capture, or overlay
+   changes. Include the exact result and any required device evidence in the PR.
+
 ## Mobile acceptance before release
 
 Use the development-only shell controls and the complete physical-device
