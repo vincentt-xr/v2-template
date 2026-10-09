@@ -12,9 +12,16 @@ file. It ships inside the SDK package, and in this project it is on disk at:
 node_modules/@vincentt-xr/sdk/GROUNDING.md
 ```
 
-This template currently pins `@vincentt-xr/sdk` to `2.0.0-alpha.5`. When that
-version changes, re-check the installed SDK grounding and update examples against
-the installed package rather than assuming older component behavior.
+This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.8` (pending release)**.
+The installed package may still be `2.0.0-alpha.7`; check
+`node_modules/@vincentt-xr/sdk/package.json`. Sections below marked
+**(alpha.8)** describe APIs that exist on the SDK's `main` branch and ship with
+alpha.8: holistic tracking, iris tracking, the coordinate-space toolkit,
+reusable gesture detection and the `PersonCutout` edge controls. Until alpha.8
+is installed those imports fail with "no exported member" — use the alpha.7
+path named next to each one. When the version changes, re-check the installed
+SDK grounding and update examples against the installed package rather than
+assuming older component behavior.
 
 Read that file when you begin a scene. It is the authoritative reference for
 every SDK component, hook, and prop, and it is far larger than this one — this
@@ -52,15 +59,27 @@ for each API; this is the map of which door to open.
   capture/share (`useFrameCapture`, `useMediaRecorder`, `dataURLtoFile`), audio.
 - **`@vincentt-xr/sdk/tracking`** — trackers: `FaceTracker`, `HandTracker`,
   `GestureTracker`, `BodyTracker`, `Segmentation`, `TrackingAnchor`,
-  `GestureTrigger`, the bare `FaceMesh`, `useFaceResults`.
+  `GestureTrigger`, the bare `FaceMesh`, `useFaceResults`, `useFaceInfo`,
+  `useFaceAction`. **(alpha.8)** `HolisticTracker` (+ `.Face` / `.Hand` /
+  `.Body`, `useHolisticTracking`, `getHolisticSignals`), `useIrisTracking`
+  (+ `IRIS_LANDMARKS`), `useGesture`, `GestureListener`, `GESTURES`,
+  `defineGesture`.
 - **`@vincentt-xr/sdk/face-effects`** — face deep: FaceMesh material config,
-  retouch, canonical mesh, head-binding.
+  retouch, canonical mesh, head-binding. **(alpha.8)** `IrisEffect`,
+  `LipEffect`, `SegmentationOverlay` face-region masks.
+- **`@vincentt-xr/sdk`** also exports the coordinate helpers: the
+  `*ScreenPixels` family today, and **(alpha.8)** the coordinate-space toolkit
+  (`feedToWorld`, `feedToViewport`, `feedToScreenPixels`, `trackerToFeed`,
+  `feedToTracker`, `trackerToWorld`, `sourceToFeed`, `feedToSource`,
+  `computeFeedCrop`, `isMirroredSourceKind`) plus `PersonCutout`.
 - **`@vincentt-xr/sdk/scene-object`** — public authoring state: scene-object and
   component types, factories, selectors, immutable store operations, and the
   render-group API.
 - **`@vincentt-xr/sdk/low-level`** — escape hatch: raw model-node reads, selector
-  hooks, custom-tracker plumbing (`useXRContext`, `useXRReady`, `useXRError`).
-  Reach here only when core + tracking can't express it.
+  hooks, custom-tracker plumbing (`useXRContext`, `useXRReady`, `useXRError`,
+  `useXRCameraTexture`, `useXRModelNode`). **(alpha.8)** `useXRFeedCrop`, the
+  gesture engine and measures (`stepGestureDetector`, `measurePinch`, …), the
+  iris compute seam. Reach here only when core + tracking can't express it.
 
 Trackers self-register when mounted — no `registerXRPipeline` call.
 
@@ -245,23 +264,37 @@ so serialized editor layouts preserve their authored aspect ratio. Keep an
 image's aspect ratio with its fit mode inside its screen rectangle, never by
 adding manual crop or mirror math to its position.
 
-| Source data                                | Origin and axes                            | Convert once with                                                                            |
-| ------------------------------------------ | ------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| Face landmark or bounds from `useFaceInfo` | normalized tracker input; top-left, Y down | `normalizedToScreenPixels({ point, viewportSize })`                                          |
-| Low-level hand, gesture, or body point     | centre-origin; X right, Y up               | `trackerPointToScreenPixels({ point, viewportSize })` in SDK versions that export it         |
-| DOM pointer/client point                   | viewport top-left, Y down                  | `clientToScreenPixels({ point, rect })`                                                      |
-| Camera-media pixel                         | source-media top-left, Y down              | `mediaToScreenPixels({ point, layout, mirrored })`                                           |
-| World point                                | Three.js world space                       | `worldToScreenPixels({ point, camera, viewportSize })`; hide when depth is outside `[-1, 1]` |
+| Source data                                | Origin and axes                                   | Convert once with                                                                                    |
+| ------------------------------------------ | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Face landmark or bounds from `useFaceInfo` | **feed** space: normalized 0..1, top-left, Y down | `normalizedToScreenPixels({ point, viewportSize })` (alpha.8: `feedToScreenPixels(point, viewport)`) |
+| Low-level hand, gesture, or body point     | **tracker** space: centre-origin; X right, Y up   | `trackerPointToScreenPixels({ point, viewportSize })` (exported from the alpha.8 target)             |
+| Iris / holistic result point (alpha.8)     | feed (`center`, face) or tracker (hands, pose)    | the same two helpers, by space                                                                       |
+| DOM pointer/client point                   | viewport top-left, Y down                         | `clientToScreenPixels({ point, rect })`                                                              |
+| Camera-media pixel                         | **source** media top-left, Y down, never mirrored | `mediaToScreenPixels({ point, layout, mirrored })`; alpha.8: `sourceToFeed(point, useXRFeedCrop())`  |
+| Any feed / tracker point into 3D           | feed or tracker                                   | `TrackingAnchor`; alpha.8: `feedToWorld(point, camera)` / `trackerToWorld(point, camera)` on z = 0   |
+| World point                                | Three.js world space                              | `worldToScreenPixels({ point, camera, viewportSize })`; hide when depth is outside `[-1, 1]`         |
+
+**The spaces, named (alpha.8).** The SDK's coordinate toolkit names six spaces
+and owns every move between them: **source** (raw media pixels, never
+mirrored) → **feed** (the camera texture: source cover-cropped to the render
+size, enlarged by `perf.cameraZoom`, mirrored for the webcam only — where every
+landmark and mask lives) ↔ **tracker** (feed recentred, Y up) ↔ **viewport**
+(CSS pixels; the feed fills it, so they agree per axis) ↔ **screen** (design
+pixels) and → **world** (z = 0 plane). `useXRFeedCrop()` (`/low-level`) returns
+the live source → feed transform when you must reach the raw frame. Positions
+never need a mirror flip; direction signs do, through `isMirroredSourceKind`,
+never an inline `sourceKind === "webcam"`.
 
 **Convert a point once only.** The helper owns origin flipping, viewport mapping,
 and any mirror/crop rule in its contract. Do not apply a second `1 - x`, manual
 cover crop, or top-left/centre conversion afterward.
 
-This template currently pins SDK `2.0.0-alpha.5`, which does not yet export
-`trackerPointToScreenPixels`. Its `HandBoundingBox` retains the compatible
-fallback: transformed tracker point → normalized top-left point →
-`normalizedToScreenPixels`. When upgrading to an SDK version that exports the
-helper, replace that fallback rather than keeping two conversion paths.
+`trackerPointToScreenPixels` is exported from the alpha.8 target (it is also
+present in alpha.7). `src/HandBoundingBox.tsx` still carries the older
+fallback — tracker point → normalized top-left point →
+`normalizedToScreenPixels` — which produces the same pixels. When you touch
+that component, replace the fallback with the helper rather than keeping two
+conversion paths; do not add a second path in new code.
 
 ## Choose the screen primitive before writing layout code
 
@@ -283,10 +316,49 @@ helper, replace that fallback rather than keeping two conversion paths.
 Use `useFaceInfo` or `useFaceDetection` for face logic and screen overlays;
 their landmarks and bounds are normalized tracker-input values. Use
 `TrackingAnchor` for straightforward 3D attachment to a named face, hand, or
-body landmark. Read a low-level tracker node only for bespoke skeletons, cursors,
-pinch measurements, or custom gesture state. Mount only the trackers the scene
-uses, choose `targetFps` deliberately, keep per-frame values in refs, and use
-React state only for visible phase or HUD changes.
+body landmark. Read a low-level tracker node only for bespoke skeletons or
+cursors. Mount only the trackers the scene uses, choose `targetFps`
+deliberately, keep per-frame values in refs, and use React state only for
+visible phase or HUD changes.
+
+**(alpha.8) New choices, in order of preference:**
+
+- **Gestures → `useGesture` / `<GestureListener>`** (`/tracking`), not a
+  hand-rolled threshold in `useFrame`. One engine gives enter/exit hysteresis,
+  hold, cooldown, a confidence gate and tracking-loss grace, with
+  `onBegin` / `onEnd` events. Built-ins: face `mouthOpen`, `smile`, `blink`,
+  `browRaise`, `headNod`, `headShake`; hand `pinch`, `grab`, `openPalm`,
+  `handRaised`, `wave`, `oneFinger`, `peaceSign`, `threeFingers`,
+  `fourFingers`, `fist`, `palm`, `thumbUp`, `thumbDown`; body `armRaised`
+  (`Left` / `Right` / `both`), `tPose`; `defineGesture` for your own. They
+  read the landmark trackers, so a hand gesture needs no `<GestureTracker>`.
+  `<GestureTrigger>` and the template's `useGestureHold` remain the tools for
+  the recognizer's _named labels_ (`victory`, `thumb_up`) from
+  `<GestureTracker>`.
+- **Face + hands + pose together → `<HolisticTracker>`** with `.Face`,
+  `.Hand hand="left|right"`, `.Body` children; every `TrackingAnchor` target
+  works unchanged under them. One model, one inference, 13.7 MB download.
+  Caveats: single person; no head rotation (keep `<FaceTracker>` for roll);
+  with face blendshapes on, inference runs on the CPU (`delegate="auto"`
+  falls back) and is several times slower, so set
+  `outputFaceBlendshapes={false}` when you only need landmarks. Never mount
+  it beside `<FaceTracker>` / `<HandTracker>` / `<BodyTracker>` — that runs
+  two models.
+- **Eye decorations, pupil overlays, iris recolouring → `<IrisEffect>`**
+  (`/face-effects`) and `useIrisTracking` (`/tracking`). Shader, image or
+  custom material per iris, driven by the same shared face model. Its
+  `offset` is the iris position inside the eyelid opening, **not gaze**; use
+  blendshapes (`useFaceAction` eye-look / blink) for expression events.
+  Best following at face `targetFps` 60, but that heats phones — ship the
+  session default and `leadMs` unless the eye effect is the point.
+- **Background replacement / person cut-out → `<PersonCutout>`** (core)
+  over a full-screen `ScreenImage`, with `maskFeather` / `maskErode` for
+  edge spill. It acquires the portrait segmentation itself; no
+  `<Segmentation>` needed. `usePersonMask` + `<SegmentationOverlay>` for a
+  tinted person / background layer; `useHairMask` for hair.
+
+Model downloads per tracker: face 3.8 MB, hand 7.8 MB, gesture 8.4 MB, body
+5.8 MB, holistic 13.7 MB (alpha.8). Each is a first-load cost on the phone.
 
 ## Tracking bounding boxes — from `src/FaceBoundingBox.tsx` and `src/HandBoundingBox.tsx`
 
@@ -312,11 +384,11 @@ turn that data into visible rectangle outlines. `FaceBoundingBox` reads the
 blessed `useFaceInfo` bounds. `HandBoundingBox` reads the official hand model
 node through `@vincentt-xr/sdk/low-level` because the SDK does not expose a
 production `HandBoundingBox` component on an app-facing entry point. Its low-level
-points are transformed tracker coordinates, not normalized tracker input. In the
-currently pinned SDK it converts them once to normalized top-left coordinates and
-then calls `normalizedToScreenPixels`; after the SDK upgrade described above it
-will call `trackerPointToScreenPixels` directly. Neither route mirrors or crops
-the camera feed a second time.
+points are transformed tracker coordinates, not normalized tracker input. It
+converts them once to normalized top-left coordinates and then calls
+`normalizedToScreenPixels`; the equivalent single call is
+`trackerPointToScreenPixels` (alpha.8 target), which the component should adopt
+when next edited. Neither route mirrors or crops the camera feed a second time.
 
 Both components are screen-space overlays and accept `color`, `padding`,
 `opacity`, `strokeWidth`, and `renderOrder`. `HandBoundingBox` additionally
@@ -351,6 +423,13 @@ useGestureHold({ gesture: "victory", holdMs: 600, onTrigger: takePhoto });
 - `holdMs: 0` fires on first detection (instant); larger values require a deliberate hold.
 - **`armDelayMs` (default 500) is the scene-transition guard.** When a gesture advances to a new scene, the user's hand is often still in that gesture as the next scene mounts — without an arm delay the new scene would fire instantly off the lingering gesture. The default keeps "the next scene doesn't double-fire" working out of the box. Pass `armDelayMs: 0` only if you genuinely want instant-on-mount.
 - `enabled: false` gates it without unmounting (e.g. only accept the gesture after a celebration finishes).
+- **(alpha.8)** For landmark gestures — pinch, grab, wave, nod, a raised arm,
+  the finger-count signs — use the SDK's `useGesture(name, { holdMs,
+cooldownMs, onBegin, onEnd })` or `<GestureListener>` instead: it has the
+  hold, hysteresis, cooldown and tracking-loss handling built in and needs no
+  `<GestureTracker>`. Keep `useGestureHold` for the recognizer's named labels.
+  Example: `useGesture("peaceSign", { holdMs: 600, cooldownMs: 1500, onBegin: takePhoto })`
+  is the landmark-based twin of the `victory` hold below.
 
 ```tsx
 // Scene A: instant peace-sign advances to Scene B
@@ -655,10 +734,22 @@ Each pattern names which primitives compose it (SDK components + template helper
 
 - `<Segmentation type="portrait" />` (SDK; registers the segmentation pipeline; mounts alongside a state/ref for the mask)
 - Pass the resulting mask texture to `<VideoBackground segmentationMask={mask} customBackground={replacementColor} />` (SDK) in App.tsx
+- **(alpha.8)** or, for any background media: `<ScreenSpaceUI>` with a full-screen `<ScreenImage>` (image / video / GIF / shader plane) at a low `renderOrder` and `<PersonCutout renderOrder={100} />` above it; tune `maskFeather` / `maskErode` for edge spill
 
 ### gesture-controlled (no tracker visuals)
 
-- `<GestureTracker>` + `<GestureTrigger>` (SDK) drives effects (particles, scene transitions, animations) without any visible hand/face overlay
+- `<GestureTracker>` + `<GestureTrigger>` (SDK) drives effects (particles, scene transitions, animations) off the recognizer's named labels without any visible hand/face overlay
+- **(alpha.8)** `<GestureListener gesture="pinch" onBegin={…} onEnd={…} />` or `useGesture` (SDK) for landmark gestures — pinch to grab, wave to reset, nod to confirm, raised arm to start — with hold / cooldown / loss handling and no `<GestureTracker>`
+
+### holistic-scene (alpha.8)
+
+- `<HolisticTracker>` (SDK) once, above any phase switch, with `<HolisticTracker.Face>`, `<HolisticTracker.Hand hand="right">`, `<HolisticTracker.Body>` and `TrackingAnchor` children; `getHolisticSignals(result)` for combined cues such as a raised open hand while smiling
+- `outputFaceBlendshapes={false}` when expressions are not needed (keeps inference on the GPU)
+
+### iris-eye-effect (alpha.8)
+
+- `<IrisEffect mode="shader" color="#4fa3ff" />` or `mode="image"` with a texture (SDK, `/face-effects`); `material` for a custom shader fed by the shared iris uniforms
+- Clip behind the eyelids with a `CanonicalFaceMeshRenderer` repainting the feed without the eye openings at a higher `renderOrder` (see `docs/api/iris-tracking.mdx`)
 
 ---
 
