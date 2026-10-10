@@ -27,6 +27,13 @@ permissions:
 
 jobs:
   move-latest:
+    # This file ships into every scaffolded project; a semver tag there must not
+    # force-move the creator's own `latest`.
+    if: github.repository == 'vincentt-xr/v2-template'
+    # The prod publisher token lives only in this environment, which allows
+    # bare-semver tags alone. A workflow_dispatch must therefore be run from a
+    # tag ref ("Use workflow from: <tag>"); a dispatch from main is refused.
+    environment: release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -36,9 +43,12 @@ jobs:
 
       - name: Resolve the release tag
         id: rel
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_REF: ${{ inputs.ref }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.ref }}"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            TAG="$INPUT_REF"
           else
             TAG="${GITHUB_REF#refs/tags/}"
           fi
@@ -53,7 +63,9 @@ jobs:
       # workflow_dispatch takes any ref, so this is also what stops `latest`
       # being pointed at a branch-only commit or a non-release tag.
       - name: The release tag is bare semver and on main
-        run: bash scripts/tag-guard.sh "${{ steps.rel.outputs.tag }}"
+        env:
+          TAG: ${{ steps.rel.outputs.tag }}
+        run: bash scripts/tag-guard.sh "$TAG"
 
       # A scaffold is an install + build from a frozen lockfile, so that is what is
       # verified here -- against the tagged commit, not against main. Smoke Build
@@ -86,15 +98,19 @@ jobs:
           git show origin/main:MIGRATION.md > "$RUNNER_TEMP/release-row/MIGRATION.md"
 
       - name: Check out the tagged tree
-        run: git checkout --force "${{ steps.rel.outputs.sha }}"
+        env:
+          SHA: ${{ steps.rel.outputs.sha }}
+        run: git checkout --force "$SHA"
 
       # An early gate, ahead of install/build: a tag with no valid migration
       # note must never reach `latest`. --dry-run only parses and bounds-checks
       # the note (f17 §2.4) — no network, no secrets needed, so this runs
       # before the credentialed write step below and fails fast on a bad note.
       - name: A migration note exists for the release tag
+        env:
+          TAG: ${{ steps.rel.outputs.tag }}
         run: |
-          node "$RUNNER_TEMP/release-row/release-row.mjs" "${{ steps.rel.outputs.tag }}" \
+          node "$RUNNER_TEMP/release-row/release-row.mjs" "$TAG" \
             --migration "$RUNNER_TEMP/release-row/MIGRATION.md" --dry-run
 
       - name: Install (frozen lockfile)
@@ -225,10 +241,13 @@ jobs:
       # publish a broken template to every `vincentt init` for as long as it took
       # someone to notice.
       - name: Move `latest`
+        env:
+          TAG: ${{ steps.rel.outputs.tag }}
+          SHA: ${{ steps.rel.outputs.sha }}
         run: |
-          git tag --force latest "${{ steps.rel.outputs.sha }}"
+          git tag --force latest "$SHA"
           git push --force origin refs/tags/latest
-          echo "latest -> ${{ steps.rel.outputs.tag }} (${{ steps.rel.outputs.sha }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "latest -> ${TAG} (${SHA})" >> "$GITHUB_STEP_SUMMARY"
 
       # Only now does the platform learn about it: the artifact is public (the
       # gates above passed and `latest` moved), which is the ordering f17 §2.3
@@ -245,6 +264,7 @@ jobs:
           # WRONG for workflow_dispatch (it would be main's HEAD, not the
           # tag's). steps.rel.outputs.sha is resolved for both trigger paths.
           GITHUB_SHA: ${{ steps.rel.outputs.sha }}
+          TAG: ${{ steps.rel.outputs.tag }}
         run: |
-          node "$RUNNER_TEMP/release-row/release-row.mjs" "${{ steps.rel.outputs.tag }}" \
+          node "$RUNNER_TEMP/release-row/release-row.mjs" "$TAG" \
             --migration "$RUNNER_TEMP/release-row/MIGRATION.md"
