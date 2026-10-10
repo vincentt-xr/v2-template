@@ -42,6 +42,10 @@ The Release workflow (`.github/workflows/release.yml`) installs from the frozen 
 builds, and typechecks **the tagged tree** before force-updating `latest` to it. A tag that
 fails leaves `latest` where it was, so a broken release cannot reach a new creator.
 
+The job runs in the `release` environment, which accepts bare-semver tags only. To re-run it by
+hand, dispatch it from the tag itself ("Use workflow from: 1.1.0"); a dispatch from `main` is
+refused.
+
 **Never move `latest` by hand.** It is force-updated by that workflow and nowhere else; moving
 it manually decouples the pointer from the version it claims to be.
 

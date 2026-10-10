@@ -22,4 +22,6 @@ jobs:
           fetch-depth: 0
 
       - name: Tag is bare semver and on main
-        run: bash scripts/tag-guard.sh "${{ github.ref_name }}"
+        env:
+          TAG: ${{ github.ref_name }}
+        run: bash scripts/tag-guard.sh "$TAG"
