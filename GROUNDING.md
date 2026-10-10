@@ -12,16 +12,15 @@ file. It ships inside the SDK package, and in this project it is on disk at:
 node_modules/@vincentt-xr/sdk/GROUNDING.md
 ```
 
-This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.8` (pending release)**.
-The installed package may still be `2.0.0-alpha.7`; check
-`node_modules/@vincentt-xr/sdk/package.json`. Sections below marked
-**(alpha.8)** describe APIs that exist on the SDK's `main` branch and ship with
-alpha.8: holistic tracking, iris tracking, the coordinate-space toolkit,
-reusable gesture detection and the `PersonCutout` edge controls. Until alpha.8
-is installed those imports fail with "no exported member" — use the alpha.7
-path named next to each one. When the version changes, re-check the installed
-SDK grounding and update examples against the installed package rather than
-assuming older component behavior.
+This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.8`**. Sections below
+marked **(alpha.8)** describe APIs that are new in that version: holistic
+tracking, iris tracking, the coordinate-space toolkit, reusable gesture
+detection and the `PersonCutout` edge controls. A project still pinned to an
+older SDK fails those imports with "no exported member"; check
+`node_modules/@vincentt-xr/sdk/package.json`, and use the older path named next
+to each one until the pin moves. When the version changes, re-check the
+installed SDK grounding and update examples against the installed package rather
+than assuming older component behavior.
 
 Read that file when you begin a scene. It is the authoritative reference for
 every SDK component, hook, and prop, and it is far larger than this one — this
@@ -267,7 +266,7 @@ adding manual crop or mirror math to its position.
 | Source data                                | Origin and axes                                   | Convert once with                                                                                    |
 | ------------------------------------------ | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | Face landmark or bounds from `useFaceInfo` | **feed** space: normalized 0..1, top-left, Y down | `normalizedToScreenPixels({ point, viewportSize })` (alpha.8: `feedToScreenPixels(point, viewport)`) |
-| Low-level hand, gesture, or body point     | **tracker** space: centre-origin; X right, Y up   | `trackerPointToScreenPixels({ point, viewportSize })` (exported from the alpha.8 target)             |
+| Low-level hand, gesture, or body point     | **tracker** space: centre-origin; X right, Y up   | `trackerPointToScreenPixels({ point, viewportSize })`                                                |
 | Iris / holistic result point (alpha.8)     | feed (`center`, face) or tracker (hands, pose)    | the same two helpers, by space                                                                       |
 | DOM pointer/client point                   | viewport top-left, Y down                         | `clientToScreenPixels({ point, rect })`                                                              |
 | Camera-media pixel                         | **source** media top-left, Y down, never mirrored | `mediaToScreenPixels({ point, layout, mirrored })`; alpha.8: `sourceToFeed(point, useXRFeedCrop())`  |
@@ -289,8 +288,8 @@ never an inline `sourceKind === "webcam"`.
 and any mirror/crop rule in its contract. Do not apply a second `1 - x`, manual
 cover crop, or top-left/centre conversion afterward.
 
-`trackerPointToScreenPixels` is exported from the alpha.8 target (it is also
-present in alpha.7). `src/HandBoundingBox.tsx` still carries the older
+`trackerPointToScreenPixels` is exported from the SDK core entry.
+`src/HandBoundingBox.tsx` still carries the older
 fallback — tracker point → normalized top-left point →
 `normalizedToScreenPixels` — which produces the same pixels. When you touch
 that component, replace the fallback with the helper rather than keeping two
@@ -387,7 +386,7 @@ production `HandBoundingBox` component on an app-facing entry point. Its low-lev
 points are transformed tracker coordinates, not normalized tracker input. It
 converts them once to normalized top-left coordinates and then calls
 `normalizedToScreenPixels`; the equivalent single call is
-`trackerPointToScreenPixels` (alpha.8 target), which the component should adopt
+`trackerPointToScreenPixels`, which the component should adopt
 when next edited. Neither route mirrors or crops the camera feed a second time.
 
 Both components are screen-space overlays and accept `color`, `padding`,

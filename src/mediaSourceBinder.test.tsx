@@ -60,7 +60,7 @@ beforeEach(() => {
     restore: vi.fn(),
     scale: vi.fn(),
     drawImage: vi.fn(),
-  } as unknown as CanvasRenderingContext2D);
+  } as unknown as ReturnType<HTMLCanvasElement["getContext"]>);
   vi.stubGlobal("requestAnimationFrame", () => 0);
   vi.stubGlobal("cancelAnimationFrame", () => undefined);
 });

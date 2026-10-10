@@ -5,6 +5,14 @@ Per release tag, newest first. Read by the platform's own version surface
 outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
+## 1.5.9
+required: false
+No action required.
+- New scaffolds now start with SDK `2.0.0-alpha.8`; existing projects retain their current SDK pin until they update or reseed.
+- The SDK's sample-media list now offers the hosted sample videos before the webcam, so the source list starts with a video and the webcam is still listed.
+- SDK `2.0.0-alpha.8` is additive: holistic and iris tracking, reusable gestures, segmentation overlays and person cut-out, a coordinate toolkit, capability and camera permission handling, an asset cache, a tracking configuration and product placement AR. Adaptive quality is now on by default and can be turned off on the provider.
+- The template grounding now states that it targets SDK `2.0.0-alpha.8`, and keeps its "(alpha.8)" markers so a project on an older pin can see which APIs need the newer SDK. The grounding file is not replaced by an upgrade, so only new scaffolds get it.
+
 ## 1.5.8
 required: false
 No action required.
