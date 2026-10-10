@@ -33,6 +33,11 @@
 // chip, the annotation module's dynamic import) is asserted in
 // toolchain/packages/harness/src/client/qa_f13_g11_framed_mounts.test.ts. This
 // file owns the TEMPLATE's half: the in-app media control.
+//
+// Superseded again by gallery-live-webcam: a framed app on its webcam default
+// starts on the webcam when its own address carries `source=webcam`. The full
+// search matrix and the no-fallback arm run through the real binder in
+// mediaSourceBinder.test.tsx; requestsWebcam's fail-closed arms in framed.test.ts.
 
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -145,7 +150,7 @@ describe("QA-F13-G11 · the template's media control, framed and unframed", () =
   });
 
   it("the framing check reads a FACT ABOUT ITSELF, with no sender and no channel", () => {
-    // No parameter, no message, no postMessage listener. Deliberately true inside
+    // No sender, no message, no postMessage listener. Deliberately true inside
     // ANY frame: the reason a control is withheld holds for any embedder, not just
     // ours. This survives G11's supersession unchanged.
     expect(isFramed({ self: {}, top: {} })).toBe(true);
@@ -194,6 +199,19 @@ describe("QA-F13-G11 · a creator's configured source is never overridden", () =
 
   it("unframed + default → the WEBCAM, byte-identical to today (a REGRESSION PIN)", () => {
     expect(chooseMediaSource({}, false)).toEqual({ kind: "webcam" });
+  });
+
+  it("framed + default + source=webcam → the webcam (gallery-live-webcam)", () => {
+    expect(chooseMediaSource({}, true, true)).toEqual({ kind: "webcam" });
+  });
+
+  it("framed + configured + source=webcam → the CREATOR'S source still wins", () => {
+    expect(
+      chooseMediaSource({ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: "u" }, true, true),
+    ).toEqual({ kind: "video", url: "u" });
+    expect(
+      chooseMediaSource({ VITE_INPUT_SOURCE: "photo", VITE_INPUT_URL: "p" }, true, true),
+    ).toEqual({ kind: "photo", url: "p" });
   });
 
   it("unframed + configured → unchanged", () => {

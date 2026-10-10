@@ -1,6 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { announcedPresets, chooseMediaSource, isFramed, pickFramedDefault } from "./framed";
+import {
+  FRAMED_SOURCE_PARAM,
+  FRAMED_SOURCE_WEBCAM,
+  announcedPresets,
+  chooseMediaSource,
+  isFramed,
+  pickFramedDefault,
+  requestsWebcam,
+} from "./framed";
 
 const TOP = { name: "top" };
 
@@ -79,21 +87,121 @@ describe("chooseMediaSource", () => {
     expect(chooseMediaSource({ VITE_INPUT_SOURCE: "webcam" }, false)).toEqual({ kind: "webcam" });
   });
 
-  it("never yields a webcam choice when framed, for any env", () => {
-    // The property that makes the frame's absent `allow` attribute cost nothing:
-    // the framed startup path cannot reach getUserMedia BY CONSTRUCTION.
-    const envs = [
-      {},
-      { VITE_INPUT_SOURCE: "webcam" },
-      { VITE_INPUT_SOURCE: "photo" },
-      { VITE_INPUT_SOURCE: "nonsense", VITE_INPUT_URL: "https://example.test/x" },
-      { VITE_INPUT_URL: "https://example.test/x" },
-      { VITE_INPUT_SOURCE: "video" },
-      { VITE_INPUT_SOURCE: "photo", VITE_INPUT_URL: "https://example.test/x" },
-    ];
-    envs.forEach((env) => {
+  const ENVS = [
+    {},
+    { VITE_INPUT_SOURCE: "webcam" },
+    { VITE_INPUT_SOURCE: "photo" },
+    { VITE_INPUT_SOURCE: "nonsense", VITE_INPUT_URL: "https://example.test/x" },
+    { VITE_INPUT_URL: "https://example.test/x" },
+    { VITE_INPUT_SOURCE: "video" },
+    { VITE_INPUT_SOURCE: "photo", VITE_INPUT_URL: "https://example.test/x" },
+  ];
+
+  it("never yields a webcam choice when framed WITHOUT the parameter, for any env", () => {
+    // f13's console frame never carries the parameter, so its startup path
+    // cannot reach getUserMedia BY CONSTRUCTION.
+    ENVS.forEach((env) => {
       expect(chooseMediaSource(env, true).kind).not.toBe("webcam");
+      expect(chooseMediaSource(env, true, false).kind).not.toBe("webcam");
     });
+  });
+
+  it("framed + webcam default + the parameter selects the webcam", () => {
+    [{}, { VITE_INPUT_SOURCE: "webcam" }, { VITE_INPUT_SOURCE: "photo" }].forEach((env) => {
+      expect(chooseMediaSource(env, true, true)).toEqual({ kind: "webcam" });
+    });
+    expect(
+      chooseMediaSource({ VITE_INPUT_SOURCE: "nonsense", VITE_INPUT_URL: "x" }, true, true),
+    ).toEqual({ kind: "webcam" });
+  });
+
+  it("a configured source wins over the parameter, framed or not", () => {
+    // A build that checked the parameter before the env passes every webcam arm
+    // and fails only here.
+    const video = { VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: "https://example.test/clip.mp4" };
+    const photo = { VITE_INPUT_SOURCE: "photo", VITE_INPUT_URL: "https://example.test/p.png" };
+    [true, false].forEach((framed) => {
+      expect(chooseMediaSource(video, framed, true)).toEqual({
+        kind: "video",
+        url: "https://example.test/clip.mp4",
+      });
+      expect(chooseMediaSource(photo, framed, true)).toEqual({
+        kind: "photo",
+        url: "https://example.test/p.png",
+      });
+    });
+  });
+
+  it("unframed: the parameter changes nothing (a REGRESSION PIN on the shipped default)", () => {
+    ENVS.forEach((env) => {
+      expect(chooseMediaSource(env, false, true)).toEqual(chooseMediaSource(env, false));
+    });
+  });
+});
+
+describe("requestsWebcam", () => {
+  it("names the one parameter and the one value", () => {
+    expect(FRAMED_SOURCE_PARAM).toBe("source");
+    expect(FRAMED_SOURCE_WEBCAM).toBe("webcam");
+  });
+
+  it.each(["?source=webcam", "?source=%77ebcam", "?a=1&source=webcam", "?source=webcam&source=video"])(
+    "%s asks for the webcam",
+    (search) => {
+      expect(requestsWebcam(search)).toBe(true);
+    },
+  );
+
+  it.each([
+    "",
+    "?source=Webcam",
+    "?Source=webcam",
+    "?source=webcam2",
+    "?source=video",
+    "?source=video&source=webcam",
+    "#source=webcam",
+    "?a=1",
+  ])("%j does not", (search) => {
+    expect(requestsWebcam(search)).toBe(false);
+  });
+
+  it("reads the document's own location.search by default", () => {
+    window.history.replaceState(null, "", "/?source=webcam");
+    try {
+      expect(requestsWebcam()).toBe(true);
+    } finally {
+      window.history.replaceState(null, "", "/");
+    }
+    expect(requestsWebcam()).toBe(false);
+  });
+
+  it("the hash is never read", () => {
+    window.history.replaceState(null, "", "/#source=webcam");
+    try {
+      expect(requestsWebcam()).toBe(false);
+    } finally {
+      window.history.replaceState(null, "", "/");
+    }
+  });
+
+  it("fails closed when location access throws", () => {
+    const spy = vi.spyOn(window, "location", "get").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    try {
+      expect(requestsWebcam()).toBe(false);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("fails closed with no window", () => {
+    vi.stubGlobal("window", undefined);
+    try {
+      expect(requestsWebcam()).toBe(false);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 
