@@ -98,7 +98,9 @@ describe("MediaSourceControl · unframed", () => {
   });
 
   it("keeps the webcam entry, unchanged from today", async () => {
-    render(<MediaSourceControl value={defaultMediaSources[0]} onChange={vi.fn()} />);
+    const webcam = defaultMediaSources.find((p) => p.kind === "webcam");
+    expect(webcam).toBeDefined();
+    render(<MediaSourceControl value={webcam!} onChange={vi.fn()} />);
 
     await openPanel();
     await screen.findByRole("combobox");
