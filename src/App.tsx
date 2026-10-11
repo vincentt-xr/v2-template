@@ -15,7 +15,13 @@ import { PerspectiveCamera } from "@react-three/drei";
 
 import { Scene } from "./Scene";
 import { PreviewAnchors } from "./PreviewAnchors";
-import { announcedPresets, chooseMediaSource, isFramed, pickFramedDefault } from "./framed";
+import {
+  announcedPresets,
+  chooseMediaSource,
+  isFramed,
+  pickFramedDefault,
+  requestsWebcam,
+} from "./framed";
 import type { MediaSourceEnv } from "./framed";
 import { streamFromImageUrl, streamFromVideoUrl } from "./mediaStream";
 import { MediaSourceControl } from "./MediaSourceControl";
@@ -47,10 +53,10 @@ const MobileXRAcceptanceHarness = MOBILE_XR_ACCEPTANCE_HARNESS_ENABLED
  *
  * Photo/video sources are pre-mirrored to cancel the SDK's selfie flip.
  *
- * FRAMED: the webcam default is replaced by an SDK video preset. A framed app
- * has no camera grant (the embedder delegates none, deliberately), so starting
- * on the webcam would open with a permission error whose advice cannot work.
- * A configured source is never overridden — see `chooseMediaSource`.
+ * FRAMED: the webcam default is replaced by an SDK video preset, so a framed
+ * app does not open on a camera prompt nobody asked for. If the app's own
+ * address carries `source=webcam` (the gallery's Live frame), it starts on the
+ * webcam instead. A configured source is never overridden: see `chooseMediaSource`.
  */
 export const MediaSourceBinder = ({
   onSourceSelected,
@@ -70,6 +76,7 @@ export const MediaSourceBinder = ({
       const choice = chooseMediaSource(
         { VITE_INPUT_SOURCE: env.VITE_INPUT_SOURCE, VITE_INPUT_URL: env.VITE_INPUT_URL },
         isFramed(),
+        requestsWebcam(),
       );
 
       // The switcher is controlled and holds no source state of its own, so the
@@ -114,7 +121,10 @@ export const MediaSourceBinder = ({
       await session.start();
     };
 
-    init();
+    // The SDK writes a startup failure (a refused camera) to the session store,
+    // which paints CameraError, then rethrows. The catch only keeps the rethrow
+    // from surfacing as an unhandled rejection; it must never bind a fallback.
+    void init().catch(() => {});
 
     return () => {
       cancelled = true;

@@ -183,3 +183,99 @@ describe("MediaSourceBinder · unframed startup", () => {
     expect(onSourceSelected.mock.calls[0][0].kind).toBe("webcam");
   });
 });
+
+// QA-F13-G11 (superseded by gallery-live-webcam): the gallery's Live frame puts
+// `source=webcam` on the frame's address. A framed app on its webcam default then
+// starts on the webcam; nothing else about the startup path moves.
+describe("MediaSourceBinder · framed + source=webcam (the gallery's Live frame)", () => {
+  const withSearch = (search: string) => {
+    window.history.replaceState(null, "", `/${search}`);
+  };
+
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
+  });
+
+  it.each(["?source=webcam", "?source=%77ebcam", "?a=1&source=webcam", "?source=webcam&source=video"])(
+    "framed + default + %s: binds the WEBCAM and reports the Webcam preset",
+    async (search) => {
+      withSearch(search);
+      frameIt();
+      const onSourceSelected = vi.fn();
+      render(<MediaSourceBinder onSourceSelected={onSourceSelected} />);
+
+      await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
+      expect(setMediaSource).toHaveBeenCalledWith({ source: "webcam" });
+      expect(setMediaSource).toHaveBeenCalledTimes(1);
+      expect(videoSrc).toBeUndefined();
+      await waitFor(() => expect(onSourceSelected).toHaveBeenCalled());
+      expect(onSourceSelected.mock.calls[0][0]).toEqual({
+        id: "webcam",
+        kind: "webcam",
+        label: "Webcam",
+      });
+    },
+  );
+
+  it.each([
+    "?source=Webcam",
+    "?Source=webcam",
+    "?source=webcam2",
+    "?source=video",
+    "?source=video&source=webcam",
+    "#source=webcam",
+  ])("framed + default + %s: still the preset, getUserMedia never called", async (search) => {
+    withSearch(search);
+    frameIt();
+    render(<MediaSourceBinder />);
+
+    await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
+    expect(setMediaSource).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "stream", stream: FAKE_STREAM }),
+    );
+    expect(sdkVideoMediaSources.map((p) => p.url)).toContain(videoSrc);
+    expect(getUserMedia).not.toHaveBeenCalled();
+  });
+
+  it("framed + CONFIGURED video + source=webcam: the creator's source wins", async () => {
+    const CONFIGURED = "https://example.test/client-footage.mp4";
+    withSearch("?source=webcam");
+    frameIt();
+    render(<MediaSourceBinder env={{ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: CONFIGURED }} />);
+
+    await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
+    expect(videoSrc).toBe(CONFIGURED);
+    expect(setMediaSource).not.toHaveBeenCalledWith(expect.objectContaining({ source: "webcam" }));
+    expect(getUserMedia).not.toHaveBeenCalled();
+  });
+
+  it("unframed + source=webcam: identical to the no-parameter result", async () => {
+    withSearch("?source=webcam");
+    render(<MediaSourceBinder />);
+
+    await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
+    expect(setMediaSource).toHaveBeenCalledWith({ source: "webcam" });
+    expect(setMediaSource).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["NotAllowedError", "NotFoundError"])(
+    "NO FALLBACK: a refused camera (%s) binds nothing else afterwards",
+    async (name) => {
+      // The SDK writes the failure to its session store (which paints the
+      // template's CameraError) and rethrows. A build that caught the rethrow and
+      // bound the sample clip would show a clip right after the visitor said no.
+      const refusal = Object.assign(new Error("camera refused"), { name });
+      setMediaSource.mockRejectedValueOnce(refusal);
+      withSearch("?source=webcam");
+      frameIt();
+      render(<MediaSourceBinder />);
+
+      await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(setMediaSource).toHaveBeenCalledTimes(1);
+      expect(setMediaSource).toHaveBeenCalledWith({ source: "webcam" });
+      expect(videoSrc).toBeUndefined();
+      expect(start).not.toHaveBeenCalled();
+    },
+  );
+});

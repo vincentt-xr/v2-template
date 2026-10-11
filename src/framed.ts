@@ -14,10 +14,9 @@ export type FramingView = { self: unknown; top: unknown };
 /**
  * True when this document is running inside a frame.
  *
- * A fact the app reads ABOUT ITSELF — no sender, no parameter, no message, no
- * channel from the embedder. Deliberately true inside *any* frame, not just the
- * console's: the reason the webcam is withheld (no camera grant crosses the
- * boundary) holds for any embedder.
+ * A fact the app reads ABOUT ITSELF — no sender, no message, no channel from
+ * the embedder. Deliberately true inside *any* frame, not just the console's:
+ * which default a framed app opens on is the same question for every embedder.
  *
  * Cross-origin does not break it. Comparing `window.top` as an opaque handle is
  * same-origin-policy-safe; only reaching THROUGH it (`top.location`) throws, and
@@ -49,21 +48,50 @@ export type MediaSourceChoice =
   | { kind: "webcam" };
 
 /**
+ * The one startup parameter a framed app reads from its own address. The
+ * console's gallery frame vendors a byte-identical copy of these two lines.
+ */
+export const FRAMED_SOURCE_PARAM = "source";
+export const FRAMED_SOURCE_WEBCAM = "webcam";
+
+/**
+ * True when this document's own address asks for the webcam (`?source=webcam`).
+ *
+ * One value only: the first `source` value, exact and case-sensitive, after
+ * percent-decoding. Anything else, the hash included, is ignored. A missing
+ * `window` or a throw folds to false, so an unknown context keeps the shipped
+ * framed default rather than raising a camera prompt.
+ */
+export const requestsWebcam = (search?: string): boolean => {
+  try {
+    const s = search ?? (typeof window === "undefined" ? "" : window.location.search);
+    if (!s) return false;
+    return new URLSearchParams(s).get(FRAMED_SOURCE_PARAM) === FRAMED_SOURCE_WEBCAM;
+  } catch {
+    return false;
+  }
+};
+
+/**
  * Which media source this app starts on.
  *
- * A creator who CONFIGURED a source keeps it, framed or not — overriding a
- * deliberate config pointed at client footage would hide work they did. Only
- * the webcam default branch is framing-aware: a framed app opens on a preset
- * rather than raising a permission prompt nobody asked for, so the creator sees
- * the tracker running the moment the frame loads. The camera remains reachable
- * on demand, since the frame now delegates it.
+ * A creator who CONFIGURED a source keeps it, framed or not, parameter or not:
+ * overriding a deliberate config pointed at client footage would hide work they
+ * did. Only the webcam default branch is framing-aware. A framed app opens on a
+ * preset rather than raising a permission prompt nobody asked for, unless its
+ * own address asked for the webcam (`webcamRequested`), which the gallery's Live
+ * frame does and the creator's preview frame never does.
  */
-export const chooseMediaSource = (env: MediaSourceEnv, framed: boolean): MediaSourceChoice => {
+export const chooseMediaSource = (
+  env: MediaSourceEnv,
+  framed: boolean,
+  webcamRequested = false,
+): MediaSourceChoice => {
   if (env.VITE_INPUT_SOURCE === "video") return { kind: "video", url: env.VITE_INPUT_URL };
   if (env.VITE_INPUT_SOURCE === "photo" && env.VITE_INPUT_URL) {
     return { kind: "photo", url: env.VITE_INPUT_URL };
   }
-  if (framed) return { kind: "framedPreset" };
+  if (framed && !webcamRequested) return { kind: "framedPreset" };
   return { kind: "webcam" };
 };
 
