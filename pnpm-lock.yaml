@@ -21,8 +21,8 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0
       '@vincentt-xr/harness':
-        specifier: ^1.5.0
-        version: 1.5.0(react@18.3.1)
+        specifier: ^2.0.0
+        version: 2.0.0(react@18.3.1)
       '@vincentt-xr/sdk':
         specifier: 2.0.0-alpha.8
         version: 2.0.0-alpha.8(@mediapipe/tasks-vision@0.10.35)(@react-three/drei@9.105.6(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@types/react@18.3.5)(@types/three@0.173.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(onnxruntime-web@1.29.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0)
@@ -996,10 +996,13 @@ packages:
   '@vincentt-xr/analytics@0.3.0':
     resolution: {integrity: sha512-LfwlvQwK1ZAQ81KSSPC/QYlAdiol6tUxYHnqylgHXLtY0xldXoduUMSxCfFUSXyBP0pe8zdXIQww8sys2q7raQ==}
 
-  '@vincentt-xr/harness@1.5.0':
-    resolution: {integrity: sha512-uFVtj91qfkBJZESupifLip4gNU64Ee/xxU1vtlbF9oGx5b6dwIgUpAzu8MkK/tzef1XPdzdYrAkF1PqWRQ7M7Q==}
+  '@vincentt-xr/harness@2.0.0':
+    resolution: {integrity: sha512-W2qVEGs3YCTeUsBDtdpMDh5D/ebjIC72NCe6mW8q2UHRGqJVKdDCBOgVXRNT9jZTJwBVWdueuOnC9H4GoqQM9Q==}
     peerDependencies:
       react: ^18.2.0
+    peerDependenciesMeta:
+      react:
+        optional: true
 
   '@vincentt-xr/sdk@2.0.0-alpha.8':
     resolution: {integrity: sha512-JycqVW+oG7M2amEFWWH35A+r0urTi8KyqTg0ogJ2EPR6sqVmb79x4SAoWrItSMOiM2PLT89lSdQ1mqc1/jpKMQ==}
@@ -3748,14 +3751,11 @@ snapshots:
 
   '@vincentt-xr/analytics@0.3.0': {}
 
-  '@vincentt-xr/harness@1.5.0(react@18.3.1)':
+  '@vincentt-xr/harness@2.0.0(react@18.3.1)':
     dependencies:
       qrcode: 1.5.4
+    optionalDependencies:
       react: 18.3.1
-      ws: 8.21.3
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
 
   '@vincentt-xr/sdk@2.0.0-alpha.8(@mediapipe/tasks-vision@0.10.35)(@react-three/drei@9.105.6(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@types/react@18.3.5)(@types/three@0.173.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(@react-three/fiber@8.18.0(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0))(onnxruntime-web@1.29.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.173.0)':
     dependencies:

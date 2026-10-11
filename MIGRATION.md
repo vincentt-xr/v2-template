@@ -5,6 +5,13 @@ Per release tag, newest first. Read by the platform's own version surface
 outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
+## 1.6.0
+required: false
+No action required.
+- The template now depends on harness `2.0.0`. The preview tunnel client moved into the CLI, so the app no longer installs it or its WebSocket library. Nothing in the template imported it. An upgrade carries the new pin.
+- A framed app whose own address carries `source=webcam` now starts on the webcam instead of a sample video. The console gallery's Live frame uses this. A creator's preview frame never sets it, and a configured source is still never overridden.
+- Release tooling only: the template's release job now runs in a tag-only environment and refuses tags that are not bare semver on main. It does nothing in a creator's project.
+
 ## 1.5.9
 required: false
 No action required.

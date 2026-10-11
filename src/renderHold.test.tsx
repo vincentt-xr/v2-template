@@ -161,6 +161,9 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  // The harness announces once per page and never releases its latch; every test
+  // here is a fresh page.
+  delete (window as unknown as Record<symbol, unknown>)[Symbol.for("vincentt.harness.announced")];
 });
 
 describe("QA-F13-G45 · the app holds and releases through canvasProps.frameloop", () => {
