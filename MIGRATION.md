@@ -5,9 +5,10 @@ Per release tag, newest first. Read by the platform's own version surface
 outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
-## 1.6.1
+## 1.6.2
 required: false
 No action required.
+- Same content as the 1.6.1 tag, which never released (its release job refused for a missing note, and release tags cannot be deleted).
 - The agent contract (AGENTS.md) now has a "Storing visitor data" section: keep visitor state in `localStorage` or `sessionStorage`, use only `__Host-` cookies when a cookie is needed, and put an app with real visitor sign-in on a custom domain, because published apps share the `vincentt.app` parent domain. AGENTS.md is not replaced by an upgrade, so only new scaffolds get it.
 
 ## 1.6.0
