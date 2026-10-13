@@ -445,6 +445,22 @@ requires it, and know why).
 The helper APIs (`capture`, `overlay`, `sprite`, `gesture`) are documented in
 `GROUNDING.md` — import and use them, don't re-implement them.
 
+## Storing visitor data
+
+A published app lives at `<slug>.vincentt.app`, next to other creators' apps. Browsers let any
+of those apps set a cookie for the whole `vincentt.app` domain, which every other app then
+receives. So:
+
+- **Keep visitor state in `localStorage` or `sessionStorage`.** Those are per app; no other app
+  can read or change them.
+- **If the app must set a cookie, name it with the `__Host-` prefix** and set it with `Secure;
+  Path=/` and no `Domain`, for example
+  `document.cookie = "__Host-session=…; Secure; Path=/; SameSite=Lax"`. Another app cannot set
+  or overwrite a `__Host-` cookie, so read only `__Host-` names. Never set
+  `Domain=vincentt.app`.
+- **An app with real visitor sign-in belongs on its own custom domain**, which isolates it
+  completely. Tell the person so when they ask for accounts or logins.
+
 ## The SDK API lives in the SDK's own grounding
 
 There are **two** grounding files, and nothing merges them:
