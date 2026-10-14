@@ -798,6 +798,85 @@ Each pattern names which primitives compose it (SDK components + template helper
 
 ---
 
+## Lessons from shipped projects
+
+What creators' agents ran into on real builds, with the fix that landed and the
+workaround for a project still on an older template. Each item links its issue;
+when the issue is closed the template already behaves as described and the
+workaround is only for projects scaffolded before it. The repository is
+`vincentt-xr/v2-template` unless named.
+
+- **Dev-only code and production builds** ([#112](https://github.com/vincentt-xr/v2-template/issues/112)).
+  A branch behind `if (import.meta.env.DEV)` is dead code in `pnpm build`: the
+  config defines each `import.meta.env` key as a literal, and `process.env.NODE_ENV`
+  folds the same way. On a template older than this, only `process.env.NODE_ENV`
+  folded; a `DEV` guard shipped its branch (a clip loader and its video in one
+  project), so guard with `process.env.NODE_ENV !== "production"` there.
+- **Developing without a camera** ([#113](https://github.com/vincentt-xr/v2-template/issues/113)).
+  `VITE_INPUT_SOURCE=video VITE_INPUT_URL=/clip.mp4 pnpm dev`, or the same two
+  lines in `.env.development`; see
+  [Developing without a camera](#developing-without-a-camera--local-clip-input).
+  Do not write a clip loader in `Scene.tsx`. On an older template the variables
+  were documented but never injected; a hand-written loader behind a
+  `NODE_ENV` guard was the only route.
+- **`pnpm build` and the dev page** ([#114](https://github.com/vincentt-xr/v2-template/issues/114)).
+  Dev output lives in `.dev/`, so a build during `pnpm dev` does not swap the dev
+  page onto the production bundle. On an older template both wrote `dist/`:
+  restart `pnpm dev` after any `pnpm build`, or the page silently serves
+  production code and dev-only input "disappears" like a camera bug.
+- **The dev address** ([#115](https://github.com/vincentt-xr/v2-template/issues/115)).
+  `http://localhost:5173` answers on IPv4 and IPv6. An older template bound
+  `127.0.0.1` only; a browser resolving `localhost` to `::1` (an embedded preview
+  browser does) got connection refused — open `http://127.0.0.1:5173` there.
+- **New files under `src/` and CI** ([#116](https://github.com/vincentt-xr/v2-template/issues/116)).
+  In a creator's repository an unlisted `src/` file is the creator's own and the
+  smoke build stays green; the completeness rule is strict only in the template
+  repo. On an older template, add every new `src/` file to
+  `.vincentt-template.json` under `creator`, or the zone-manifest step fails with
+  "classified in neither list".
+- **Framed apps and the webcam** ([#117](https://github.com/vincentt-xr/v2-template/issues/117)).
+  Inside any iframe the shell plays a sample clip instead of the webcam unless
+  the frame's address says `?source=webcam` or the build set
+  `VITE_FRAMED_SOURCE=webcam`; the host must also put `allow="camera"` on the
+  frame. The shell publishes `loading | ready | error` for the host; see
+  "Embedding the experience in another page" in `AGENTS.md`. On an older template
+  only `?source=webcam` existed and there was no status signal.
+- **Lint on a scene split across files** ([#118](https://github.com/vincentt-xr/v2-template/issues/118)):
+  see [Lint rules for scene modules](#lint-rules-for-scene-modules). Older
+  templates allowed R3F props in `src/Scene.tsx` only; copy the two overrides
+  from the current `.eslintrc.json` (it is never replaced by an upgrade).
+- **Title and share card** ([#119](https://github.com/vincentt-xr/v2-template/issues/119)):
+  `app.config.json`, not `index.html`. Older templates kept them in `index.html`,
+  which an upgrade replaces; re-apply after upgrading, or copy
+  `scripts/app-metadata.mjs` with the current `build.mjs` / `dev.mjs`.
+- **Hand sample media** ([console#135](https://github.com/vincentt-xr/console/issues/135)):
+  the SDK's sample presets have no hand-centric clip yet, so a hand-tracking scene
+  previewed in the console frame shows a face. Preview on the phone, or use a
+  local clip as above.
+
+**Hand interaction patterns that held up** (a force-field game driven by one hand,
+SDK alpha.7/alpha.8):
+
+- **Smooth the palm, not the fingertips.** Drive the effect from the palm centre
+  (the mean of wrist and the four finger bases) passed through a One Euro filter;
+  per-landmark smoothing lags the gesture. `TrackingAnchor smoothing={15}` is the
+  SDK's One Euro for anchored 3D children; for a value you read in `useFrame`,
+  use `smoothVector2` / `smoothVector3` from the SDK core rather than a lerp,
+  which steps under motion.
+- **Derive palm / fist / pinch from landmarks, with hysteresis.** Open palm when
+  the mean fingertip-to-wrist distance exceeds an *enter* threshold, closed when
+  it drops below a lower *exit* threshold; pinch from thumb-tip to index-tip
+  distance normalised by palm width, again with two thresholds. One threshold
+  flickers at the boundary. On alpha.8 this is what `useGesture` /
+  `<GestureListener gesture="pinch" | "fist" | "openPalm">` does for you, with
+  hold, cooldown and tracking-loss grace; prefer it.
+- **One hand model.** Read landmarks from `<HandTracker>` (or `useGesture`, which
+  shares it) and derive the gestures; do not mount `<GestureTracker>` beside it
+  for a label the landmarks already give you. Two models mean two downloads
+  (7.8 MB + 8.4 MB), two wasm compiles and two inferences per frame on the phone.
+  Keep `<GestureTracker>` + `useGestureHold` for the recognizer's named labels
+  (`victory`, `thumb_up`) when those are the point.
+
 ## Notes
 
 - `VideoBackground`, camera, and lighting are already mounted in `src/App.tsx`. Do NOT add a second background plane — it covers the camera.
