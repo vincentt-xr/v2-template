@@ -31,7 +31,8 @@ import { isFramed } from "./framed";
 // the chunk: `enabled` is a prop a caller may still pass, and the framed startup
 // path imports the same SDK module for its preset list, so the chunk stays in the
 // emitted output. What production gets is a mount that never fires, and an entry
-// bundle that never carries the switcher — `qa.f13-g13-treeshake` asserts both.
+// bundle that never carries the switcher; `qa.f13-g13-treeshake` asserts the
+// entry-bundle half and the dynamic-import shape of this file.
 
 export type MediaPreset = { id: string; kind: string; label: string; url?: string };
 

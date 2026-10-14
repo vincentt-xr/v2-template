@@ -15,17 +15,13 @@ import "./index.css";
 // remember to wire is one that is usually not wired.
 //
 // Safe in production by construction: `enabled` defaults to import.meta.env.DEV
-// inside the harness package, which reads it at runtime from the object
-// esbuild.config.mjs defines (`DEV: false` in a production build), and the
-// instrumentation and overlay are both DYNAMIC imports inside the effect — so a
-// production build emits them as chunks nothing ever loads. They are emitted,
-// not dropped: the guard is a runtime read in a prebuilt package, not a literal
-// esbuild can fold. Do not pass `enabled` explicitly to force it on in a
-// published bundle.
-//
-// In THIS repo's own source, `if (import.meta.env.DEV)` IS folded — the config
-// defines each key as a literal (#112) — so a dev-only branch written here is
-// dropped from the production bundle outright.
+// inside the harness package. esbuild applies `define` to node_modules too, so
+// that read folds to a literal `false` in a production build, the same way a
+// `if (import.meta.env.DEV)` in this repo's own source does (#112). The
+// instrumentation and overlay are DYNAMIC imports inside the effect, so they
+// are emitted as chunks nothing ever loads — emitted rather than dropped only
+// because `enabled` is also a prop a caller could pass. Do not pass `enabled`
+// explicitly to force it on in a published bundle.
 //
 // The package is a runtime DEPENDENCY, not a devDependency, even though nothing
 // it provides survives into a production run: this file is bundled application
