@@ -219,7 +219,7 @@ jobs:
       # One failure refuses the WHOLE manifest, and this step runs before `Move latest`,
       # so a refused manifest never becomes the artifact.
       - name: The zone manifest is complete and passes the floor
-        run: node scripts/check-zone-manifest.mjs
+        run: node scripts/check-zone-manifest.mjs --strict
 
       # The recognition section is GENERATED from recognition.md in vincentt-xr/agent-plugin. A
       # hand-edit here would put a sentence in every creator's tree without putting it in the

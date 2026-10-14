@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { checkEntry, validateManifest } from './check-zone-manifest.mjs';
+import { checkEntry, unclassifiedSrcFiles, validateManifest } from './check-zone-manifest.mjs';
 
 const ok = (path, zone) => checkEntry(path, zone).length === 0;
 
@@ -233,6 +233,56 @@ describe('rule 9 — set level, and one failure refuses the whole manifest', () 
   it('rejects a non-string entry rather than coercing it', () => {
     const m = { ...base, platform: [...base.platform, 42] };
     expect(validateManifest(m, tree, srcFiles).length).toBeGreaterThan(0);
+  });
+});
+
+describe("lenient mode — a creator's repository (#116)", () => {
+  const tree = new Set(['src/App.tsx', 'src/Scene.tsx', 'src/main.tsx', 'src/magnetic/field.tsx']);
+  const srcFiles = ['src/App.tsx', 'src/Scene.tsx', 'src/main.tsx', 'src/magnetic/field.tsx'];
+  const base = {
+    schema: 1,
+    platform: ['src/App.tsx', 'src/main.tsx'],
+    creator: ['src/Scene.tsx'],
+  };
+  const lenient = { strict: false };
+
+  it('strict is the default, so an unclassified file is still refused by a bare call', () => {
+    expect(validateManifest(base, tree, srcFiles)).toContainEqual(
+      expect.stringContaining('classified in neither list'),
+    );
+  });
+
+  it("accepts a creator's own unclassified src file", () => {
+    expect(validateManifest(base, tree, srcFiles, lenient)).toEqual([]);
+    expect(unclassifiedSrcFiles(base, srcFiles)).toEqual(['src/magnetic/field.tsx']);
+  });
+
+  it('accepts a creator-zone entry the creator deleted', () => {
+    const pruned = new Set([...tree].filter((f) => f !== 'src/Scene.tsx'));
+    expect(validateManifest(base, pruned, srcFiles, lenient)).toEqual([]);
+    expect(validateManifest(base, pruned, srcFiles)).toContainEqual(
+      expect.stringContaining('"src/Scene.tsx" is in the manifest but not in the tree'),
+    );
+  });
+
+  it('still reports a platform entry missing from the tree', () => {
+    const pruned = new Set([...tree].filter((f) => f !== 'src/main.tsx'));
+    expect(validateManifest(base, pruned, srcFiles, lenient)).toContainEqual(
+      expect.stringContaining('"src/main.tsx" is in the manifest but not in the tree'),
+    );
+  });
+
+  it('still refuses the floor and the set rules — they bound what an upgrade may write', () => {
+    const hostile = { ...base, platform: [...base.platform, 'src/../../etc/passwd'] };
+    expect(validateManifest(hostile, tree, srcFiles, lenient).length).toBeGreaterThan(0);
+    const dup = { ...base, creator: [...base.creator, 'src/App.tsx'] };
+    expect(validateManifest(dup, tree, srcFiles, lenient)).toContainEqual(
+      expect.stringContaining('appears in both platform and creator'),
+    );
+    const sceneAsPlatform = { ...base, platform: [...base.platform, 'src/Scene.tsx'], creator: [] };
+    expect(validateManifest(sceneAsPlatform, tree, srcFiles, lenient)).toContainEqual(
+      expect.stringContaining('denied by name'),
+    );
   });
 });
 
