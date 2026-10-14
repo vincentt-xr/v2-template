@@ -808,4 +808,10 @@ Each pattern names which primitives compose it (SDK components + template helper
   creator's file), written into `index.html` at build. Do not edit `index.html`
   for them; it is a platform file an upgrade replaces. See "Page title and share
   preview" in `AGENTS.md`.
+- Framed (any iframe), the shell swaps the webcam for a sample clip unless the
+  frame's address says `?source=webcam` or the build set
+  `VITE_FRAMED_SOURCE=webcam`. The shell also publishes `loading | ready | error`
+  for embedders (`<html data-experience>`, the `experience:status` window event,
+  a `postMessage` to the parent). Do not re-implement either in `Scene.tsx`; see
+  "Embedding the experience in another page" in `AGENTS.md`.
 - Always name your meshes — `name="..."` enables runtime lookup and visual-feedback editing.

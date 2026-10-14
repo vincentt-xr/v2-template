@@ -23,6 +23,7 @@ import {
 } from "./framed";
 import type { MediaSourceEnv } from "./framed";
 import { streamFromImageUrl, streamFromVideoUrl } from "./mediaStream";
+import { deriveExperienceStatus, publishExperienceStatus } from "./experienceStatus";
 import { MediaSourceControl } from "./MediaSourceControl";
 import type { MediaPreset } from "./MediaSourceControl";
 
@@ -54,8 +55,9 @@ const MobileXRAcceptanceHarness = MOBILE_XR_ACCEPTANCE_HARNESS_ENABLED
  *
  * FRAMED: the webcam default is replaced by an SDK video preset, so a framed
  * app does not open on a camera prompt nobody asked for. If the app's own
- * address carries `source=webcam` (the gallery's Live frame), it starts on the
- * webcam instead. A configured source is never overridden: see `chooseMediaSource`.
+ * address carries `source=webcam` (the gallery's Live frame), or the creator
+ * built with `VITE_FRAMED_SOURCE=webcam`, it starts on the webcam instead. A
+ * configured source is never overridden: see `chooseMediaSource`.
  */
 export const MediaSourceBinder = ({
   onSourceSelected,
@@ -73,7 +75,11 @@ export const MediaSourceBinder = ({
 
     const init = async () => {
       const choice = chooseMediaSource(
-        { VITE_INPUT_SOURCE: env.VITE_INPUT_SOURCE, VITE_INPUT_URL: env.VITE_INPUT_URL },
+        {
+          VITE_INPUT_SOURCE: env.VITE_INPUT_SOURCE,
+          VITE_INPUT_URL: env.VITE_INPUT_URL,
+          VITE_FRAMED_SOURCE: env.VITE_FRAMED_SOURCE,
+        },
         isFramed(),
         requestsWebcam(),
       );
@@ -265,6 +271,14 @@ export const Shell = () => {
   // `<XRProvider>`, which is what makes the read possible at all.
   useEffect(() => {
     reportSession({ ready, reason });
+  }, [ready, reason]);
+
+  // THE PUBLIC STATUS, beside the private one. Same inputs, a different reader:
+  // the page embedding this experience, which has no beacon to ask. Written to
+  // `<html data-experience>`, dispatched on `window`, and posted to the parent
+  // when framed. See experienceStatus.ts for the shape a host awaits.
+  useEffect(() => {
+    publishExperienceStatus(deriveExperienceStatus(ready, reason), reason);
   }, [ready, reason]);
 
   // THE CONSOLE'S CHANNEL, framed only.

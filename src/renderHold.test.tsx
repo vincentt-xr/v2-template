@@ -109,8 +109,10 @@ async function mountFramed() {
 
   const result = render(<Shell />);
   // The channel opens behind a dynamic import of the SDK's preset module, so an
-  // immediate send would race the listener's registration.
-  await vi.waitFor(() => expect(parentPostMessage).toHaveBeenCalled());
+  // immediate send would race the listener's registration. Wait for the ANNOUNCE
+  // itself: the shell also posts its public `experience:status` to the parent on
+  // mount (#117), and that lands before the channel is open.
+  await vi.waitFor(() => expect(announce()).toBeDefined());
   return result;
 }
 
@@ -255,12 +257,18 @@ describe("QA-F13-G45 · the announce declares the capability, and the app says n
     // The baseline is the announce fan-out, not 1: the harness posts the SAME
     // announce once per allowed console origin, and only the real parent's origin
     // delivers. What must not grow is the number of posts after commands arrive.
-    const afterAnnounce = parentPostMessage.mock.calls.length;
+    //
+    // `experience:status` is NOT channel traffic and is excluded: it is the
+    // shell's public readiness signal to any embedder (#117), posted on mount and
+    // on a readiness change, never in answer to a console command.
+    const channelPosts = () =>
+      parentPostMessage.mock.calls.filter(
+        (call) => (call[0] as { type?: string })?.type !== "experience:status",
+      );
+    const afterAnnounce = channelPosts().length;
     expect(
-      parentPostMessage.mock.calls.every(
-        (call) => (call[0] as { type?: string })?.type === "announce",
-      ),
-      "the only thing the app may ever post is its announce",
+      channelPosts().every((call) => (call[0] as { type?: string })?.type === "announce"),
+      "the only thing the app may ever post on the channel is its announce",
     ).toBe(true);
 
     await deliver(holdCommand(true));
@@ -272,8 +280,8 @@ describe("QA-F13-G45 · the announce declares the capability, and the app says n
     await deliver({ source: "vincentt-console", v: 1, type: "set-render-hold", held: "yes" });
 
     expect(
-      parentPostMessage.mock.calls.length,
-      "the app must never post anything beyond its single announce",
+      channelPosts().length,
+      "the app must never post anything on the channel beyond its single announce",
     ).toBe(afterAnnounce);
   });
 

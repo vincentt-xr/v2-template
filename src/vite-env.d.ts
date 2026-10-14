@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly VITE_PREVIEW?: string;
   readonly VITE_INPUT_SOURCE?: string;
   readonly VITE_INPUT_URL?: string;
+  readonly VITE_FRAMED_SOURCE?: string;
 }
 
 interface ImportMeta {

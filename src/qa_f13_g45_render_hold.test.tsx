@@ -121,8 +121,10 @@ async function mountFramed() {
 
   const result = render(<Shell />);
   // The channel opens behind a dynamic import of the SDK's preset module, so an
-  // immediate send would race the listener's registration.
-  await vi.waitFor(() => expect(parentPostMessage).toHaveBeenCalled());
+  // immediate send would race the listener's registration. Wait for the ANNOUNCE
+  // itself: the shell also posts its public `experience:status` to the parent on
+  // mount (#117), and that lands before the channel is open.
+  await vi.waitFor(() => expect(announce()).toBeDefined());
   return result;
 }
 
@@ -375,12 +377,20 @@ describe("QA-F13-G45 · the app sends NOTHING back, on any path", () => {
 
     // The baseline is the announce FAN-OUT (one post per allowed console origin),
     // not 1: only the real parent's origin delivers, and the others go nowhere.
-    const afterAnnounce = parentPostMessage.mock.calls.length;
+    //
+    // `experience:status` is NOT channel traffic and is excluded: it is the
+    // shell's public readiness signal to any embedder (#117), posted on mount
+    // and on a readiness change, never in response to a console command. The
+    // pin here is about the CHANNEL — no ack, no error, no report — so the
+    // count below must not move when a command arrives.
+    const channelPosts = () =>
+      parentPostMessage.mock.calls.filter(
+        (call) => (call[0] as { type?: string })?.type !== "experience:status",
+      );
+    const afterAnnounce = channelPosts().length;
     expect(
-      parentPostMessage.mock.calls.every(
-        (call) => (call[0] as { type?: string })?.type === "announce",
-      ),
-      "the only thing the app may ever post is its announce",
+      channelPosts().every((call) => (call[0] as { type?: string })?.type === "announce"),
+      "the only thing the app may ever post on the channel is its announce",
     ).toBe(true);
 
     await deliver(holdCommand(true));
@@ -393,10 +403,17 @@ describe("QA-F13-G45 · the app sends NOTHING back, on any path", () => {
     await deliver({ source: "vincentt-console", v: 1, type: "ack" });
 
     expect(
-      parentPostMessage.mock.calls.length,
+      channelPosts().length,
       "the app posted something after a command arrived. An ack for `set-render-hold` " +
         "is the B-F13-3 breach — capability crosses, observation does not.",
     ).toBe(afterAnnounce);
+    // And the public signal did not fire either: no command changes readiness.
+    expect(
+      parentPostMessage.mock.calls.filter(
+        (call) => (call[0] as { type?: string })?.type === "experience:status",
+      ).length,
+      "a console command must not re-post the experience status",
+    ).toBe(1);
   });
 
   it("a hold from a DISALLOWED origin does not freeze the app", async () => {
