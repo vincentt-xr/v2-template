@@ -202,7 +202,8 @@ after anything that could have moved you.
 The browser-tab title, the description and the Open Graph / Twitter share card
 come from **`app.config.json`** at the project root — the creator's file. Edit it
 there, never in `index.html`: that file is replaced by a template upgrade, and
-`pnpm build` and `pnpm dev` write the config's values into its tags.
+`pnpm build` and `pnpm dev` (at startup — restart dev after editing it) write the
+config's values into its tags.
 
 ```json
 {
@@ -214,11 +215,12 @@ there, never in `index.html`: that file is replaced by a template upgrade, and
 }
 ```
 
-Every key is optional. `image` is a path under `public/` (served from the root)
-or a full URL; with `url` set it is made absolute for crawlers. Add
+Every key is optional. `image` is a root-relative path under `public/` (`/images/…`)
+or a full `https://` URL; with `url` set it is made absolute for crawlers. Add
 `imageWidth` / `imageHeight` / `imageType` when the image is not 1200×630 JPEG.
 A share image should be 1200×630. `vincentt publish` checks these tags on the
-built page, so a missing title or image shows up before anything ships.
+built page; note that once `url` is set the image is an absolute URL, which the
+publish check cannot verify against `dist/`, so check the path yourself.
 
 ## Platform commands (`vincentt`)
 

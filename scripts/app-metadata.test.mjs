@@ -63,6 +63,21 @@ describe("applyAppMetadata", () => {
     expect(meta(out, "property", "og:site_name")).toBe("Vincentt");
   });
 
+  it("drops the default alt text when the image is overridden without one", () => {
+    const out = applyAppMetadata(TEMPLATE_HTML, { image: "/share.png" });
+    expect(count(out, "property", "og:image:alt")).toBe(0);
+    expect(count(out, "name", "twitter:image:alt")).toBe(0);
+    expect(out).not.toContain("Augmented Reality App builder");
+  });
+
+  it("refuses an image that is neither root-relative nor absolute", () => {
+    expect(validateAppConfig({ image: "images/share.jpg" })).toContainEqual(
+      expect.stringContaining('"image" must start with "/"'),
+    );
+    expect(validateAppConfig({ image: "/images/share.jpg" })).toEqual([]);
+    expect(validateAppConfig({ image: "https://cdn.example.com/s.png" })).toEqual([]);
+  });
+
   it("keeps the default image tags when only the title changes", () => {
     const out = applyAppMetadata(TEMPLATE_HTML, { title: "Only a title" });
     expect(meta(out, "property", "og:image")).toBe("/images/og-default.jpg");
