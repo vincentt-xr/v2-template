@@ -87,6 +87,23 @@ describe("chooseMediaSource", () => {
     expect(chooseMediaSource({ VITE_INPUT_SOURCE: "webcam" }, false)).toEqual({ kind: "webcam" });
   });
 
+  it("framed + VITE_FRAMED_SOURCE=webcam: the creator keeps the camera in every embed", () => {
+    expect(chooseMediaSource({ VITE_FRAMED_SOURCE: "webcam" }, true)).toEqual({ kind: "webcam" });
+    // Unframed it changes nothing — the webcam was the default already.
+    expect(chooseMediaSource({ VITE_FRAMED_SOURCE: "webcam" }, false)).toEqual({ kind: "webcam" });
+  });
+
+  it("VITE_FRAMED_SOURCE is exact: anything but `webcam` keeps the preset default", () => {
+    expect(chooseMediaSource({ VITE_FRAMED_SOURCE: "Webcam" }, true)).toEqual({ kind: "framedPreset" });
+    expect(chooseMediaSource({ VITE_FRAMED_SOURCE: "true" }, true)).toEqual({ kind: "framedPreset" });
+    expect(chooseMediaSource({ VITE_FRAMED_SOURCE: "" }, true)).toEqual({ kind: "framedPreset" });
+  });
+
+  it("a configured source still wins over the creator's framed-webcam opt-in", () => {
+    const env = { VITE_FRAMED_SOURCE: "webcam", VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: "u" };
+    expect(chooseMediaSource(env, true)).toEqual({ kind: "video", url: "u" });
+  });
+
   const ENVS = [
     {},
     { VITE_INPUT_SOURCE: "webcam" },

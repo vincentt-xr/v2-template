@@ -39,6 +39,8 @@ export const isFramed = (view?: FramingView): boolean => {
 export type MediaSourceEnv = {
   VITE_INPUT_SOURCE?: string;
   VITE_INPUT_URL?: string;
+  /** `"webcam"` keeps the live camera when framed. See `FRAMED_SOURCE_WEBCAM`. */
+  VITE_FRAMED_SOURCE?: string;
 };
 
 export type MediaSourceChoice =
@@ -78,9 +80,17 @@ export const requestsWebcam = (search?: string): boolean => {
  * A creator who CONFIGURED a source keeps it, framed or not, parameter or not:
  * overriding a deliberate config pointed at client footage would hide work they
  * did. Only the webcam default branch is framing-aware. A framed app opens on a
- * preset rather than raising a permission prompt nobody asked for, unless its
- * own address asked for the webcam (`webcamRequested`), which the gallery's Live
- * frame does and the creator's preview frame never does.
+ * preset rather than raising a permission prompt nobody asked for, unless
+ * someone asked for the webcam — and two parties can:
+ *
+ *   - the EMBEDDER, per frame, with `?source=webcam` on the app's own address
+ *     (`webcamRequested`): the gallery's Live frame does this, the creator's
+ *     preview frame never does;
+ *   - the CREATOR, for every embed, with `VITE_FRAMED_SOURCE=webcam` at build
+ *     time (vincentt-xr/v2-template#117): an experience that IS the camera — a
+ *     hand-tracked game on a partner's page — has nothing to show without it.
+ *     The host must still grant `allow="camera"` on the iframe, or the browser
+ *     refuses the prompt. Unset, the console's preset default is unchanged.
  */
 export const chooseMediaSource = (
   env: MediaSourceEnv,
@@ -91,7 +101,8 @@ export const chooseMediaSource = (
   if (env.VITE_INPUT_SOURCE === "photo" && env.VITE_INPUT_URL) {
     return { kind: "photo", url: env.VITE_INPUT_URL };
   }
-  if (framed && !webcamRequested) return { kind: "framedPreset" };
+  const creatorKeepsWebcam = env.VITE_FRAMED_SOURCE === FRAMED_SOURCE_WEBCAM;
+  if (framed && !webcamRequested && !creatorKeepsWebcam) return { kind: "framedPreset" };
   return { kind: "webcam" };
 };
 

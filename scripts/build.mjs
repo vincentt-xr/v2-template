@@ -30,6 +30,13 @@ if (configuredSource && configuredSource !== JSON.stringify("")) {
   );
 }
 
+if (options.define["import.meta.env.VITE_FRAMED_SOURCE"] === JSON.stringify("webcam")) {
+  console.warn(
+    "build: VITE_FRAMED_SOURCE=webcam is baked in — framed embeds (the console's preview " +
+      "frame included) will ask for the camera instead of playing a sample clip.",
+  );
+}
+
 const result = await esbuild.build(options);
 
 // Mirror /public into dist so root-relative refs (favicon, og:image, fonts)
