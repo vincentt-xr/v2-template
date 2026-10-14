@@ -7,3 +7,4 @@ opencode.json
 .env
 .env.local
 *.log
+.dev/

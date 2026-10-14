@@ -179,7 +179,12 @@ preview, at an address for someone else's app. Check where you are before the fi
 after anything that could have moved you.
 
 - **`pnpm install`** — install dependencies.
-- **`pnpm dev`** — esbuild dev server on `http://localhost:5173`.
+- **`pnpm dev`** — esbuild dev server on `http://localhost:5173` (answers on both
+  `127.0.0.1` and `[::1]`; `PORT` changes the port). Loopback only: to open the dev
+  page from a phone on the same network, run `HOST=0.0.0.0 pnpm dev` and use this
+  machine's LAN address (`pnpm preview` needs none of that). Dev output goes to
+  `.dev/`, gitignored and separate from `dist/`, so a `pnpm build` while dev is
+  running does not change what the dev page serves.
 - **`pnpm preview`** — on-device preview. Builds and serves the app behind a secure
   tunnel to Vincentt's own edge, so you get one `https` URL to open on a phone. AR
   needs a secure context for camera access, so this is how you test tracking and
@@ -189,7 +194,8 @@ after anything that could have moved you.
 - **`pnpm typecheck`** — `tsc --noEmit`.
 - **`pnpm lint`** — lint the platform source with the template's ESLint rules.
 - **`pnpm test`** — run the platform and QA test suites.
-- **`pnpm build`** — production bundle to `dist/`.
+- **`pnpm build`** — production bundle to `dist/`. Only a production build ever lands
+  there; the dev server writes to `.dev/`.
 
 ## Platform commands (`vincentt`)
 
