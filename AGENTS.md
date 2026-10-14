@@ -245,12 +245,16 @@ have a switch:
   an embed does not open on a permission prompt nobody asked for. To run on the
   live camera the host must allow it on the frame **and** someone must ask for it:
   the host, per frame, with `?source=webcam` on the frame's address; or the
-  creator, for every embed, by building with `VITE_FRAMED_SOURCE=webcam` (put it in
-  `.env`). Use the creator switch when the experience *is* the camera — hand or
-  face tracking has nothing to show without it.
+  creator, for every embed, by building with `VITE_FRAMED_SOURCE=webcam`. Use the
+  creator switch when the experience *is* the camera — hand or face tracking has
+  nothing to show without it. "Every embed" includes the console's own preview
+  frame, which will then ask for the camera too. The template git-ignores `.env`,
+  so a switch kept there is lost on a fresh clone or a CI build: un-ignore `.env`
+  for this project or set the variable in the build environment. `pnpm build`
+  prints the switch when it bakes it in.
 
   ```html
-  <iframe src="https://my-app.vincentt.app/" allow="camera; microphone"
+  <iframe src="https://my-app.vincentt.app/" allow="camera"
           allowfullscreen style="border:0;width:100%;aspect-ratio:9/16"></iframe>
   ```
 
