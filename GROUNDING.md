@@ -804,4 +804,8 @@ Each pattern names which primitives compose it (SDK components + template helper
 - Assets are referenced by **URL**. For the platform's curated library, run
   `vincentt assets search "<what you want>"` — see the Assets section in `AGENTS.md`.
 - Tracker components self-register — no `registerXRPipeline` call needed.
+- Page title, description and share image live in `app.config.json` (the
+  creator's file), written into `index.html` at build. Do not edit `index.html`
+  for them; it is a platform file an upgrade replaces. See "Page title and share
+  preview" in `AGENTS.md`.
 - Always name your meshes — `name="..."` enables runtime lookup and visual-feedback editing.
