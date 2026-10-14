@@ -58,6 +58,9 @@ export function validateAppConfig(config) {
   if (typeof config.url === "string" && !/^https?:\/\/[^\s"<>]+$/.test(config.url)) {
     problems.push(`"url" must be an absolute http(s) URL`);
   }
+  if (typeof config.image === "string" && !/^(\/|https?:\/\/)/.test(config.image)) {
+    problems.push(`"image" must start with "/" (a file under public/) or be an http(s) URL`);
+  }
   for (const key of ["title", "description", "image", "imageAlt"]) {
     if (typeof config[key] === "string" && /[<>]/.test(config[key])) {
       problems.push(`"${key}" must not contain < or >`);
@@ -158,13 +161,18 @@ export function applyAppMetadata(html, config = {}) {
     out = setMeta(out, "property", "og:image", image);
     out = setMeta(out, "name", "twitter:image", image);
     // The default tags describe the default image. Replace them when the
-    // creator says, drop them when they do not.
+    // creator says, drop them when they do not — the alt text included, which
+    // would otherwise describe the template's picture under the creator's.
     for (const [key, value] of [
       ["og:image:type", imageType],
       ["og:image:width", imageWidth],
       ["og:image:height", imageHeight],
     ]) {
       out = value === undefined ? removeMeta(out, "property", key) : setMeta(out, "property", key, value);
+    }
+    if (imageAlt === undefined) {
+      out = removeMeta(out, "property", "og:image:alt");
+      out = removeMeta(out, "name", "twitter:image:alt");
     }
   } else {
     for (const [key, value] of [
