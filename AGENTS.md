@@ -631,6 +631,81 @@ no wearables or face-filter assets, so a query for those correctly returns nothi
 search comes back empty or the platform is unreachable, say so and fall back to local
 files under `public/`; the project still builds, previews, and publishes either way.
 
+### Bringing in files from outside the library
+
+The developer may want a specific 3D model, image, or piece of UI that the library does not hold:
+a model from Sketchfab, a screen designed in Figma or Canva, a logo they own. If a connector for
+that source is set up, use it; if not, ask the developer to download the file and put it where
+this section says. The rules are the same either way. Recommended connectors and how to set them
+up: https://vincentt.studio/connectors
+
+**Where the file goes.** Save it under `public/assets/<source>/`, named for what it is:
+`public/assets/sketchfab/fox.glb`, `public/assets/figma/start-button.webp`,
+`public/assets/brand/logo.png`. Reference it from the root: `useGLTF("/assets/sketchfab/fox.glb")`,
+`<img src="/assets/brand/logo.png">`. Never use a name that starts with a dot; publish refuses
+hidden files.
+
+**Formats.**
+
+- **Models: GLB, one file.** A `.gltf` that comes with a separate `.bin` and texture files breaks
+  when imported, because the build copies only the `.gltf`. Convert it to GLB, or keep the whole
+  folder under `public/` and load it by path.
+- **USDZ** is only for `ProductViewer`'s `iosSrc`. It must live under `public/`; the build cannot
+  import it.
+- **Images and UI exports: WebP**, or PNG where you need transparency over the camera. Export
+  from design tools at the size the screen needs, not at 3x.
+- **No transparent video as an overlay.** Use a WebP or PNG sprite sheet instead.
+
+**What a phone can carry.** Every file downloads to the viewer's phone, often over mobile data,
+on top of the tracking models (the face model alone is 3.8 MB).
+
+- **One model: aim for 5 MB or less. Over 10 MB is too heavy**, and `vincentt publish` warns
+  about it.
+- **Images and textures: at most 2048 px on the long side**, 1024 px for small props.
+  `vincentt publish` warns about any image over 2048 px.
+- **Compress models on this machine before referencing them**, with meshopt geometry and WebP
+  textures:
+
+  ```
+  pnpm dlx @gltf-transform/cli optimize in.glb public/assets/sketchfab/fox.glb --compress meshopt --texture-compress webp --texture-size 2048
+  ```
+
+  Do not use Draco or KTX2. A Draco model makes every viewer's phone download a decoder from
+  Google's servers, and the loader here does not decode KTX2 textures. Load outside models with
+  `useGLTF` (or the SDK's `MeshRenderer` with `assetUrl`). `defineGltfAsset` cannot read a
+  compressed model.
+- Load only what the first scene needs; defer the rest (see `GROUNDING.md`, "Assets and
+  frame-loop performance").
+
+**Record where it came from.** Before using an outside file, find its licence. Add one row per
+file to `CREDITS.md` at the repo root, creating the file with this header if it does not exist:
+
+```markdown
+# Credits
+
+| File | Title | Author | Source | Licence | Fetched | Credit text |
+|---|---|---|---|---|---|---|
+| public/assets/sketchfab/fox.glb | Low Poly Fox | Jane Doe | https://sketchfab.com/3d-models/... | CC BY 4.0 | 2026-10-14 | "Low Poly Fox" by Jane Doe, CC BY 4.0 |
+```
+
+Write the licence exactly as the source states it. Files the developer made or owns go in too,
+with `Own work` as the licence, so every outside-looking file has an answer.
+
+**What the licence asks of the experience.**
+
+- **The licence requires attribution** (every CC BY variant, and most "free with credit" terms):
+  show the credit text inside the experience, somewhere a viewer can reach, such as a small
+  "Credits" line on the start or end screen, or a credits panel built with `<Overlay>`.
+- **Non-commercial** (CC BY-NC and its variants): stop and ask the developer whether this project
+  is commercial before using it. A brand campaign is commercial.
+- **No derivatives** (CC BY-ND and its variants): tell the developer before you modify the file.
+  Compressing it may count as a modification.
+- **No licence you can find:** do not use the file. Say so and offer an alternative.
+
+**Keys.** A connector's API key belongs in the connector's own settings, outside this project.
+Never put it in the repo, in `.env`, or in any variable the build bakes into the app; anything
+the build reads can end up in the published files.
+
 ## Communicating
 
 You are working with a developer, not a non-technical user. Be concise and specific —

@@ -228,6 +228,11 @@ Working patterns: [Jungle sprite-sheet and ref updates](https://github.com/vince
 [connect-pair data-driven board](https://github.com/vincentt-xr/connect-pair-game/blob/main/src/gameData.ts),
 and the template's own `src/sprite.tsx` frame-loop implementation.
 
+Files fetched from outside the library (a Sketchfab model, a Figma or Canva export) follow the
+rules in `AGENTS.md`, "Bringing in files from outside the library": they go under
+`public/assets/<source>/`, models are one GLB compressed with meshopt and WebP (never Draco or
+KTX2), loaded with `useGLTF`, and every one gets a row in `CREDITS.md`.
+
 ## Authoring self-review before handoff
 
 Run this list after every scene change. It is deliberately short enough to use
