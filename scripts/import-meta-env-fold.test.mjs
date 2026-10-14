@@ -114,6 +114,19 @@ describe("#113 · VITE_* variables reach import.meta.env", () => {
     });
   });
 
+  it("ignores a VITE_ key that is not an identifier instead of failing the build", () => {
+    const warn = console.warn;
+    const warned = [];
+    console.warn = (m) => warned.push(m);
+    try {
+      expect(viteEnvVars({ mode: "development", processEnv: { "VITE_FOO-BAR": "1", VITE_OK: "2" }, readFile: () => undefined }))
+        .toEqual({ VITE_OK: "2" });
+    } finally {
+      console.warn = warn;
+    }
+    expect(warned[0]).toContain("VITE_FOO-BAR");
+  });
+
   it("defines each VITE_ key as a literal and inside the object", () => {
     const define = importMetaEnvDefine(false, { VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: "/c.mp4" });
     expect(define["import.meta.env.VITE_INPUT_SOURCE"]).toBe('"video"');

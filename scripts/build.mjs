@@ -19,7 +19,8 @@ const options = buildOptions({ mode: "production", root });
 // ship client footage), but a clip left over from development is the more
 // common way to get here. Say so, loudly enough to read, without refusing.
 const configuredSource = options.define["import.meta.env.VITE_INPUT_SOURCE"];
-if (configuredSource) {
+// An empty value is "no source" to the app (framed.ts), so it is no warning.
+if (configuredSource && configuredSource !== JSON.stringify("")) {
   const url = options.define["import.meta.env.VITE_INPUT_URL"] ?? "(unset)";
   console.warn(
     `build: VITE_INPUT_SOURCE=${configuredSource} VITE_INPUT_URL=${url} is baked into this ` +

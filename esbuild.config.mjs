@@ -200,7 +200,15 @@ export function viteEnvVars({ mode, root = repoRoot, processEnv = process.env, r
   Object.assign(merged, processEnv);
   const vite = {};
   for (const [key, value] of Object.entries(merged)) {
-    if (key.startsWith("VITE_") && value !== undefined) vite[key] = String(value);
+    if (!key.startsWith("VITE_") || value === undefined) continue;
+    // Each key becomes a define `import.meta.env.<KEY>`, which esbuild parses as
+    // an expression: a key that is not an identifier would fail the build with
+    // an error pointing nowhere near the env file.
+    if (!/^VITE_[A-Za-z0-9_]+$/.test(key)) {
+      console.warn(`env: ignoring ${JSON.stringify(key)} — a VITE_ key must be an identifier`);
+      continue;
+    }
+    vite[key] = String(value);
   }
   return vite;
 }

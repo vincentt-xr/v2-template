@@ -64,6 +64,13 @@ export const streamFromVideoUrl = async (url: string): Promise<VideoStreamHandle
 
   let stopped = false;
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
+  let detachVisibility: () => void = () => {};
+  /** Ends the retry loop and its listener. Safe to call more than once. */
+  const teardown = () => {
+    stopped = true;
+    clearTimeout(retryTimer);
+    detachVisibility();
+  };
   let resolvePlayed: () => void = () => {};
   const played = new Promise<void>((resolve) => {
     resolvePlayed = resolve;
@@ -83,6 +90,7 @@ export const streamFromVideoUrl = async (url: string): Promise<VideoStreamHandle
     if (document.visibilityState === "visible") void tryPlay();
   };
   document.addEventListener("visibilitychange", onVisible);
+  detachVisibility = () => document.removeEventListener("visibilitychange", onVisible);
 
   // The first attempt and the metadata wait run together: a clip that is
   // allowed to play has its metadata by the time `play()` resolves, and one
@@ -92,9 +100,7 @@ export const streamFromVideoUrl = async (url: string): Promise<VideoStreamHandle
   try {
     await Promise.race([whenMetadataLoaded(video), played]);
   } catch (err) {
-    stopped = true;
-    clearTimeout(retryTimer);
-    document.removeEventListener("visibilitychange", onVisible);
+    teardown();
     throw err;
   }
 
@@ -102,7 +108,10 @@ export const streamFromVideoUrl = async (url: string): Promise<VideoStreamHandle
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("2d canvas context unavailable");
+  if (!ctx) {
+    teardown();
+    throw new Error("2d canvas context unavailable");
+  }
 
   let rafId = 0;
   const draw = () => {
@@ -118,9 +127,7 @@ export const streamFromVideoUrl = async (url: string): Promise<VideoStreamHandle
   return {
     stream: (canvas as CaptureCanvas).captureStream(),
     stop: () => {
-      stopped = true;
-      clearTimeout(retryTimer);
-      document.removeEventListener("visibilitychange", onVisible);
+      teardown();
       if (rafId) cancelAnimationFrame(rafId);
       video.pause();
     },
