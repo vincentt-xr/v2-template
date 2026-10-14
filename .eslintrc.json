@@ -40,9 +40,15 @@
       }
     },
     {
-      "files": ["src/Scene.tsx"],
+      "files": ["src/**/*.tsx"],
       "rules": {
         "react/no-unknown-property": "off"
+      }
+    },
+    {
+      "files": ["src/**/*.sim.ts", "src/**/*.sim.tsx", "src/**/sim/**/*.ts"],
+      "rules": {
+        "no-param-reassign": ["error", { "props": false }]
       }
     }
   ]

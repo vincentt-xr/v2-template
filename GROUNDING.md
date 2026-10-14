@@ -169,6 +169,32 @@ is the advanced render-group reference; [Portrait Photobooth](https://github.com
 shows delegated experience state. Follow their data ownership, not their exact
 assets or scene behavior.
 
+## Lint rules for scene modules
+
+`pnpm lint` runs the airbnb + TypeScript rules over `src/`, with two overrides
+chosen for R3F scenes so a scene split across files lints clean with no
+per-file disables:
+
+- **R3F props are allowed in every `src/**/*.tsx`.** `position`, `args`,
+  `rotation`, `material`, `geometry`, `intensity`, `renderOrder`, `transparent`,
+  `side` and the rest are not DOM attributes, and `react/no-unknown-property`
+  would flag each one. The override is off for every `.tsx` under `src/`, not
+  only `src/Scene.tsx`, so `src/magnetic/Field.tsx` is as clean as the file it
+  was split from. Do not add `/* eslint-disable react/no-unknown-property */`
+  at the top of a file: the lint runs with unused-directive reporting on, and the
+  directive is now an error.
+- **In-place simulation updates.** airbnb's `no-param-reassign` (with
+  `props: true`) rejects `body.velocity.x += …` on a function parameter, which
+  is how a per-frame simulation step is written when it must not allocate.
+  Name the module `*.sim.ts` (or put it under a `sim/` folder) and property
+  mutation on parameters is allowed there; reassigning the parameter itself
+  stays an error. Keep that pattern in the simulation module and pass results
+  out by mutating typed arrays or objects the caller owns, as the
+  [frame-loop guidance](#assets-and-frame-loop-performance) describes. A
+  one-off elsewhere takes a scoped `/* eslint-disable no-param-reassign */` …
+  `/* eslint-enable */` around the function, the way `src/sprite.tsx` does, not a
+  file-wide one.
+
 ## Assets and frame-loop performance
 
 Use an asset path that matches its ownership. Put public, URL-addressable files

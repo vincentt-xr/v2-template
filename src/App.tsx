@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unknown-property */
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import {
