@@ -843,8 +843,8 @@ workaround is only for projects scaffolded before it. The repository is
   only `?source=webcam` existed and there was no status signal.
 - **Lint on a scene split across files** ([#118](https://github.com/vincentt-xr/v2-template/issues/118)):
   see [Lint rules for scene modules](#lint-rules-for-scene-modules). Older
-  templates allowed R3F props in `src/Scene.tsx` only; copy the two overrides
-  from the current `.eslintrc.json` (it is never replaced by an upgrade).
+  templates allowed R3F props in `src/Scene.tsx` only; copy the two R3F
+  overrides from the current `.eslintrc.json` (it is never replaced by an upgrade).
 - **Title and share card** ([#119](https://github.com/vincentt-xr/v2-template/issues/119)):
   `app.config.json`, not `index.html`. Older templates kept them in `index.html`,
   which an upgrade replaces; re-apply after upgrading, or copy
@@ -860,15 +860,17 @@ SDK alpha.7/alpha.8):
 - **Smooth the palm, not the fingertips.** Drive the effect from the palm centre
   (the mean of wrist and the four finger bases) passed through a One Euro filter;
   per-landmark smoothing lags the gesture. `TrackingAnchor smoothing={15}` is the
-  SDK's One Euro for anchored 3D children; for a value you read in `useFrame`,
-  use `smoothVector2` / `smoothVector3` from the SDK core rather than a lerp,
-  which steps under motion.
+  SDK's One Euro for anchored 3D children. For a value you read in `useFrame`
+  the SDK core exports `smoothVector2` / `smoothVector3` (frame-rate-independent
+  exponential damping, not One Euro); they beat a raw per-frame lerp but still
+  follow throttled samples, so keep a One Euro of your own on the palm centre
+  when the effect must not step.
 - **Derive palm / fist / pinch from landmarks, with hysteresis.** Open palm when
   the mean fingertip-to-wrist distance exceeds an *enter* threshold, closed when
   it drops below a lower *exit* threshold; pinch from thumb-tip to index-tip
   distance normalised by palm width, again with two thresholds. One threshold
   flickers at the boundary. On alpha.8 this is what `useGesture` /
-  `<GestureListener gesture="pinch" | "fist" | "openPalm">` does for you, with
+  `<GestureListener gesture="pinch" | "grab" | "openPalm">` does for you, with
   hold, cooldown and tracking-loss grace; prefer it.
 - **One hand model.** Read landmarks from `<HandTracker>` (or `useGesture`, which
   shares it) and derive the gestures; do not mount `<GestureTracker>` beside it
