@@ -180,9 +180,11 @@ after anything that could have moved you.
 
 - **`pnpm install`** — install dependencies.
 - **`pnpm dev`** — esbuild dev server on `http://localhost:5173` (answers on both
-  `127.0.0.1` and `[::1]`; `PORT` changes the port). Dev output goes to `.dev/`,
-  gitignored and separate from `dist/`, so a `pnpm build` while dev is running does
-  not change what the dev page serves.
+  `127.0.0.1` and `[::1]`; `PORT` changes the port). Loopback only: to open the dev
+  page from a phone on the same network, run `HOST=0.0.0.0 pnpm dev` and use this
+  machine's LAN address (`pnpm preview` needs none of that). Dev output goes to
+  `.dev/`, gitignored and separate from `dist/`, so a `pnpm build` while dev is
+  running does not change what the dev page serves.
 - **`pnpm preview`** — on-device preview. Builds and serves the app behind a secure
   tunnel to Vincentt's own edge, so you get one `https` URL to open on a phone. AR
   needs a secure context for camera access, so this is how you test tracking and

@@ -34,6 +34,7 @@
  */
 import fs from "node:fs/promises";
 import http from "node:http";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import esbuild from "esbuild";
@@ -85,15 +86,58 @@ const upstreamHost = upstream.hosts?.[0] ?? upstream.host ?? "127.0.0.1";
 const upstreamPort = upstream.port;
 
 const port = Number(process.env.PORT) || 5173;
+const explicitHost = process.env.HOST;
+
+/**
+ * The Host values a request may carry. esbuild refuses any other Host — its
+ * defence against DNS rebinding, where a page on an attacker's hostname that
+ * resolves to 127.0.0.1 reads the dev bundle, source maps and public/ through
+ * the victim's browser. Rewriting Host for the upstream would discard that
+ * defence, so the forwarder enforces the same allowlist first: the loopback
+ * names, an explicit HOST, and — when HOST is an any-address — this machine's
+ * own interface addresses, which is what esbuild allows. `localhost:<port>` is
+ * what the `vincentt preview` proxy sends, so it is always in.
+ */
+function allowedHosts() {
+  const hosts = new Set(["localhost", "127.0.0.1", "[::1]"]);
+  if (explicitHost) {
+    hosts.add(explicitHost.includes(":") ? `[${explicitHost}]` : explicitHost);
+    if (explicitHost === "0.0.0.0" || explicitHost === "::") {
+      for (const addrs of Object.values(os.networkInterfaces())) {
+        for (const { address, family } of addrs ?? []) {
+          hosts.add(family === "IPv6" || family === 6 ? `[${address}]` : address);
+        }
+      }
+    }
+  }
+  return hosts;
+}
+const ALLOWED_HOSTS = allowedHosts();
+
+function hostAllowed(header) {
+  if (!header) return false;
+  const value = header.trim().toLowerCase();
+  const name = value.startsWith("[")
+    ? value.slice(0, value.indexOf("]") + 1)
+    : value.replace(/:\d+$/, "");
+  const suffix = value.slice(name.length);
+  if (suffix !== "" && suffix !== `:${port}`) return false;
+  return ALLOWED_HOSTS.has(name);
+}
 
 /**
  * A request forwarder. Streams both directions, so esbuild's `/esbuild`
- * live-reload event stream stays open. The Host header is rewritten to the
- * upstream's own address: esbuild refuses a request whose Host it does not
- * recognise, and a browser sends the public one.
+ * live-reload event stream stays open. After the allowlist above, the Host
+ * header is rewritten to the upstream's own address, which is the only Host
+ * esbuild's private listener recognises.
  */
 function forwarder() {
   return http.createServer((req, res) => {
+    if (!hostAllowed(req.headers.host)) {
+      res.writeHead(403, { "content-type": "text/plain" });
+      res.end(`403 - Forbidden: Host "${req.headers.host ?? ""}" is not allowed by the dev server`);
+      return;
+    }
     const headers = { ...req.headers, host: `${upstreamHost}:${upstreamPort}` };
     const up = http.request(
       { host: upstreamHost, port: upstreamPort, method: req.method, path: req.url, headers },
@@ -110,6 +154,8 @@ function forwarder() {
   });
 }
 
+const servers = [];
+
 /** Resolves to the bound address, or to `undefined` when the family is unavailable. */
 function listen(address) {
   return new Promise((resolve, reject) => {
@@ -117,18 +163,34 @@ function listen(address) {
     server.once("error", (err) => {
       // No IPv6 on this machine (or the family is disabled): not an error for
       // the address that is there. Anything else — the port in use, most
-      // likely — is.
+      // likely — is, and is reported below rather than thrown.
       if (err.code === "EADDRNOTAVAIL" || err.code === "EAFNOSUPPORT") resolve(undefined);
       else reject(err);
     });
-    server.listen(port, address, () => resolve(address));
+    server.listen(port, address, () => {
+      servers.push(server);
+      resolve(address);
+    });
   });
 }
 
-const explicitHost = process.env.HOST;
 const addresses = explicitHost ? [explicitHost] : ["127.0.0.1", "::1"];
-const bound = (await Promise.all(addresses.map(listen))).filter(Boolean);
+let bound;
+try {
+  bound = (await Promise.all(addresses.map(listen))).filter(Boolean);
+} catch (err) {
+  // One family failed for real; do not leave the other one half-up.
+  for (const server of servers) server.close();
+  await ctx.dispose();
+  console.error(
+    err.code === "EADDRINUSE"
+      ? `dev server: port ${port} is already in use (another dev server? set PORT=<other> to pick another)`
+      : `dev server: could not listen on port ${port}: ${err.message}`,
+  );
+  process.exit(1);
+}
 if (bound.length === 0) {
+  await ctx.dispose();
   console.error(`dev server: could not bind ${addresses.join(" or ")} on port ${port}`);
   process.exit(1);
 }
