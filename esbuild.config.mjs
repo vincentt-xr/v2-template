@@ -3,6 +3,7 @@
  * server-side publish build and the in-browser esbuild-wasm preview use the
  * exact same options (preview == publish). Replaces the old Vite setup.
  */
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -122,8 +123,9 @@ function beaconEndpointDefine() {
 //
 // `scripts/import-meta-env-fold.test.mjs` builds a probe through this exact map
 // and asserts the guarded branch is absent in production and present in dev.
-export function importMetaEnvValues(prod) {
+export function importMetaEnvValues(prod, viteVars = {}) {
   return {
+    ...viteVars,
     MODE: prod ? "production" : "development",
     PROD: prod,
     DEV: !prod,
@@ -131,8 +133,8 @@ export function importMetaEnvValues(prod) {
   };
 }
 
-export function importMetaEnvDefine(prod) {
-  const env = importMetaEnvValues(prod);
+export function importMetaEnvDefine(prod, viteVars = {}) {
+  const env = importMetaEnvValues(prod, viteVars);
   const define = { "import.meta.env": JSON.stringify(env) };
   for (const [key, value] of Object.entries(env)) {
     define[`import.meta.env.${key}`] = JSON.stringify(value);
@@ -140,8 +142,72 @@ export function importMetaEnvDefine(prod) {
   return define;
 }
 
+// `VITE_*` variables, the way Vite exposes them on `import.meta.env`.
+//
+// Read from the process environment and from the repo's env files, so the
+// documented one-liner works as written:
+//
+//   VITE_INPUT_SOURCE=video VITE_INPUT_URL=/clip.mp4 pnpm dev
+//
+// and so a clip a creator develops against can live in a file instead of on
+// every command line. Files, in the order Vite reads them, later overriding
+// earlier and the process environment overriding every file:
+//
+//   .env  →  .env.local  →  .env.<mode>  →  .env.<mode>.local
+//
+// `.env.development` is where a dev-only clip belongs: it is read by `pnpm dev`
+// and never by `pnpm build`, so the clip cannot reach a published bundle by
+// forgetting to unset it. `.env` and `.env.local` are read in BOTH modes, which
+// is what makes a configured source survive into a build on purpose — and why
+// `scripts/build.mjs` prints what it is baking in when `VITE_INPUT_SOURCE` is
+// set. Only `VITE_`-prefixed keys cross into the bundle; nothing else from the
+// environment is exposed (vincentt-xr/v2-template#113).
+export function parseEnvFile(text) {
+  const out = {};
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#")) continue;
+    const eq = line.indexOf("=");
+    if (eq <= 0) continue;
+    const key = line.slice(0, eq).trim().replace(/^export\s+/, "");
+    let value = line.slice(eq + 1).trim();
+    const quoted = /^(['"`])([\s\S]*)\1$/.exec(value);
+    if (quoted) value = quoted[2];
+    else {
+      const hash = value.indexOf(" #");
+      if (hash >= 0) value = value.slice(0, hash).trim();
+    }
+    out[key] = value;
+  }
+  return out;
+}
+
+export function viteEnvVars({ mode, root = repoRoot, processEnv = process.env, readFile } = {}) {
+  const read =
+    readFile ??
+    ((file) => {
+      try {
+        return fs.readFileSync(path.join(root, file), "utf8");
+      } catch {
+        return undefined;
+      }
+    });
+  const merged = {};
+  for (const file of [".env", ".env.local", `.env.${mode}`, `.env.${mode}.local`]) {
+    const text = read(file);
+    if (text) Object.assign(merged, parseEnvFile(text));
+  }
+  Object.assign(merged, processEnv);
+  const vite = {};
+  for (const [key, value] of Object.entries(merged)) {
+    if (key.startsWith("VITE_") && value !== undefined) vite[key] = String(value);
+  }
+  return vite;
+}
+
 export function buildOptions({ mode = "production", root = repoRoot } = {}) {
   const prod = mode === "production";
+  const viteVars = viteEnvVars({ mode, root });
   return {
     entryPoints: [path.join(root, "src", "main.tsx")],
     bundle: true,
@@ -178,7 +244,7 @@ export function buildOptions({ mode = "production", root = repoRoot } = {}) {
       "globalThis.VCT_MOBILE_XR_ACCEPTANCE_HARNESS": JSON.stringify(
         process.env.VITE_MOBILE_XR_ACCEPTANCE_HARNESS === "true",
       ),
-      ...importMetaEnvDefine(prod),
+      ...importMetaEnvDefine(prod, viteVars),
       ...beaconEndpointDefine(),
     },
     plugins: [

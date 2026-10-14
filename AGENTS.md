@@ -185,6 +185,21 @@ after anything that could have moved you.
   machine's LAN address (`pnpm preview` needs none of that). Dev output goes to
   `.dev/`, gitignored and separate from `dist/`, so a `pnpm build` while dev is
   running does not change what the dev page serves.
+- **Develop against a clip instead of the camera** — when there is no webcam, or
+  the browser you are previewing in blocks it (an embedded preview browser does):
+
+  ```
+  VITE_INPUT_SOURCE=video VITE_INPUT_URL=/clip.mp4 pnpm dev
+  ```
+
+  `/clip.mp4` is any file under `public/` (served at the root) or a full URL.
+  `VITE_INPUT_SOURCE=photo` with an image URL gives a single still frame. To stop
+  typing it, put the same two lines in `.env.development`: `pnpm dev` reads it and
+  `pnpm build` never does, so a dev clip cannot reach a published bundle. `.env` is
+  read by both and is the place for a source that should ship. A build with a
+  configured source prints what it is baking in. The app starts on that source and
+  the in-app media switcher still lets you swap. A hidden tab refusing to play the
+  clip is retried until it plays.
 - **`pnpm preview`** — on-device preview. Builds and serves the app behind a secure
   tunnel to Vincentt's own edge, so you get one `https` URL to open on a phone. AR
   needs a secure context for camera access, so this is how you test tracking and

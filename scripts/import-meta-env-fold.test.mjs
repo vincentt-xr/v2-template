@@ -15,7 +15,12 @@
 
 import { describe, expect, it } from "vitest";
 import esbuild from "esbuild";
-import { buildOptions, importMetaEnvDefine } from "../esbuild.config.mjs";
+import {
+  buildOptions,
+  importMetaEnvDefine,
+  parseEnvFile,
+  viteEnvVars,
+} from "../esbuild.config.mjs";
 
 const DEV_MARKER = "DEV_ONLY_BRANCH_e7c1";
 const PROD_MARKER = "PROD_ONLY_BRANCH_e7c1";
@@ -66,6 +71,77 @@ async function bundle(mode) {
   });
   return result.outputFiles.map((f) => f.text).join("\n");
 }
+
+describe("#113 · VITE_* variables reach import.meta.env", () => {
+  it("parses an env file: comments, quotes, export, trailing comments", () => {
+    expect(
+      parseEnvFile(
+        [
+          "# a comment",
+          "",
+          "VITE_INPUT_SOURCE=video",
+          'VITE_INPUT_URL="/clips/hand.mp4"',
+          "export VITE_X='single'",
+          "VITE_Y=raw value # trailing",
+          "NOT_VITE=hidden",
+          "broken line without equals",
+        ].join("\n"),
+      ),
+    ).toEqual({
+      VITE_INPUT_SOURCE: "video",
+      VITE_INPUT_URL: "/clips/hand.mp4",
+      VITE_X: "single",
+      VITE_Y: "raw value",
+      NOT_VITE: "hidden",
+    });
+  });
+
+  it("merges files in Vite's order, process env last, VITE_ keys only", () => {
+    const files = {
+      ".env": "VITE_A=env\nVITE_B=env\nVITE_C=env\nSECRET=no",
+      ".env.local": "VITE_B=local",
+      ".env.development": "VITE_C=dev\nVITE_INPUT_SOURCE=video",
+      ".env.development.local": "VITE_C=dev-local",
+    };
+    const readFile = (f) => files[f];
+    expect(viteEnvVars({ mode: "development", processEnv: { VITE_A: "proc", PATH: "/x" }, readFile }))
+      .toEqual({ VITE_A: "proc", VITE_B: "local", VITE_C: "dev-local", VITE_INPUT_SOURCE: "video" });
+    // A production build never reads the development files.
+    expect(viteEnvVars({ mode: "production", processEnv: {}, readFile })).toEqual({
+      VITE_A: "env",
+      VITE_B: "local",
+      VITE_C: "env",
+    });
+  });
+
+  it("defines each VITE_ key as a literal and inside the object", () => {
+    const define = importMetaEnvDefine(false, { VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: "/c.mp4" });
+    expect(define["import.meta.env.VITE_INPUT_SOURCE"]).toBe('"video"');
+    expect(define["import.meta.env.VITE_INPUT_URL"]).toBe('"/c.mp4"');
+    expect(JSON.parse(define["import.meta.env"])).toMatchObject({
+      VITE_INPUT_SOURCE: "video",
+      VITE_INPUT_URL: "/c.mp4",
+      DEV: true,
+    });
+    // The built-ins cannot be overridden by a VITE_ file.
+    expect(importMetaEnvDefine(true, { DEV: true, MODE: "x" })["import.meta.env.DEV"]).toBe("false");
+  });
+
+  it("the documented one-liner drives the build's define map", () => {
+    const saved = { ...process.env };
+    process.env.VITE_INPUT_SOURCE = "video";
+    process.env.VITE_INPUT_URL = "/clip.mp4";
+    try {
+      const { define } = buildOptions({ mode: "development" });
+      expect(define["import.meta.env.VITE_INPUT_SOURCE"]).toBe('"video"');
+      expect(define["import.meta.env.VITE_INPUT_URL"]).toBe('"/clip.mp4"');
+    } finally {
+      delete process.env.VITE_INPUT_SOURCE;
+      delete process.env.VITE_INPUT_URL;
+      Object.assign(process.env, saved);
+    }
+  });
+});
 
 describe("#112 · import.meta.env keys fold in a production build", () => {
   it("defines the object AND each key, so both read styles resolve", () => {

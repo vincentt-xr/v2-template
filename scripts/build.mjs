@@ -13,7 +13,22 @@ const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const distDir = path.join(root, "dist");
 
 await fs.rm(distDir, { recursive: true, force: true });
-const result = await esbuild.build(buildOptions({ mode: "production", root }));
+const options = buildOptions({ mode: "production", root });
+
+// A configured input source survives into the bundle on purpose (a creator may
+// ship client footage), but a clip left over from development is the more
+// common way to get here. Say so, loudly enough to read, without refusing.
+const configuredSource = options.define["import.meta.env.VITE_INPUT_SOURCE"];
+if (configuredSource) {
+  const url = options.define["import.meta.env.VITE_INPUT_URL"] ?? "(unset)";
+  console.warn(
+    `build: VITE_INPUT_SOURCE=${configuredSource} VITE_INPUT_URL=${url} is baked into this ` +
+      `production bundle — it will start on that source, not the webcam. ` +
+      `Keep dev-only clips in .env.development, which a build never reads.`,
+  );
+}
+
+const result = await esbuild.build(options);
 
 // Mirror /public into dist so root-relative refs (favicon, og:image, fonts)
 // are served by the published bundle.
