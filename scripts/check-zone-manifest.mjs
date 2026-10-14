@@ -159,7 +159,23 @@ export function checkEntry(raw, zone = 'platform') {
 // Rule 9 plus the §5 table's completeness and existence rows. `tree` is the set
 // of tracked paths to validate against; `srcFiles` the tracked src/* files that
 // must each be classified exactly once.
-export function validateManifest(manifest, tree, srcFiles) {
+//
+// TWO MODES, because this script ships into every creator's repository
+// (vincentt-xr/v2-template#116). The manifest is the TEMPLATE's statement of
+// what an upgrade may overwrite; a creator's own files are not in it and never
+// will be, so a rule that refuses an unclassified src/* file is right in the
+// template repo and wrong everywhere else — it failed a creator's CI on the
+// first file they added, which is the normal case.
+//
+//   strict  (the template repo, and the release tag): every src/* file is
+//           classified exactly once and every entry exists.
+//   lenient (a creator's repo): the floor (rules 1-8) and the set rules still
+//           apply to every entry — they bound what an upgrade may WRITE, which
+//           protects the creator — but an unclassified src/* file is theirs by
+//           definition, and a creator-zone entry they deleted is not a failure.
+//           A platform entry missing from the tree still is: an upgrade would
+//           rewrite it, which the creator should know before the tag moves.
+export function validateManifest(manifest, tree, srcFiles, { strict = true } = {}) {
   const failures = [];
 
   if (manifest === null || typeof manifest !== 'object' || Array.isArray(manifest)) {
@@ -219,17 +235,23 @@ export function validateManifest(manifest, tree, srcFiles) {
     }
   }
 
-  // §5 table row 2 — every entry exists in the tagged tree.
+  // §5 table row 2 — every entry exists in the tagged tree. Lenient: a creator
+  // may delete a file the template handed them (creator zone); a missing
+  // platform entry is still reported.
   if (tree) {
-    for (const entry of all) {
-      if (typeof entry === 'string' && !tree.has(entry)) {
-        failures.push(`"${entry}" is in the manifest but not in the tree`);
-      }
+    for (const [zone, entry] of zoned) {
+      if (typeof entry !== 'string' || tree.has(entry)) continue;
+      if (!strict && zone === 'creator') continue;
+      failures.push(
+        `"${entry}" is in the manifest but not in the tree` +
+          (strict ? '' : ' — restore it, or expect the next template upgrade to rewrite it'),
+      );
     }
   }
 
   // §5 table row 1 — every src/* in exactly one list; none unclassified.
-  if (srcFiles) {
+  // Lenient: an unclassified src/* file is the creator's own.
+  if (srcFiles && strict) {
     const classified = new Set(all.filter((e) => typeof e === 'string'));
     for (const file of srcFiles) {
       if (!classified.has(file)) {
@@ -239,6 +261,14 @@ export function validateManifest(manifest, tree, srcFiles) {
   }
 
   return failures;
+}
+
+/** The tracked src/* files the manifest does not name — in a creator's repo, theirs. */
+export function unclassifiedSrcFiles(manifest, srcFiles) {
+  const classified = new Set(
+    [...(manifest.platform ?? []), ...(manifest.creator ?? [])].filter((e) => typeof e === 'string'),
+  );
+  return srcFiles.filter((f) => !classified.has(f));
 }
 
 function trackedFiles(cwd) {
@@ -349,8 +379,16 @@ function checkOwnCommit(cwd) {
   return [];
 }
 
+// `--strict` (or ZONE_MANIFEST_STRICT=1) selects the template-repo mode. The
+// workflows pass it only when `github.repository` is the template, so the same
+// workflow file is strict at home and lenient in every creator's repo without
+// the creator editing anything. The default is lenient: a bare run in an
+// unknown checkout must not refuse the creator's own files.
 function main() {
-  const cwd = process.argv[2] ? resolve(process.argv[2]) : process.cwd();
+  const args = process.argv.slice(2);
+  const strict = args.includes('--strict') || process.env.ZONE_MANIFEST_STRICT === '1';
+  const cwdArg = args.find((a) => !a.startsWith('--'));
+  const cwd = cwdArg ? resolve(cwdArg) : process.cwd();
   const manifestPath = join(cwd, MANIFEST);
   const skipCommitCheck = process.env.ZONE_MANIFEST_SKIP_COMMIT_CHECK === '1';
 
@@ -378,7 +416,7 @@ function main() {
     process.exit(1);
   }
 
-  const failures = validateManifest(manifest, tree, srcFiles);
+  const failures = validateManifest(manifest, tree, srcFiles, { strict });
   if (!skipCommitCheck) {
     failures.push(...checkOwnCommit(cwd));
   }
@@ -394,7 +432,15 @@ function main() {
   }
 
   const counts = `${manifest.platform.length} platform, ${manifest.creator.length} creator`;
-  console.log(`${MANIFEST} OK — ${counts}; ${srcFiles.length} src/* files all classified exactly once.`);
+  if (strict) {
+    console.log(`${MANIFEST} OK — ${counts}; ${srcFiles.length} src/* files all classified exactly once.`);
+  } else {
+    const own = unclassifiedSrcFiles(manifest, srcFiles).length;
+    console.log(
+      `${MANIFEST} OK (lenient) — ${counts}; ${own} unlisted src/* file(s) treated as creator-owned. ` +
+        `(In the template repo run with --strict.)`,
+    );
+  }
 }
 
 const invokedDirectly =
