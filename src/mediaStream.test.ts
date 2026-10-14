@@ -40,7 +40,7 @@ beforeEach(() => {
     restore() {},
     scale() {},
     drawImage() {},
-  } as unknown as CanvasRenderingContext2D);
+  } as unknown as ReturnType<HTMLCanvasElement["getContext"]>);
   (HTMLCanvasElement.prototype as unknown as { captureStream: () => MediaStream }).captureStream =
     () => fakeStream;
   vi.spyOn(window, "requestAnimationFrame").mockReturnValue(1);
