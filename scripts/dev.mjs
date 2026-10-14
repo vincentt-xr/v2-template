@@ -39,6 +39,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import esbuild from "esbuild";
 import { buildOptions } from "../esbuild.config.mjs";
+import { applyAppMetadata, readAppConfig } from "./app-metadata.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const devDir = path.join(root, ".dev");
@@ -57,7 +58,12 @@ try {
   if (e.code !== "ENOENT") throw e;
 }
 
-let html = await fs.readFile(path.join(root, "index.html"), "utf8");
+// The creator's title, description and share image come from app.config.json
+// (their file), not from index.html (ours). See scripts/app-metadata.mjs.
+let html = applyAppMetadata(
+  await fs.readFile(path.join(root, "index.html"), "utf8"),
+  readAppConfig(root),
+);
 html = html.replace(
   /<link[^>]+href="\/src\/index\.css"[^>]*>/,
   `<link rel="stylesheet" href="/assets/main.css" />`,
