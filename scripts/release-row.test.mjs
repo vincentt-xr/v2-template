@@ -15,6 +15,8 @@ import {
   tokenEnvVar,
   buildBody,
   postRelease,
+  formatResult,
+  SUCCESS_OUTCOMES,
   parseArgs,
 } from './release-row.mjs';
 
@@ -288,6 +290,37 @@ describe('postRelease', () => {
     const result = await postRelease(target, body, fetchImpl);
     expect(result.outcome).toBe('unchanged');
     delete process.env.RELEASE_PUBLISHER_TOKEN_STAGING;
+  });
+
+  it('reports "corrected", a success logged with its release, on corrected:true', async () => {
+    process.env.RELEASE_PUBLISHER_TOKEN_STAGING = 'vrp_test';
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ written: true, corrected: true, release: '2026.10.1' }),
+    });
+    const result = await postRelease(target, body, fetchImpl);
+    expect(result).toEqual({ target: 'staging', outcome: 'corrected', release: '2026.10.1' });
+    expect(SUCCESS_OUTCOMES.has(result.outcome)).toBe(true);
+    expect(formatResult(result)).toBe('staging: corrected 2026.10.1');
+    delete process.env.RELEASE_PUBLISHER_TOKEN_STAGING;
+  });
+
+  it('reads a missing corrected field as false', async () => {
+    process.env.RELEASE_PUBLISHER_TOKEN_STAGING = 'vrp_test';
+    const written = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ written: true }) });
+    const noop = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ written: false, corrected: false }),
+    });
+    expect((await postRelease(target, body, written)).outcome).toBe('written');
+    expect((await postRelease(target, body, noop)).outcome).toBe('unchanged');
+    delete process.env.RELEASE_PUBLISHER_TOKEN_STAGING;
+  });
+
+  it('counts only refused and error as failures', () => {
+    expect([...SUCCESS_OUTCOMES].sort()).toEqual(['corrected', 'unchanged', 'written']);
+    expect(SUCCESS_OUTCOMES.has('refused')).toBe(false);
+    expect(SUCCESS_OUTCOMES.has('error')).toBe(false);
   });
 
   it('reports "refused" with the code and reason on a 400', async () => {
