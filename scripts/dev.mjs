@@ -101,7 +101,9 @@ const explicitHost = process.env.HOST;
 function allowedHosts() {
   const hosts = new Set(["localhost", "127.0.0.1", "[::1]"]);
   if (explicitHost) {
-    hosts.add(explicitHost.includes(":") ? `[${explicitHost}]` : explicitHost);
+    // Lowercased, because the check below lowercases the header a browser sends.
+    const h = explicitHost.toLowerCase();
+    hosts.add(h.includes(":") ? `[${h}]` : h);
     if (explicitHost === "0.0.0.0" || explicitHost === "::") {
       for (const addrs of Object.values(os.networkInterfaces())) {
         for (const { address, family } of addrs ?? []) {
@@ -121,6 +123,8 @@ function hostAllowed(header) {
     ? value.slice(0, value.indexOf("]") + 1)
     : value.replace(/:\d+$/, "");
   const suffix = value.slice(name.length);
+  // Deliberately tighter than esbuild, which ignores the port: a Host naming
+  // another port is not this server's, whoever sends it.
   if (suffix !== "" && suffix !== `:${port}`) return false;
   return ALLOWED_HOSTS.has(name);
 }
