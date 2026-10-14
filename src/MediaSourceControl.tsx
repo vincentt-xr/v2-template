@@ -19,11 +19,19 @@ import { isFramed } from "./framed";
 // (`vincentt preview` opened directly) has no console chrome around it to take
 // over, so it keeps the in-app switcher.
 //
-// DYNAMIC IMPORT BEHIND A CONSTANT GUARD, never a static import. The preset
-// module carries 12 CDN URLs and the switcher pulls in an icon dependency. A
-// production build folds `enabled` to a constant false, so the guarded branch is
-// dead code and the whole chunk is dropped rather than shipped-but-unused. Do
-// not hoist either import to the top level.
+// DYNAMIC IMPORT BEHIND A GUARD, never a static import. The preset module
+// carries 12 CDN URLs and the switcher pulls in an icon dependency. A static
+// import would inline both into the entry bundle every visitor downloads; the
+// dynamic import keeps them in their own code-split chunk, fetched only when the
+// guard is true. Do not hoist either import to the top level.
+//
+// WHAT THE GUARD DOES AND DOES NOT DROP. `enabled` defaults to
+// `import.meta.env.DEV`, which esbuild.config.mjs defines per key so a
+// production build folds the DEFAULT to a literal `false`. That does not delete
+// the chunk: `enabled` is a prop a caller may still pass, and the framed startup
+// path imports the same SDK module for its preset list, so the chunk stays in the
+// emitted output. What production gets is a mount that never fires, and an entry
+// bundle that never carries the switcher — `qa.f13-g13-treeshake` asserts both.
 
 export type MediaPreset = { id: string; kind: string; label: string; url?: string };
 

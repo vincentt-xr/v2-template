@@ -108,6 +108,38 @@ function beaconEndpointDefine() {
   return { "globalThis.__VCT_BEACON__": JSON.stringify(endpoint) };
 }
 
+// Vite's `import.meta.env`, populated the way Vite would, as TWO kinds of define.
+//
+// The object define serves code that reads the object itself (`env =
+// import.meta.env`, the injectable `env` prop on `MediaSourceBinder`). The
+// per-key defines are what make `if (import.meta.env.DEV)` DEAD CODE in a
+// production build: esbuild constant-folds a member access only when that exact
+// expression is defined as a literal. A member read off a defined OBJECT stays a
+// runtime property lookup, so a guard on it shipped its dev-only branch — a clip
+// loader, its 5 MB video and a debug overlay reached a published bundle that way
+// (vincentt-xr/v2-template#112). `process.env.NODE_ENV` was already a literal and
+// already folded; now both guards do. The per-key form wins where both match.
+//
+// `scripts/import-meta-env-fold.test.mjs` builds a probe through this exact map
+// and asserts the guarded branch is absent in production and present in dev.
+export function importMetaEnvValues(prod) {
+  return {
+    MODE: prod ? "production" : "development",
+    PROD: prod,
+    DEV: !prod,
+    BASE_URL: "/",
+  };
+}
+
+export function importMetaEnvDefine(prod) {
+  const env = importMetaEnvValues(prod);
+  const define = { "import.meta.env": JSON.stringify(env) };
+  for (const [key, value] of Object.entries(env)) {
+    define[`import.meta.env.${key}`] = JSON.stringify(value);
+  }
+  return define;
+}
+
 export function buildOptions({ mode = "production", root = repoRoot } = {}) {
   const prod = mode === "production";
   return {
@@ -146,14 +178,7 @@ export function buildOptions({ mode = "production", root = repoRoot } = {}) {
       "globalThis.VCT_MOBILE_XR_ACCEPTANCE_HARNESS": JSON.stringify(
         process.env.VITE_MOBILE_XR_ACCEPTANCE_HARNESS === "true",
       ),
-      // The template's _core config helpers read Vite's import.meta.env, which
-      // esbuild doesn't provide — inject a populated object so the app mounts.
-      "import.meta.env": JSON.stringify({
-        MODE: prod ? "production" : "development",
-        PROD: prod,
-        DEV: !prod,
-        BASE_URL: "/",
-      }),
+      ...importMetaEnvDefine(prod),
       ...beaconEndpointDefine(),
     },
     plugins: [
