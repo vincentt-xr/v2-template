@@ -242,7 +242,10 @@ export function validateManifest(manifest, tree, srcFiles, { strict = true } = {
     for (const [zone, entry] of zoned) {
       if (typeof entry !== 'string' || tree.has(entry)) continue;
       if (!strict && zone === 'creator') continue;
-      failures.push(`"${entry}" is in the manifest but not in the tree`);
+      failures.push(
+        `"${entry}" is in the manifest but not in the tree` +
+          (strict ? '' : ' — restore it, or expect the next template upgrade to rewrite it'),
+      );
     }
   }
 
@@ -434,7 +437,8 @@ function main() {
   } else {
     const own = unclassifiedSrcFiles(manifest, srcFiles).length;
     console.log(
-      `${MANIFEST} OK (lenient) — ${counts}; ${own} unlisted src/* file(s) treated as creator-owned.`,
+      `${MANIFEST} OK (lenient) — ${counts}; ${own} unlisted src/* file(s) treated as creator-owned. ` +
+        `(In the template repo run with --strict.)`,
     );
   }
 }
