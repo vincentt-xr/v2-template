@@ -266,6 +266,26 @@ in a new session; follow the linked sections when an answer is uncertain.
    for camera, tracker, source, responsive-layout, touch, capture, or overlay
    changes. Include the exact result and any required device evidence in the PR.
 
+## Developing without a camera — local clip input
+
+The template reads `VITE_INPUT_SOURCE` and `VITE_INPUT_URL` from the process
+environment and from `.env`, `.env.local`, `.env.development` (dev only) and
+`.env.production` (build only), and starts the session on that source instead of
+the webcam:
+
+```
+VITE_INPUT_SOURCE=video VITE_INPUT_URL=/hand-wave.mp4 pnpm dev   # a looping clip
+VITE_INPUT_SOURCE=photo VITE_INPUT_URL=/portrait.jpg  pnpm dev   # one still frame
+```
+
+Put the clip under `public/` (served from the root) or point at a full URL. Keep
+a dev clip in `.env.development` so `pnpm build` never bakes it in; a clip that
+should ship goes in `.env`, and the build prints what it carries. Clips and
+stills are pre-mirrored to cancel the SDK's selfie flip, so landmarks land where
+the footage shows them. A hidden or embedded tab that refuses to play the clip is
+retried automatically. Do not write a clip loader in `src/Scene.tsx` — the shell
+owns the media source, and `App.tsx` already does this.
+
 ## Mobile acceptance before release
 
 Use the development-only shell controls and the complete physical-device

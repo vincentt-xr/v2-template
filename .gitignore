@@ -6,5 +6,6 @@ dist/
 opencode.json
 .env
 .env.local
+.env.*.local
 *.log
 .dev/

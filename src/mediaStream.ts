@@ -19,7 +19,40 @@ export type VideoStreamHandle = {
   stop: () => void;
 };
 
-/** A looping clip, mirrored into a canvas and captured as a live stream. */
+/** How long to wait before asking a refused clip to play again. */
+export const PLAY_RETRY_MS = 500;
+
+/** Resolves once the clip's metadata is known; rejects when it cannot load. */
+const whenMetadataLoaded = (video: HTMLVideoElement): Promise<void> =>
+  new Promise((resolve, reject) => {
+    if (video.readyState >= 1) {
+      resolve();
+      return;
+    }
+    const listeners: Array<[string, () => void]> = [];
+    const settle = (done: () => void) => () => {
+      listeners.forEach(([event, handler]) => video.removeEventListener(event, handler));
+      done();
+    };
+    listeners.push(
+      ["loadedmetadata", settle(resolve)],
+      ["error", settle(() => reject(new Error(`failed to load ${video.src}`)))],
+    );
+    listeners.forEach(([event, handler]) => video.addEventListener(event, handler));
+  });
+
+/**
+ * A looping clip, mirrored into a canvas and captured as a live stream.
+ *
+ * `play()` IS RETRIED, NOT AWAITED ONCE. Chrome rejects `play()` for a muted,
+ * video-only element in a hidden or embedded tab (the editor's preview browser,
+ * a backgrounded tab), and a single awaited call turned that into a failed
+ * source swap: the clip never bound and the app sat on the loading screen. The
+ * stream is now built as soon as the clip's dimensions are known, and playback
+ * is asked for again on a timer and whenever the tab becomes visible, until it
+ * sticks or the handle is stopped. Frames start flowing the moment the browser
+ * allows them (vincentt-xr/v2-template#113).
+ */
 export const streamFromVideoUrl = async (url: string): Promise<VideoStreamHandle> => {
   const video = document.createElement("video");
   video.crossOrigin = "anonymous";
@@ -28,16 +61,59 @@ export const streamFromVideoUrl = async (url: string): Promise<VideoStreamHandle
   video.muted = true;
   video.autoplay = true;
   video.playsInline = true;
-  await video.play();
+
+  let stopped = false;
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
+  let detachVisibility: () => void = () => {};
+  /** Ends the retry loop and its listener. Safe to call more than once. */
+  const teardown = () => {
+    stopped = true;
+    clearTimeout(retryTimer);
+    detachVisibility();
+  };
+  let resolvePlayed: () => void = () => {};
+  const played = new Promise<void>((resolve) => {
+    resolvePlayed = resolve;
+  });
+  const tryPlay = async () => {
+    if (stopped) return;
+    try {
+      await video.play();
+      resolvePlayed();
+    } catch {
+      if (stopped) return;
+      clearTimeout(retryTimer);
+      retryTimer = setTimeout(() => void tryPlay(), PLAY_RETRY_MS);
+    }
+  };
+  const onVisible = () => {
+    if (document.visibilityState === "visible") void tryPlay();
+  };
+  document.addEventListener("visibilitychange", onVisible);
+  detachVisibility = () => document.removeEventListener("visibilitychange", onVisible);
+
+  // The first attempt and the metadata wait run together: a clip that is
+  // allowed to play has its metadata by the time `play()` resolves, and one
+  // that is refused still loads metadata, which is all the canvas needs. The
+  // race means a refusal costs nothing but the frames until it is allowed.
+  void tryPlay();
+  try {
+    await Promise.race([whenMetadataLoaded(video), played]);
+  } catch (err) {
+    teardown();
+    throw err;
+  }
 
   const canvas = document.createElement("canvas");
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("2d canvas context unavailable");
+  if (!ctx) {
+    teardown();
+    throw new Error("2d canvas context unavailable");
+  }
 
   let rafId = 0;
-  let stopped = false;
   const draw = () => {
     if (stopped) return;
     ctx.save();
@@ -51,7 +127,7 @@ export const streamFromVideoUrl = async (url: string): Promise<VideoStreamHandle
   return {
     stream: (canvas as CaptureCanvas).captureStream(),
     stop: () => {
-      stopped = true;
+      teardown();
       if (rafId) cancelAnimationFrame(rafId);
       video.pause();
     },
