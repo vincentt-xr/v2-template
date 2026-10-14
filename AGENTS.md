@@ -197,6 +197,29 @@ after anything that could have moved you.
 - **`pnpm build`** — production bundle to `dist/`. Only a production build ever lands
   there; the dev server writes to `.dev/`.
 
+## Page title and share preview
+
+The browser-tab title, the description and the Open Graph / Twitter share card
+come from **`app.config.json`** at the project root — the creator's file. Edit it
+there, never in `index.html`: that file is replaced by a template upgrade, and
+`pnpm build` and `pnpm dev` write the config's values into its tags.
+
+```json
+{
+  "title": "Magnetic Hands",
+  "description": "Push a field of lines around with your hands",
+  "url": "https://magnetic-hands.vincentt.app",
+  "image": "/images/share.jpg",
+  "imageAlt": "A hand bending a field of lines"
+}
+```
+
+Every key is optional. `image` is a path under `public/` (served from the root)
+or a full URL; with `url` set it is made absolute for crawlers. Add
+`imageWidth` / `imageHeight` / `imageType` when the image is not 1200×630 JPEG.
+A share image should be 1200×630. `vincentt publish` checks these tags on the
+built page, so a missing title or image shows up before anything ships.
+
 ## Platform commands (`vincentt`)
 
 The local-first dev loop is driven by the **`vincentt` CLI** over your shell — no MCP
