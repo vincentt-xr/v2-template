@@ -187,6 +187,10 @@ export function buildBody(version, entry) {
  * POSTs the row to one target. Never throws — every outcome, including a
  * transport fault or a missing token, comes back as a tagged result so the
  * caller can report on every target before deciding whether to fail.
+ *
+ * outcome is 'written' | 'corrected' | 'unchanged' | 'refused' | 'error'.
+ * 'corrected' is the newest row's note replaced in place; an api that predates
+ * the `corrected` field reads as false.
  */
 export async function postRelease(target, body, fetchImpl = fetch) {
   const token = process.env[tokenEnvVar(target.name)];
@@ -213,6 +217,9 @@ export async function postRelease(target, body, fetchImpl = fetch) {
       // A non-JSON body on a non-2xx response is reported by status alone below.
     }
     if (res.ok) {
+      if (json.corrected === true) {
+        return { target: target.name, outcome: 'corrected', release: json.release };
+      }
       return { target: target.name, outcome: json.written ? 'written' : 'unchanged' };
     }
     return {
@@ -230,11 +237,17 @@ export async function postRelease(target, body, fetchImpl = fetch) {
   }
 }
 
-function formatResult(result) {
+export const SUCCESS_OUTCOMES = new Set(['written', 'corrected', 'unchanged']);
+
+export function formatResult(result) {
   switch (result.outcome) {
     case 'written':
     case 'unchanged':
       return `${result.target}: ${result.outcome}`;
+    case 'corrected':
+      return result.release
+        ? `${result.target}: corrected ${result.release}`
+        : `${result.target}: corrected`;
     case 'refused':
       return `${result.target}: refused (${result.code}${result.reason ? `: ${result.reason}` : ''}${
         result.message ? ` — ${result.message}` : ''
@@ -334,7 +347,7 @@ async function main() {
   let failed = false;
   for (const result of results) {
     console.log(formatResult(result));
-    if (result.outcome === 'refused' || result.outcome === 'error') failed = true;
+    if (!SUCCESS_OUTCOMES.has(result.outcome)) failed = true;
   }
 
   if (failed) process.exit(1);
