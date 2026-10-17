@@ -5,6 +5,12 @@ Per release tag, newest first. Read by the platform's own version surface
 outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
+## 1.7.1
+required: false
+No action required.
+- The template grounding now maps every SDK `2.0.0-alpha.9` door, including instructions and particles, names the remaining face-effects pieces, and adds patterns for hand try-on, touch objects, instruction prompts and particles. The grounding file is not replaced by an upgrade, so only new scaffolds get it.
+- New scaffolds now include a credited low-poly hand model, hand-v1.glb, in the public models folder, with a CREDITS.md entry for its CC BY 4.0 source. An upgrade adds neither file; a project that wants the model can copy both from a new scaffold.
+
 ## 1.7.0
 required: true
 The template now depends on SDK `2.0.0-alpha.9`, where left and right mean the person's own side and FaceTracker content turns with the head; remove any swap or negated rotation your scene added.
