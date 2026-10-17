@@ -29,6 +29,7 @@ vi.mock("@vincentt-xr/sdk/low-level", () => ({
 
 let getUserMedia: ReturnType<typeof vi.fn>;
 let videoSrc: string | undefined;
+let ctx2d: { save: ReturnType<typeof vi.fn>; scale: ReturnType<typeof vi.fn>; drawImage: ReturnType<typeof vi.fn> };
 
 const FAKE_STREAM = { id: "fake-stream", getTracks: () => [] } as unknown as MediaStream;
 
@@ -55,11 +56,10 @@ beforeEach(() => {
     writable: true,
     value: () => FAKE_STREAM,
   });
+  ctx2d = { save: vi.fn(), scale: vi.fn(), drawImage: vi.fn() };
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
-    save: vi.fn(),
+    ...ctx2d,
     restore: vi.fn(),
-    scale: vi.fn(),
-    drawImage: vi.fn(),
   } as unknown as ReturnType<HTMLCanvasElement["getContext"]>);
   vi.stubGlobal("requestAnimationFrame", () => 0);
   vi.stubGlobal("cancelAnimationFrame", () => undefined);
@@ -162,6 +162,64 @@ describe("MediaSourceBinder · a configured source is never overridden", () => {
     await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
 
     expect(videoSrc).toBe(unframed);
+  });
+});
+
+// The SDK takes a stream with no `sourceKind` for a mirrored webcam and, since
+// SDK 2.0.0-alpha.9, names every left/right reading from that. A clip or still
+// bound without its kind shows the right picture with every side reversed.
+describe("MediaSourceBinder · a clip or still is bound as what it is", () => {
+  const CONFIGURED = "https://example.test/client-footage.mp4";
+
+  it("the framed preset binds as a video", async () => {
+    frameIt();
+    render(<MediaSourceBinder />);
+
+    await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
+    expect(setMediaSource).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "stream", sourceKind: "video" }),
+    );
+  });
+
+  it("a configured video binds as a video", async () => {
+    render(<MediaSourceBinder env={{ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: CONFIGURED }} />);
+
+    await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
+    expect(setMediaSource).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "stream", sourceKind: "video" }),
+    );
+  });
+
+  it("a configured photo binds as an image", async () => {
+    vi.stubGlobal(
+      "Image",
+      class {
+        onload: (() => void) | null = null;
+
+        naturalWidth = 4;
+
+        naturalHeight = 4;
+
+        set src(_value: string) {
+          queueMicrotask(() => this.onload?.());
+        }
+      },
+    );
+    render(<MediaSourceBinder env={{ VITE_INPUT_SOURCE: "photo", VITE_INPUT_URL: "/still.jpg" }} />);
+
+    await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
+    expect(setMediaSource).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "stream", sourceKind: "image" }),
+    );
+  });
+
+  it("the frame is drawn as filmed: no flip, because the SDK no longer mirrors it back", async () => {
+    render(<MediaSourceBinder env={{ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: CONFIGURED }} />);
+
+    await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
+    expect(ctx2d.drawImage).toHaveBeenCalled();
+    expect(ctx2d.scale).not.toHaveBeenCalled();
+    expect(ctx2d.drawImage.mock.calls[0].slice(1, 3)).toEqual([0, 0]);
   });
 });
 

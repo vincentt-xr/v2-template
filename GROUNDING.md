@@ -12,8 +12,8 @@ file. It ships inside the SDK package, and in this project it is on disk at:
 node_modules/@vincentt-xr/sdk/GROUNDING.md
 ```
 
-This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.8`**. Sections below
-marked **(alpha.8)** describe APIs that are new in that version: holistic
+This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.9`**. Sections below
+marked **(alpha.8)** describe APIs that arrived in that version: holistic
 tracking, iris tracking, the coordinate-space toolkit, reusable gesture
 detection and the `PersonCutout` edge controls. A project still pinned to an
 older SDK fails those imports with "no exported member"; check
@@ -21,6 +21,14 @@ older SDK fails those imports with "no exported member"; check
 to each one until the pin moves. When the version changes, re-check the
 installed SDK grounding and update examples against the installed package rather
 than assuming older component behavior.
+
+**Since alpha.9, left and right mean the person's own side on every source**
+(the selfie webcam, the rear camera, clips and stills): `hand="left"` is their
+real left hand, `face.leftEye` their real left eye, `armRaisedLeft` their real
+left arm. Content inside `<FaceTracker>` or `<HeadBinding>` now turns with the
+head. Never add a left/right swap or a negated rotation to compensate; the SDK
+grounding's "Left and right" section lists which raw readings still use the
+image's sides and the helpers that convert them.
 
 Read that file when you begin a scene. It is the authoritative reference for
 every SDK component, hook, and prop, and it is far larger than this one — this
@@ -286,8 +294,9 @@ VITE_INPUT_SOURCE=photo VITE_INPUT_URL=/portrait.jpg  pnpm dev   # one still fra
 Put the clip under `public/` (served from the root) or point at a full URL. Keep
 a dev clip in `.env.development` so `pnpm build` never bakes it in; a clip that
 should ship goes in `.env`, and the build prints what it carries. Clips and
-stills are pre-mirrored to cancel the SDK's selfie flip, so landmarks land where
-the footage shows them. A hidden or embedded tab that refuses to play the clip is
+stills are drawn as filmed, never mirrored, and the shell tells the SDK which
+kind of source it bound, so landmarks land where the footage shows them and
+left/right name the filmed person's own side. A hidden or embedded tab that refuses to play the clip is
 retried automatically. Do not write a clip loader in `src/Scene.tsx` — the shell
 owns the media source, and `App.tsx` already does this.
 
@@ -442,7 +451,8 @@ when next edited. Neither route mirrors or crops the camera feed a second time.
 
 Both components are screen-space overlays and accept `color`, `padding`,
 `opacity`, `strokeWidth`, and `renderOrder`. `HandBoundingBox` additionally
-accepts `hand="left" | "right" | "both"`; omit it to show both hands. They
+accepts `hand="left" | "right" | "both"` (the person's own hand, on every
+source); omit it to show both hands. They
 acquire the shared tracking models themselves. Add `FaceTracker` or
 `HandTracker` separately only when you need to attach tracked 3D children or
 use tracker contexts.

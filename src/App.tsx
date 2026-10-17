@@ -51,7 +51,9 @@ const MobileXRAcceptanceHarness = MOBILE_XR_ACCEPTANCE_HARNESS_ENABLED
  *   - "video": loop VITE_INPUT_URL (or FALLBACK_VIDEO_URL if unset)
  *   - "photo": draw VITE_INPUT_URL to a canvas as a static 1-frame stream
  *
- * Photo/video sources are pre-mirrored to cancel the SDK's selfie flip.
+ * Photo/video streams are bound with their `sourceKind`, so the SDK draws them
+ * as filmed and names left/right as the person's own side. Without it a stream
+ * is taken for a mirrored webcam.
  *
  * FRAMED: the webcam default is replaced by an SDK video preset, so a framed
  * app does not open on a camera prompt nobody asked for. If the app's own
@@ -94,7 +96,11 @@ export const MediaSourceBinder = ({
         const handle = await streamFromVideoUrl(url);
         stopVideo = handle.stop;
         if (cancelled) return;
-        await session.setMediaSource({ source: XRMediaSource.STREAM, stream: handle.stream });
+        await session.setMediaSource({
+          source: XRMediaSource.STREAM,
+          stream: handle.stream,
+          sourceKind: "video",
+        });
         onSourceSelected?.({ id: "configured", kind: "video", label: "Configured input", url });
       } else if (choice.kind === "framedPreset") {
         // Dynamic import: the preset module carries 12 CDN URLs and must not
@@ -105,12 +111,16 @@ export const MediaSourceBinder = ({
         const handle = await streamFromVideoUrl(preset.url);
         stopVideo = handle.stop;
         if (cancelled) return;
-        await session.setMediaSource({ source: XRMediaSource.STREAM, stream: handle.stream });
+        await session.setMediaSource({
+          source: XRMediaSource.STREAM,
+          stream: handle.stream,
+          sourceKind: "video",
+        });
         onSourceSelected?.(preset);
       } else if (choice.kind === "photo") {
         const stream = await streamFromImageUrl(choice.url);
         if (cancelled) return;
-        await session.setMediaSource({ source: XRMediaSource.STREAM, stream });
+        await session.setMediaSource({ source: XRMediaSource.STREAM, stream, sourceKind: "image" });
         onSourceSelected?.({
           id: "configured",
           kind: "image",
@@ -237,11 +247,12 @@ export const Shell = () => {
           return;
         }
         if (!next.url) return;
+        const sourceKind = next.kind === "image" ? "image" : "video";
         const stream =
-          next.kind === "image"
+          sourceKind === "image"
             ? await streamFromImageUrl(next.url)
             : (await streamFromVideoUrl(next.url)).stream;
-        await session.setMediaSource({ source: XRMediaSource.STREAM, stream });
+        await session.setMediaSource({ source: XRMediaSource.STREAM, stream, sourceKind });
       };
       // The SDK rethrows after writing the failure to the session store, so the
       // error screen paints from that store either way and this catch is only
