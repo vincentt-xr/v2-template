@@ -839,7 +839,7 @@ Each pattern names which primitives compose it (SDK components + template helper
 
 - `<HandOccluder hand="right" model={handGltf.scene} inflate={-0.1}>` (SDK, `/tracking`), one per hand, outside any tracker: the real hand hides the back of what it wears
 - Inside it: `<HandAttachment joint="ringMcp" along={0.6}>` for a ring, `<HandTattoo>` for art on the skin; experimental `<WristAttachment along={1.6}>` for a watch, with `forearm` and `armMask="skin"` on the `HandOccluder`
-- The model is a rigged hand on the SDK's rig contract (see the SDK grounding's hand rig section)
+- The model is a rigged hand on the SDK's rig contract: the template ships `public/models/hand-v1.glb` (see the SDK grounding's hand rig section); it is CC BY, so show its credit text from `CREDITS.md` in the experience
 
 ### touch-objects (alpha.9)
 
@@ -850,7 +850,7 @@ Each pattern names which primitives compose it (SDK components + template helper
 
 - `<HandInstruction gesture="peace" text="Peace to start" model={hand.scene} poses={hand.animations} onComplete={start} />` (SDK, `/instructions`) inside `XRScene`: a looping ghost hand shows the gesture, holding it for `holdMs` (400) completes it; it acquires the hand model itself (no `HandTracker`, not `GestureTracker`)
 - `<FaceInstruction expression="smile" text="Smile to start" model={face.scene} onComplete={start} />` for an expression; `<BodyInstruction pose="hooray" text="Arms up to start" model={body.scene} poses={body.animations} onComplete={start} />` for a body pose
-- The ghost needs a model the project brings (put it in `public/models/`, load it with `useLoader`): a rig-contract hand with gesture clips (the SDK's `hand-v1.glb`, CC BY, credit in its README), a face with expression morph targets (the SDK's `face-v1.glb`, meshopt-compressed), or a humanoid with one clip per pose plus an `idle` clip
+- The ghost needs a model, loaded with `useLoader`: for hands the template ships `public/models/hand-v1.glb` (a rig-contract hand with the 11 gesture clips; CC BY, so show its credit text from `CREDITS.md` in the experience); for a face, a model with expression morph targets (the SDK's `face-v1.glb`, meshopt-compressed); for a body, a humanoid with one clip per pose plus an `idle` clip. Add any model you bring to `public/models/` and `CREDITS.md`
 - Vocabularies: `HAND_GESTURES`, `FACE_EXPRESSIONS`, `BODY_POSES` (and `defineHandGesture` / `defineFaceExpression` / `defineBodyPose` for your own); `onStatusChange` reports waiting / detected / holding / done
 - `useHandGesture` / `useFaceExpression` / `useBodyPose` for the detection alone, with your own UI (`<Instruction>` for another layout)
 
