@@ -22,6 +22,13 @@ to each one until the pin moves. When the version changes, re-check the
 installed SDK grounding and update examples against the installed package rather
 than assuming older component behavior.
 
+Sections marked **(alpha.9)** describe APIs that arrived in `2.0.0-alpha.9`:
+two new doors (`/instructions` and `/particles`), the hand rig and hand try-on,
+touch objects, body triggers, makeup, face swap, liquify, face characters and
+head accessories. Some are **experimental** (`Faceless`, `HairLock`,
+`WristAttachment`, `ForearmOccluder`, and liquify's hands in front): their props
+may change in a later alpha, and the SDK grounding marks them.
+
 **Since alpha.9, left and right mean the person's own side on every source**
 (the selfie webcam, the rear camera, clips and stills): `hand="left"` is their
 real left hand, `face.leftEye` their real left eye, `armRaisedLeft` their real
@@ -70,10 +77,30 @@ for each API; this is the map of which door to open.
   `useFaceAction`. **(alpha.8)** `HolisticTracker` (+ `.Face` / `.Hand` /
   `.Body`, `useHolisticTracking`, `getHolisticSignals`), `useIrisTracking`
   (+ `IRIS_LANDMARKS`), `useGesture`, `GestureListener`, `GESTURES`,
-  `defineGesture`.
+  `defineGesture`. **(alpha.9)** the hand rig and hand try-on (`HandRig`,
+  `HandOccluder`, `HandAttachment`, `HandTattoo`, `HandCutout`; experimental
+  `WristAttachment`, `ForearmOccluder`), touch objects (`HandTouch`,
+  `Touchable`, `useHandTouch`), body triggers (`BodyTrigger`,
+  `useBodyTrigger`), `ShoulderOccluder`, `CanonicalTorsoFrame`, `useHairMask`.
 - **`@vincentt-xr/sdk/face-effects`** — face deep: FaceMesh material config,
   retouch, canonical mesh, head-binding. **(alpha.8)** `IrisEffect`,
-  `LipEffect`, `SegmentationOverlay` face-region masks.
+  `LipEffect`, `SegmentationOverlay` face-region masks. **(alpha.9)** makeup
+  (`Blush`, `Contour`, `Highlighter`, `Eyeshadow`, `Eyeliner`, `Brows`,
+  `MakeupDesign`, `MadeUpCamera`), `FaceSwap` / `FaceMirror`, `FaceLiquify`,
+  `FaceWarp3D`, face characters (`FaceRig`, `ExternalFaceMesh`,
+  `FaceReprojection`, `FaceMorph`), `FaceInset`, head accessories
+  (`HeadAttachment`, `CanonicalHeadFrame`, `Earrings`, `Necklace`,
+  `SpringSwing`, `NeckOccluder`), and the experimental `Faceless` and
+  `HairLock`.
+- **`@vincentt-xr/sdk/instructions`** **(alpha.9)** — prompts that ask for a
+  hand gesture, a face expression or a body pose with a ghost 3D hint:
+  `HandInstruction`, `FaceInstruction`, `BodyInstruction`, the generic
+  `Instruction`; the detectors `useHandGesture`, `useFaceExpression`,
+  `useBodyPose`; the vocabularies `HAND_GESTURES`, `FACE_EXPRESSIONS`,
+  `BODY_POSES`; the hint kit (`useGhostModel`, `HintStage`).
+- **`@vincentt-xr/sdk/particles`** **(alpha.9)** — GPU particles:
+  `ParticleEmitter` (placed anywhere; inside a tracker it follows it),
+  `PARTICLE_PRESETS`, and the `ParticleSystem` building block.
 - **`@vincentt-xr/sdk`** also exports the coordinate helpers: the
   `*ScreenPixels` family today, and **(alpha.8)** the coordinate-space toolkit
   (`feedToWorld`, `feedToViewport`, `feedToScreenPixels`, `trackerToFeed`,
@@ -86,7 +113,9 @@ for each API; this is the map of which door to open.
   hooks, custom-tracker plumbing (`useXRContext`, `useXRReady`, `useXRError`,
   `useXRCameraTexture`, `useXRModelNode`). **(alpha.8)** `useXRFeedCrop`, the
   gesture engine and measures (`stepGestureDetector`, `measurePinch`, …), the
-  iris compute seam. Reach here only when core + tracking can't express it.
+  iris compute seam. **(alpha.9)** `useXRFeedAspect`, the hand rig and touch
+  pieces (`HandRigContext`, `TouchWorld`). Reach here only when core + tracking
+  can't express it.
 
 Trackers self-register when mounted — no `registerXRPipeline` call.
 
@@ -805,6 +834,22 @@ Each pattern names which primitives compose it (SDK components + template helper
 
 - `<HolisticTracker>` (SDK) once, above any phase switch, with `<HolisticTracker.Face>`, `<HolisticTracker.Hand hand="right">`, `<HolisticTracker.Body>` and `TrackingAnchor` children; `getHolisticSignals(result)` for combined cues such as a raised open hand while smiling
 - `outputFaceBlendshapes={false}` when expressions are not needed (keeps inference on the GPU)
+
+### hand-try-on (alpha.9)
+
+- `<HandOccluder hand="right" model={handGltf.scene} inflate={-0.1}>` (SDK, `/tracking`), one per hand, outside any tracker: the real hand hides the back of what it wears
+- Inside it: `<HandAttachment joint="ringMcp" along={0.6}>` for a ring, `<HandTattoo>` for art on the skin; experimental `<WristAttachment along={1.6}>` for a watch, with `forearm` and `armMask="skin"` on the `HandOccluder`
+- The model is a rigged hand on the SDK's rig contract (see the SDK grounding's hand rig section)
+
+### touch-objects (alpha.9)
+
+- `<HandTouch showColliders>` (SDK, `/tracking`) once, outside any tracker, with `<Touchable shape="sphere" size={0.4} position={[0, 0.5, 0]} onTap={…} />` children: pinch to grab and throw, push and poke, hover and tap
+- `pointer` lets the mouse or touch screen play too (desktop without a camera)
+
+### instruction-prompt (alpha.9)
+
+- `<HandInstruction gesture="peace" model={hand.scene} poses={hand.animations} onComplete={start} />`, `<FaceInstruction expression="smile" model={face.scene} onComplete={start} />` or `<BodyInstruction>` (SDK, `/instructions`) inside `XRScene`: ask for a move with a ghost hint, then start the scene
+- `useHandGesture` / `useFaceExpression` / `useBodyPose` for the detection alone
 
 ### iris-eye-effect (alpha.8)
 
