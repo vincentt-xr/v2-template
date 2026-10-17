@@ -848,8 +848,18 @@ Each pattern names which primitives compose it (SDK components + template helper
 
 ### instruction-prompt (alpha.9)
 
-- `<HandInstruction gesture="peace" model={hand.scene} poses={hand.animations} onComplete={start} />`, `<FaceInstruction expression="smile" model={face.scene} onComplete={start} />` or `<BodyInstruction>` (SDK, `/instructions`) inside `XRScene`: ask for a move with a ghost hint, then start the scene
-- `useHandGesture` / `useFaceExpression` / `useBodyPose` for the detection alone
+- `<HandInstruction gesture="peace" text="Peace to start" model={hand.scene} poses={hand.animations} onComplete={start} />` (SDK, `/instructions`) inside `XRScene`: a looping ghost hand shows the gesture, holding it for `holdMs` (400) completes it; it acquires the hand model itself (no `HandTracker`, not `GestureTracker`)
+- `<FaceInstruction expression="smile" text="Smile to start" model={face.scene} onComplete={start} />` for an expression; `<BodyInstruction pose="hooray" text="Arms up to start" model={body.scene} poses={body.animations} onComplete={start} />` for a body pose
+- The ghost needs a model the project brings (put it in `public/models/`, load it with `useLoader`): a rig-contract hand with gesture clips (the SDK's `hand-v1.glb`, CC BY, credit in its README), a face with expression morph targets (the SDK's `face-v1.glb`, meshopt-compressed), or a humanoid with one clip per pose plus an `idle` clip
+- Vocabularies: `HAND_GESTURES`, `FACE_EXPRESSIONS`, `BODY_POSES` (and `defineHandGesture` / `defineFaceExpression` / `defineBodyPose` for your own); `onStatusChange` reports waiting / detected / holding / done
+- `useHandGesture` / `useFaceExpression` / `useBodyPose` for the detection alone, with your own UI (`<Instruction>` for another layout)
+
+### particles (alpha.9)
+
+- `<ParticleEmitter preset="laser" target="eyes" />` (SDK, `/particles`): laser eyes, one emitter in front of each eye; inside a `FaceTracker` it follows that face, anywhere else it tracks the face itself
+- A custom emitter is placed like any 3D object (its +Z is forward): `<ParticleEmitter shape="cone" angle={20} rate={120} speed={40} lifetime={1.2} color={["#ffffff", "#ff3b30"]} size={[1.2, 0.2]} />`; inside a tracker, `HeadAttachment` or `TrackingAnchor` it follows that face or hand
+- Particles live on in world space: a moving emitter leaves a trail, `emitting={false}` stops new ones and the old ones finish; `gravity`, `wind` and `drag` shape their path, `sprite="streak"` stretches them along the motion
+- Thousands cost one draw (the GPU works out each particle from its spawn record); keep `rate × lifetime` sensible on phones
 
 ### iris-eye-effect (alpha.8)
 
