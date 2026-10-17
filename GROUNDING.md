@@ -86,12 +86,15 @@ for each API; this is the map of which door to open.
   retouch, canonical mesh, head-binding. **(alpha.8)** `IrisEffect`,
   `LipEffect`, `SegmentationOverlay` face-region masks. **(alpha.9)** makeup
   (`Blush`, `Contour`, `Highlighter`, `Eyeshadow`, `Eyeliner`, `Brows`,
-  `MakeupDesign`, `MadeUpCamera`), `FaceSwap` / `FaceMirror`, `FaceLiquify`,
-  `FaceWarp3D`, face characters (`FaceRig`, `ExternalFaceMesh`,
-  `FaceReprojection`, `FaceMorph`), `FaceInset`, head accessories
-  (`HeadAttachment`, `CanonicalHeadFrame`, `Earrings`, `Necklace`,
-  `SpringSwing`, `NeckOccluder`), and the experimental `Faceless` and
-  `HairLock`.
+  `MakeupDesign`, `MadeUpCamera`, `useMakeupSkinTone`), drawing on the live
+  face (`FaceAtlasLayer`), `FaceSwap` / `FaceMirror` / `FaceTextureLayer` (your
+  own face texture with `useFaceTexture`; `FaceTransfer` without React),
+  `FaceLiquify`, `FaceWarp3D`, face characters (`FaceRig`, `ExternalFaceMesh`,
+  `FaceReprojection`, `FaceMorph`, `FaceExpressionController`), `FaceInset`,
+  content pinned to the face surface (`PinToFaceMesh`, `FaceSurfaceOccluder`),
+  head accessories (`HeadAttachment`, `CanonicalHeadFrame`, `Earrings`,
+  `Necklace`, `FacePiercing`, `SpringSwing`, and `HeadOccluder`'s new `neck`
+  bust, also `NeckOccluder`), and the experimental `Faceless` and `HairLock`.
 - **`@vincentt-xr/sdk/instructions`** **(alpha.9)** — prompts that ask for a
   hand gesture, a face expression or a body pose with a ghost 3D hint:
   `HandInstruction`, `FaceInstruction`, `BodyInstruction`, the generic
@@ -112,7 +115,8 @@ for each API; this is the map of which door to open.
 - **`@vincentt-xr/sdk/low-level`** — escape hatch: raw model-node reads, selector
   hooks, custom-tracker plumbing (`useXRContext`, `useXRReady`, `useXRError`,
   `useXRCameraTexture`, `useXRModelNode`). **(alpha.8)** `useXRFeedCrop`, the
-  gesture engine and measures (`stepGestureDetector`, `measurePinch`, …), the
+  gesture engine and measures (`stepGestureDetector`, `measurePinch`,
+  `OscillationTracker`, …), the
   iris compute seam. **(alpha.9)** `useXRFeedAspect`, the hand rig and touch
   pieces (`HandRigContext`, `TouchWorld`). Reach here only when core + tracking
   can't express it.
