@@ -3,8 +3,13 @@
  *
  * One mechanism for all of them — the configured `video`/`photo` sources, the
  * framed preset default, and a runtime switch from the media switcher — so the
- * framed path adds no second way to produce a stream, and so every non-webcam
- * source gets the same pre-mirroring that cancels the SDK's selfie flip.
+ * framed path adds no second way to produce a stream.
+ *
+ * Frames are drawn as filmed, never mirrored. The binder passes `sourceKind`
+ * ("video" / "image") with each stream, so the SDK draws it straight and names
+ * left and right as the person's own side. Pre-mirroring here while binding it
+ * as the default "webcam" kind would show the same picture but tell the SDK the
+ * feed is a mirrored selfie, which reverses every left/right reading.
  *
  * Nothing here touches `getUserMedia`. That call has exactly one site in this
  * app (the webcam branch of `MediaSourceBinder`), which is what lets the framed
@@ -15,7 +20,7 @@ type CaptureCanvas = HTMLCanvasElement & { captureStream: (fps?: number) => Medi
 
 export type VideoStreamHandle = {
   stream: MediaStream;
-  /** Stops the mirroring RAF loop. Safe to call more than once. */
+  /** Stops the drawing RAF loop. Safe to call more than once. */
   stop: () => void;
 };
 
@@ -42,7 +47,7 @@ const whenMetadataLoaded = (video: HTMLVideoElement): Promise<void> =>
   });
 
 /**
- * A looping clip, mirrored into a canvas and captured as a live stream.
+ * A looping clip, drawn into a canvas and captured as a live stream.
  *
  * `play()` IS RETRIED, NOT AWAITED ONCE. Chrome rejects `play()` for a muted,
  * video-only element in a hidden or embedded tab (the editor's preview browser,
@@ -116,10 +121,7 @@ export const streamFromVideoUrl = async (url: string): Promise<VideoStreamHandle
   let rafId = 0;
   const draw = () => {
     if (stopped) return;
-    ctx.save();
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
-    ctx.restore();
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     rafId = requestAnimationFrame(draw);
   };
   draw();
@@ -134,7 +136,7 @@ export const streamFromVideoUrl = async (url: string): Promise<VideoStreamHandle
   };
 };
 
-/** A still, mirrored into a canvas and captured as a one-frame stream. */
+/** A still, drawn into a canvas and captured as a one-frame stream. */
 export const streamFromImageUrl = async (url: string): Promise<MediaStream> => {
   const img = new Image();
   img.crossOrigin = "anonymous";
@@ -149,8 +151,7 @@ export const streamFromImageUrl = async (url: string): Promise<MediaStream> => {
   canvas.height = img.naturalHeight;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("2d canvas context unavailable");
-  ctx.scale(-1, 1);
-  ctx.drawImage(img, -canvas.width, 0);
+  ctx.drawImage(img, 0, 0);
 
   return (canvas as CaptureCanvas).captureStream(0);
 };

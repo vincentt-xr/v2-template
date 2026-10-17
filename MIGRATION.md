@@ -5,6 +5,15 @@ Per release tag, newest first. Read by the platform's own version surface
 outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
+## 1.7.0
+required: true
+The template now depends on SDK `2.0.0-alpha.9`, where left and right mean the person's own side and FaceTracker content turns with the head; remove any swap or negated rotation your scene added.
+- SDK `2.0.0-alpha.9` is a required update. Scene code needs changing if it swapped left and right, negated a head yaw or pitch, used the removed FaceWarp3D settings, or relied on LipEffect drawing above hands and glasses. Hand presence must now reach 0.65 (was 0.5), so faint hands drop out sooner. The SDK's own migration note lists every change.
+- Sample videos and a configured video or photo are now bound as a video or an image and drawn as filmed, instead of pre-mirrored and bound as a mirrored webcam. The picture is unchanged; left and right now name the filmed person's own side. An upgrade carries this, because the shell files are replaced.
+- The hand bounding box's hand option and its automatic colours now follow the person's own hands. The component is creator-owned, so an existing copy keeps its code but reads the new SDK sides.
+- The template now depends on harness `3.0.0`. A production page no longer downloads the Share and feedback overlays or their QR code library; both buttons still appear in preview. Nothing in the template imported the moved names. A project that imported a Share or feedback helper from the package root now fails to build until it imports it from the share or annotate entry instead.
+- The template grounding now states that it targets SDK `2.0.0-alpha.9` and explains the person's-own-side rule. The grounding file is not replaced by an upgrade, so only new scaffolds get it.
+
 ## 1.6.2
 required: false
 No action required.

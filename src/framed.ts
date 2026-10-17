@@ -141,10 +141,10 @@ const ANNOUNCED_KIND: Record<string, AnnouncedPresetKind> = {
  *
  * DERIVED FROM `kind`, because the SDK's preset type carries no such field —
  * mirroring is a session-level flag there, not a property of a preset. The
- * derivation is not a guess: `mediaStream.ts` pre-mirrors every non-webcam
- * source to cancel the SDK's selfie flip, so a webcam ends up mirrored on
- * screen and a clip or a still ends up drawn as filmed. That asymmetry is what
- * the console's mirror mark reports.
+ * derivation is not a guess: the SDK mirrors only the `webcam` source kind, and
+ * the binder passes `sourceKind` "video" / "image" for every clip and still, so
+ * a webcam ends up mirrored on screen and a clip or a still ends up drawn as
+ * filmed. That asymmetry is what the console's mirror mark reports.
  *
  * If the SDK ever declares mirroring per preset, this is the one line to delete.
  */
