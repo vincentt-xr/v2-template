@@ -40,6 +40,7 @@ import { fileURLToPath } from "node:url";
 import esbuild from "esbuild";
 import { buildOptions } from "../esbuild.config.mjs";
 import { applyAppMetadata, readAppConfig } from "./app-metadata.mjs";
+import { devIndexHtml } from "./dev-html.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const devDir = path.join(root, ".dev");
@@ -60,17 +61,9 @@ try {
 
 // The creator's title, description and share image come from app.config.json
 // (their file), not from index.html (ours). See scripts/app-metadata.mjs.
-let html = applyAppMetadata(
-  await fs.readFile(path.join(root, "index.html"), "utf8"),
-  readAppConfig(root),
-);
-html = html.replace(
-  /<link[^>]+href="\/src\/index\.css"[^>]*>/,
-  `<link rel="stylesheet" href="/assets/main.css" />`,
-);
-html = html.replace(
-  /<script[^>]+src="\/src\/main\.tsx"[^>]*><\/script>/,
-  `<script type="module" src="/assets/main.js"></script>`,
+// The page also carries live reload; see scripts/dev-html.mjs.
+const html = devIndexHtml(
+  applyAppMetadata(await fs.readFile(path.join(root, "index.html"), "utf8"), readAppConfig(root)),
 );
 await fs.writeFile(path.join(devDir, "index.html"), html);
 

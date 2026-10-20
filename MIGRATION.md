@@ -5,6 +5,12 @@ Per release tag, newest first. Read by the platform's own version surface
 outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
+## Unreleased
+required: false
+No action required. The development build now carries JSX source info, and the dev server reloads the page after every change.
+- The development build now records each element's source file and line, which the desktop editor uses to map objects back to code. An upgrade carries this through esbuild.config.mjs. The production build is unchanged, byte for byte.
+- The dev server now reloads the page, including a phone on a live preview, about a second after a source change. This lives in scripts/dev.mjs and the new scripts/dev-html.mjs, which an upgrade does not replace. To get live reload in an existing project, copy both files from a new scaffold, or ask your agent to. Only new scaffolds get it otherwise.
+
 ## 1.7.1
 required: false
 No action required.
