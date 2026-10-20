@@ -91,10 +91,9 @@ jobs:
       # branches and tags"), so origin/main is already present; `git fetch` is
       # a cheap no-op guard in case that ever changes.
       #
-      # A corrected MIGRATION.md entry reaches the platform only by dispatching
-      # this workflow at the NEWEST tag: the api corrects only the newest row's
-      # note. Dispatching at an older tag moves `latest` backwards and corrects
-      # nothing.
+      # A corrected MIGRATION.md entry is re-sent by release-row.yml, which
+      # writes only the row. Dispatching THIS workflow at an older tag moves
+      # `latest` backwards; the api corrects only the newest row's note anyway.
       - name: Prepare the release-row script and note from main
         run: |
           mkdir -p "$RUNNER_TEMP/release-row"

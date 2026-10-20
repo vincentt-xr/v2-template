@@ -46,6 +46,11 @@ The job runs in the `release` environment, which accepts bare-semver tags only. 
 hand, dispatch it from the tag itself ("Use workflow from: 1.1.0"); a dispatch from `main` is
 refused.
 
+To correct a migration note without moving `latest`, fix the entry in `MIGRATION.md` on
+`main`, then dispatch the Release row workflow (`.github/workflows/release-row.yml`) from the
+newest tag with that tag as its input. It re-sends only the platform release row: no build,
+no tag move. It exists only on tags cut after it was added.
+
 **Never move `latest` by hand.** It is force-updated by that workflow and nowhere else; moving
 it manually decouples the pointer from the version it claims to be.
 
