@@ -230,6 +230,10 @@ export function buildOptions({ mode = "production", root = repoRoot } = {}) {
     sourcemap: !prod,
     target: ["es2020"],
     jsx: "automatic",
+    // Development builds carry each element's source location (React 18's
+    // `_debugSource`), which the desktop editor maps back to the JSX it came
+    // from. Off in production: the published bundle must not change.
+    jsxDev: !prod,
     loader: {
       ".png": "file",
       ".jpg": "file",
