@@ -333,6 +333,16 @@ left/right name the filmed person's own side. A hidden or embedded tab that refu
 retried automatically. Do not write a clip loader in `src/Scene.tsx` — the shell
 owns the media source, and `App.tsx` already does this.
 
+## Values tuned in Vincentt Editor
+
+The person may tune a scene by hand in Vincentt Editor, the desktop app that `vincentt editor`
+hands this folder to. It writes each adjusted value back into the source as a literal edit to the
+prop it came from (a `position`, a `fontSize`, a `color`), so keep tunable values as literals at
+the usage site where you can: a value computed from other values is shown read-only there. Read
+what the person has selected with `vincentt editor --selection --json`; its `source` names the
+file and line. The hand-off result and its fields (`vincentt.editor-open/1`) are described in
+`AGENTS.md`, "Vincentt Editor".
+
 ## Mobile acceptance before release
 
 Use the development-only shell controls and the complete physical-device
