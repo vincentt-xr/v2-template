@@ -357,7 +357,8 @@ stdout (the sentence goes to stderr):
 - `handedOff: true` means the folder reached the app, not that the project opened: the app may
   still ask the person to trust the folder, or refuse it. What happened is read afterwards with
   `vincentt editor --status --json`, in `app.lastOpen`: `opened`, `awaiting_trust`,
-  `refused:<id>` or `cancelled`.
+  `refused:<id>` or `cancelled`. It is `null` when the folder was not handed over with
+  `vincentt editor` on this machine, or the app has not answered since.
 - `handedOff: false` carries a `reason`, and for some reasons the `app` path and a `detail`:
   `not_installed` (point the person at https://vincentt.studio/editor), `bad_signature` (the
   installed copy is not signed by Vincentt; the person deletes it and downloads it again),
