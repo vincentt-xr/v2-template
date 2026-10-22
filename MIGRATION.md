@@ -10,6 +10,7 @@ required: false
 No action required. The development build now carries JSX source info, and the dev server reloads the page after every change.
 - The development build now records each element's source file and line, which the desktop editor uses to map objects back to code. An upgrade carries this through esbuild.config.mjs. The production build is unchanged, byte for byte.
 - The dev server now reloads the page, including a phone on a live preview, about a second after a source change. This lives in scripts/dev.mjs and the new scripts/dev-html.mjs, which an upgrade does not replace. To get live reload in an existing project, copy both files from a new scaffold, or ask your agent to. Only new scaffolds get it otherwise.
+- AGENTS.md and GROUNDING.md now describe Vincentt Editor: `vincentt editor` hands the project to the desktop app, `vincentt editor --selection --json` reads what the person selected in it, and `--json` prints a `vincentt.editor-open/1` object. The grounding files are not replaced by an upgrade, so only new scaffolds get them.
 
 ## 1.7.1
 required: false
