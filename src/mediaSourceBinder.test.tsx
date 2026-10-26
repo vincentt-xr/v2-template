@@ -13,6 +13,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // The SDK's real media-source module is used as-is: the preset URL asserted
 // below is READ FROM IT, never hand-written, so this cannot drift from the SDK.
 import { sdkVideoMediaSources } from "@vincentt-xr/sdk/debug-ui/media-source";
+import * as framed from "./framed";
+
+// The pure chooser is spied THROUGH so the wiring can be asserted: the binder
+// must hand it the scene's registered trackers, read after its own mount.
+vi.mock("./framed", async (importOriginal) => {
+  const real = await importOriginal<typeof import("./framed")>();
+  return { ...real, pickFramedDefault: vi.fn(real.pickFramedDefault) };
+});
 
 import { MediaSourceBinder } from "./App";
 
@@ -21,7 +29,12 @@ const { setMediaSource, start } = vi.hoisted(() => ({
   start: vi.fn().mockResolvedValue(undefined),
 }));
 
+// The trackers the scene has registered, as the binder reads them after one
+// macrotask; a test sets it before rendering.
+let registeredModels: string[] = [];
+
 vi.mock("@vincentt-xr/sdk/low-level", () => ({
+  useXRPipelineSnapshot: () => registeredModels,
   useXRContext: () => ({ session: { setMediaSource, start } }),
   useXRReady: () => false,
   useXRError: () => undefined,
@@ -29,16 +42,25 @@ vi.mock("@vincentt-xr/sdk/low-level", () => ({
 
 let getUserMedia: ReturnType<typeof vi.fn>;
 let videoSrc: string | undefined;
-let ctx2d: { save: ReturnType<typeof vi.fn>; scale: ReturnType<typeof vi.fn>; drawImage: ReturnType<typeof vi.fn> };
+let ctx2d: {
+  save: ReturnType<typeof vi.fn>;
+  scale: ReturnType<typeof vi.fn>;
+  drawImage: ReturnType<typeof vi.fn>;
+};
 
-const FAKE_STREAM = { id: "fake-stream", getTracks: () => [] } as unknown as MediaStream;
+const FAKE_STREAM = {
+  id: "fake-stream",
+  getTracks: () => [],
+} as unknown as MediaStream;
 
 beforeEach(() => {
   setMediaSource.mockClear();
   start.mockClear();
   videoSrc = undefined;
 
-  getUserMedia = vi.fn().mockRejectedValue(new Error("getUserMedia must not be called"));
+  getUserMedia = vi
+    .fn()
+    .mockRejectedValue(new Error("getUserMedia must not be called"));
   Object.defineProperty(globalThis.navigator, "mediaDevices", {
     configurable: true,
     value: { getUserMedia },
@@ -46,11 +68,11 @@ beforeEach(() => {
 
   // jsdom implements neither video playback nor captureStream, so both are
   // faked. Nothing else about the binder is stubbed.
-  vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(async function play(
-    this: HTMLMediaElement,
-  ) {
-    videoSrc = (this as HTMLVideoElement).src;
-  });
+  vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(
+    async function play(this: HTMLMediaElement) {
+      videoSrc = (this as HTMLVideoElement).src;
+    },
+  );
   Object.defineProperty(HTMLCanvasElement.prototype, "captureStream", {
     configurable: true,
     writable: true,
@@ -72,7 +94,9 @@ afterEach(() => {
 
 /** Put the document inside a frame, the way the console embeds it. */
 const frameIt = () => {
-  vi.spyOn(window, "top", "get").mockReturnValue({ name: "embedder" } as unknown as Window);
+  vi.spyOn(window, "top", "get").mockReturnValue({
+    name: "embedder",
+  } as unknown as Window);
 };
 
 describe("MediaSourceBinder · framed startup", () => {
@@ -93,6 +117,24 @@ describe("MediaSourceBinder · framed startup", () => {
 
     await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
     expect(sdkVideoMediaSources.map((p) => p.url)).toContain(videoSrc);
+  });
+
+  it("framed: the scene's registered trackers reach the chooser, so a hand scene can get a hand clip", async () => {
+    frameIt();
+    registeredModels = ["vincentt.xr.hand-tracker"];
+    try {
+      render(<MediaSourceBinder />);
+      await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
+      expect(framed.pickFramedDefault).toHaveBeenCalledWith(
+        sdkVideoMediaSources,
+        ["vincentt.xr.hand-tracker"],
+      );
+      // The installed SDK's presets carry no tags yet, so the first clip plays;
+      // with tagged presets `pickFramedDefault` picks the hand clip (framed.test).
+      expect(sdkVideoMediaSources.map((p) => p.url)).toContain(videoSrc);
+    } finally {
+      registeredModels = [];
+    }
   });
 
   it("framed: the selected preset is handed back, so the controlled switcher shows it", async () => {
@@ -126,7 +168,11 @@ describe("MediaSourceBinder · a configured source is never overridden", () => {
     // Overriding a deliberate config pointed at client footage would hide work
     // the creator did, so the framing check does not reach this branch.
     frameIt();
-    render(<MediaSourceBinder env={{ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: CONFIGURED }} />);
+    render(
+      <MediaSourceBinder
+        env={{ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: CONFIGURED }}
+      />,
+    );
 
     await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
     expect(videoSrc).toBe(CONFIGURED);
@@ -151,14 +197,22 @@ describe("MediaSourceBinder · a configured source is never overridden", () => {
   });
 
   it("a configured video resolves to the same URL framed and unframed", async () => {
-    render(<MediaSourceBinder env={{ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: CONFIGURED }} />);
+    render(
+      <MediaSourceBinder
+        env={{ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: CONFIGURED }}
+      />,
+    );
     await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
     const unframed = videoSrc;
 
     setMediaSource.mockClear();
     videoSrc = undefined;
     frameIt();
-    render(<MediaSourceBinder env={{ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: CONFIGURED }} />);
+    render(
+      <MediaSourceBinder
+        env={{ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: CONFIGURED }}
+      />,
+    );
     await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
 
     expect(videoSrc).toBe(unframed);
@@ -182,7 +236,11 @@ describe("MediaSourceBinder · a clip or still is bound as what it is", () => {
   });
 
   it("a configured video binds as a video", async () => {
-    render(<MediaSourceBinder env={{ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: CONFIGURED }} />);
+    render(
+      <MediaSourceBinder
+        env={{ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: CONFIGURED }}
+      />,
+    );
 
     await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
     expect(setMediaSource).toHaveBeenCalledWith(
@@ -205,7 +263,11 @@ describe("MediaSourceBinder · a clip or still is bound as what it is", () => {
         }
       },
     );
-    render(<MediaSourceBinder env={{ VITE_INPUT_SOURCE: "photo", VITE_INPUT_URL: "/still.jpg" }} />);
+    render(
+      <MediaSourceBinder
+        env={{ VITE_INPUT_SOURCE: "photo", VITE_INPUT_URL: "/still.jpg" }}
+      />,
+    );
 
     await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
     expect(setMediaSource).toHaveBeenCalledWith(
@@ -214,7 +276,11 @@ describe("MediaSourceBinder · a clip or still is bound as what it is", () => {
   });
 
   it("the frame is drawn as filmed: no flip, because the SDK no longer mirrors it back", async () => {
-    render(<MediaSourceBinder env={{ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: CONFIGURED }} />);
+    render(
+      <MediaSourceBinder
+        env={{ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: CONFIGURED }}
+      />,
+    );
 
     await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
     expect(ctx2d.drawImage).toHaveBeenCalled();
@@ -254,7 +320,12 @@ describe("MediaSourceBinder · framed + source=webcam (the gallery's Live frame)
     window.history.replaceState(null, "", "/");
   });
 
-  it.each(["?source=webcam", "?source=%77ebcam", "?a=1&source=webcam", "?source=webcam&source=video"])(
+  it.each([
+    "?source=webcam",
+    "?source=%77ebcam",
+    "?a=1&source=webcam",
+    "?source=webcam&source=video",
+  ])(
     "framed + default + %s: binds the WEBCAM and reports the Webcam preset",
     async (search) => {
       withSearch(search);
@@ -282,28 +353,37 @@ describe("MediaSourceBinder · framed + source=webcam (the gallery's Live frame)
     "?source=video",
     "?source=video&source=webcam",
     "#source=webcam",
-  ])("framed + default + %s: still the preset, getUserMedia never called", async (search) => {
-    withSearch(search);
-    frameIt();
-    render(<MediaSourceBinder />);
+  ])(
+    "framed + default + %s: still the preset, getUserMedia never called",
+    async (search) => {
+      withSearch(search);
+      frameIt();
+      render(<MediaSourceBinder />);
 
-    await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
-    expect(setMediaSource).toHaveBeenCalledWith(
-      expect.objectContaining({ source: "stream", stream: FAKE_STREAM }),
-    );
-    expect(sdkVideoMediaSources.map((p) => p.url)).toContain(videoSrc);
-    expect(getUserMedia).not.toHaveBeenCalled();
-  });
+      await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
+      expect(setMediaSource).toHaveBeenCalledWith(
+        expect.objectContaining({ source: "stream", stream: FAKE_STREAM }),
+      );
+      expect(sdkVideoMediaSources.map((p) => p.url)).toContain(videoSrc);
+      expect(getUserMedia).not.toHaveBeenCalled();
+    },
+  );
 
   it("framed + CONFIGURED video + source=webcam: the creator's source wins", async () => {
     const CONFIGURED = "https://example.test/client-footage.mp4";
     withSearch("?source=webcam");
     frameIt();
-    render(<MediaSourceBinder env={{ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: CONFIGURED }} />);
+    render(
+      <MediaSourceBinder
+        env={{ VITE_INPUT_SOURCE: "video", VITE_INPUT_URL: CONFIGURED }}
+      />,
+    );
 
     await waitFor(() => expect(setMediaSource).toHaveBeenCalled());
     expect(videoSrc).toBe(CONFIGURED);
-    expect(setMediaSource).not.toHaveBeenCalledWith(expect.objectContaining({ source: "webcam" }));
+    expect(setMediaSource).not.toHaveBeenCalledWith(
+      expect.objectContaining({ source: "webcam" }),
+    );
     expect(getUserMedia).not.toHaveBeenCalled();
   });
 

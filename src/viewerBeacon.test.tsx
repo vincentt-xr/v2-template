@@ -48,13 +48,18 @@ let ready = false;
 let reason: string | undefined;
 
 const SESSION = {
-  session: { setMediaSource: vi.fn(), start: vi.fn().mockResolvedValue(undefined) },
+  session: {
+    setMediaSource: vi.fn(),
+    start: vi.fn().mockResolvedValue(undefined),
+  },
 };
 
 vi.mock("@vincentt-xr/sdk/low-level", () => ({
+  useXRPipelineSnapshot: () => [],
   useXRContext: () => SESSION,
   useXRReady: () => ready,
-  useXRError: () => (reason ? { error: "PermissionError", message: "m", reason } : undefined),
+  useXRError: () =>
+    reason ? { error: "PermissionError", message: "m", reason } : undefined,
 }));
 
 vi.mock("@vincentt-xr/sdk", async () => {
@@ -74,7 +79,9 @@ vi.mock("./PreviewAnchors", () => ({ PreviewAnchors: () => null }));
 vi.mock("@react-three/drei", () => ({ PerspectiveCamera: () => null }));
 vi.mock("./MediaSourceControl", () => ({ MediaSourceControl: () => null }));
 vi.mock("./mediaStream", () => ({
-  streamFromImageUrl: vi.fn(async () => ({ id: "img" }) as unknown as MediaStream),
+  streamFromImageUrl: vi.fn(
+    async () => ({ id: "img" }) as unknown as MediaStream,
+  ),
   streamFromVideoUrl: vi.fn(async () => ({
     stream: { id: "vid" } as unknown as MediaStream,
     stop: () => undefined,
@@ -82,7 +89,8 @@ vi.mock("./mediaStream", () => ({
 }));
 
 /** The `SessionSignal` handed over on the most recent feed. */
-const lastSignal = () => reportSession.mock.calls[reportSession.mock.calls.length - 1]?.[0];
+const lastSignal = () =>
+  reportSession.mock.calls[reportSession.mock.calls.length - 1]?.[0];
 
 beforeEach(() => {
   ready = false;

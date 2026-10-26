@@ -1,4 +1,11 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { flushSync } from "react-dom";
 import {
   XRProvider,
@@ -7,7 +14,12 @@ import {
   XRMediaSource,
   AspectRatioContainer,
 } from "@vincentt-xr/sdk";
-import { useXRContext, useXRReady, useXRError } from "@vincentt-xr/sdk/low-level";
+import {
+  useXRContext,
+  useXRError,
+  useXRPipelineSnapshot,
+  useXRReady,
+} from "@vincentt-xr/sdk/low-level";
 import { mountViewerBeacon, reportSession } from "@vincentt-xr/analytics";
 import { openConsoleChannel } from "@vincentt-xr/harness";
 import { PerspectiveCamera } from "@react-three/drei";
@@ -23,7 +35,10 @@ import {
 } from "./framed";
 import type { MediaSourceEnv } from "./framed";
 import { streamFromImageUrl, streamFromVideoUrl } from "./mediaStream";
-import { deriveExperienceStatus, publishExperienceStatus } from "./experienceStatus";
+import {
+  deriveExperienceStatus,
+  publishExperienceStatus,
+} from "./experienceStatus";
 import { MediaSourceControl } from "./MediaSourceControl";
 import type { MediaPreset } from "./MediaSourceControl";
 
@@ -70,6 +85,12 @@ export const MediaSourceBinder = ({
   env?: MediaSourceEnv;
 }) => {
   const { session } = useXRContext();
+  // The trackers the scene mounts register on their own mount effects, which
+  // run AFTER this binder's (it is an earlier sibling). The framed branch waits
+  // one macrotask before reading, so the list it sees is the scene's.
+  const pipeline = useXRPipelineSnapshot();
+  const pipelineRef = useRef(pipeline);
+  pipelineRef.current = pipeline;
 
   useEffect(() => {
     let cancelled = false;
@@ -101,13 +122,29 @@ export const MediaSourceBinder = ({
           stream: handle.stream,
           sourceKind: "video",
         });
-        onSourceSelected?.({ id: "configured", kind: "video", label: "Configured input", url });
+        onSourceSelected?.({
+          id: "configured",
+          kind: "video",
+          label: "Configured input",
+          url,
+        });
       } else if (choice.kind === "framedPreset") {
         // Dynamic import: the preset module carries 12 CDN URLs and must not
         // reach a production bundle through a static import from app source.
-        const { sdkVideoMediaSources } = await import("@vincentt-xr/sdk/debug-ui/media-source");
-        const preset = pickFramedDefault(sdkVideoMediaSources);
-        if (!preset?.url) throw new Error("no video preset available for the framed default");
+        const { sdkVideoMediaSources } = await import(
+          "@vincentt-xr/sdk/debug-ui/media-source"
+        );
+        await new Promise((resolve) => {
+          setTimeout(resolve, 0);
+        });
+        if (cancelled) return;
+        // A hand scene opens on a hand clip, a body scene on a body clip.
+        const preset = pickFramedDefault(
+          sdkVideoMediaSources,
+          pipelineRef.current,
+        );
+        if (!preset?.url)
+          throw new Error("no video preset available for the framed default");
         const handle = await streamFromVideoUrl(preset.url);
         stopVideo = handle.stop;
         if (cancelled) return;
@@ -120,7 +157,11 @@ export const MediaSourceBinder = ({
       } else if (choice.kind === "photo") {
         const stream = await streamFromImageUrl(choice.url);
         if (cancelled) return;
-        await session.setMediaSource({ source: XRMediaSource.STREAM, stream, sourceKind: "image" });
+        await session.setMediaSource({
+          source: XRMediaSource.STREAM,
+          stream,
+          sourceKind: "image",
+        });
         onSourceSelected?.({
           id: "configured",
           kind: "image",
@@ -177,31 +218,31 @@ const Loading = ({ shouldFadeOut }: { shouldFadeOut: boolean }) => (
 const CameraError = () => {
   const xrError = useXRError();
   return (
-  <div className="flex w-full h-full flex-col items-center justify-center gap-4 bg-[var(--color-bg-app)] text-[var(--color-fg-app)] px-8 text-center">
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-12 w-12 text-[var(--color-fg-muted)]"
-      aria-hidden="true"
-    >
-      <path d="M2 2l20 20" />
-      <path d="M15 7h2a2 2 0 0 1 2 2v2m-2 6H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2" />
-      <path d="M9.5 9.5a3 3 0 0 0 4.2 4.2" />
-    </svg>
-    <div className="flex flex-col items-center gap-1">
-      <div className="text-base font-medium tracking-wide">
-        Camera unavailable
-      </div>
-      <div className="text-sm text-[var(--color-fg-muted)] max-w-xs">
-        {xrError?.message ||
-          "Allow camera access in your browser, then refresh the page."}
+    <div className="flex w-full h-full flex-col items-center justify-center gap-4 bg-[var(--color-bg-app)] text-[var(--color-fg-app)] px-8 text-center">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-12 w-12 text-[var(--color-fg-muted)]"
+        aria-hidden="true"
+      >
+        <path d="M2 2l20 20" />
+        <path d="M15 7h2a2 2 0 0 1 2 2v2m-2 6H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2" />
+        <path d="M9.5 9.5a3 3 0 0 0 4.2 4.2" />
+      </svg>
+      <div className="flex flex-col items-center gap-1">
+        <div className="text-base font-medium tracking-wide">
+          Camera unavailable
+        </div>
+        <div className="text-sm text-[var(--color-fg-muted)] max-w-xs">
+          {xrError?.message ||
+            "Allow camera access in your browser, then refresh the page."}
+        </div>
       </div>
     </div>
-  </div>
   );
 };
 
@@ -252,7 +293,11 @@ export const Shell = () => {
           sourceKind === "image"
             ? await streamFromImageUrl(next.url)
             : (await streamFromVideoUrl(next.url)).stream;
-        await session.setMediaSource({ source: XRMediaSource.STREAM, stream, sourceKind });
+        await session.setMediaSource({
+          source: XRMediaSource.STREAM,
+          stream,
+          sourceKind,
+        });
       };
       // The SDK rethrows after writing the failure to the session store, so the
       // error screen paints from that store either way and this catch is only

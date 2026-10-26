@@ -58,6 +58,7 @@ const { setMediaSource, start, SESSION } = vi.hoisted(() => {
 });
 
 vi.mock("@vincentt-xr/sdk/low-level", () => ({
+  useXRPipelineSnapshot: () => [],
   useXRContext: () => SESSION,
   useXRReady: () => true,
   useXRError: () => undefined,
@@ -90,7 +91,9 @@ vi.mock("./MediaSourceControl", () => ({ MediaSourceControl: () => null }));
 // Faked at the stream layer so no clip is fetched. The ordering log is written at
 // the moment the app actually applies.
 vi.mock("./mediaStream", () => ({
-  streamFromImageUrl: vi.fn(async () => ({ id: "img" }) as unknown as MediaStream),
+  streamFromImageUrl: vi.fn(
+    async () => ({ id: "img" }) as unknown as MediaStream,
+  ),
   streamFromVideoUrl: vi.fn(async () => ({
     stream: { id: "vid" } as unknown as MediaStream,
     stop: () => undefined,
@@ -132,7 +135,11 @@ async function mountFramed() {
 async function deliver(data: unknown, origin: string = CONSOLE_ORIGIN) {
   await act(async () => {
     window.dispatchEvent(
-      new MessageEvent("message", { data, origin, source: window.parent as Window }),
+      new MessageEvent("message", {
+        data,
+        origin,
+        source: window.parent as Window,
+      }),
     );
     await Promise.resolve();
   });
@@ -155,7 +162,14 @@ const mediaCommand = (presetId: string) => ({
 /** The announce the app actually posted, read off the recording parent. */
 const announce = () =>
   parentPostMessage.mock.calls
-    .map((call) => call[0] as { type?: string; capabilities?: unknown; presets?: { id: string }[] })
+    .map(
+      (call) =>
+        call[0] as {
+          type?: string;
+          capabilities?: unknown;
+          presets?: { id: string }[];
+        },
+    )
     .find((message) => message?.type === "announce");
 
 beforeEach(() => {
@@ -177,7 +191,9 @@ afterEach(() => {
   vi.restoreAllMocks();
   // The harness announces once per page and never releases its latch; every test
   // here is a fresh page.
-  delete (window as unknown as Record<symbol, unknown>)[Symbol.for("vincentt.harness.announced")];
+  delete (window as unknown as Record<symbol, unknown>)[
+    Symbol.for("vincentt.harness.announced")
+  ];
 });
 
 describe("QA-F13-G45 · the freeze travels in `canvasProps`, and both directions work", () => {
@@ -230,7 +246,9 @@ describe("QA-F13-G45 · the freeze travels in `canvasProps`, and both directions
       "`frameloop` was passed BARE to <XRScene>, where it does not exist — the SDK " +
         "would drop it and the app would never freeze",
     ).toBeUndefined();
-    expect((props.canvasProps as { frameloop?: string }).frameloop).toBe("never");
+    expect((props.canvasProps as { frameloop?: string }).frameloop).toBe(
+      "never",
+    );
   });
 
   it("the SDK's own `canvasProps` keys are not clobbered by the freeze", async () => {
@@ -271,7 +289,10 @@ describe("QA-F13-G45 · a media command clears the hold BEFORE applying the sour
     // it cannot drift from the SDK's real preset list.
     const announced = announce();
     const presetId = announced?.presets?.[0]?.id;
-    expect(presetId, "the app must announce at least one preset to command").toBeTruthy();
+    expect(
+      presetId,
+      "the app must announce at least one preset to command",
+    ).toBeTruthy();
 
     events.length = 0;
     setMediaSource.mockClear();
@@ -350,9 +371,18 @@ describe("QA-F13-G45 · the capability is emitted ONLY when the handler is wired
         "be derived from anything, and this arm is asserting nothing",
     ).toBe("function");
 
-    const presets = [{ id: "clip-1", label: "A clip", kind: "video" as const, mirrored: false }];
+    const presets = [
+      {
+        id: "clip-1",
+        label: "A clip",
+        kind: "video" as const,
+        mirrored: false,
+      },
+    ];
 
-    const withHandler = buildAnnounce(presets, { onSetRenderHold: () => undefined });
+    const withHandler = buildAnnounce(presets, {
+      onSetRenderHold: () => undefined,
+    });
     const withoutHandler = buildAnnounce(presets);
 
     expect(
@@ -389,7 +419,9 @@ describe("QA-F13-G45 · the app sends NOTHING back, on any path", () => {
       );
     const afterAnnounce = channelPosts().length;
     expect(
-      channelPosts().every((call) => (call[0] as { type?: string })?.type === "announce"),
+      channelPosts().every(
+        (call) => (call[0] as { type?: string })?.type === "announce",
+      ),
       "the only thing the app may ever post on the channel is its announce",
     ).toBe(true);
 
@@ -399,7 +431,12 @@ describe("QA-F13-G45 · the app sends NOTHING back, on any path", () => {
     // And on the REFUSED paths too — a refusal is not an error to report, because
     // there is no channel to report it on.
     await deliver(holdCommand(true), FOREIGN_ORIGIN);
-    await deliver({ source: "vincentt-console", v: 1, type: "set-render-hold", held: "yes" });
+    await deliver({
+      source: "vincentt-console",
+      v: 1,
+      type: "set-render-hold",
+      held: "yes",
+    });
     await deliver({ source: "vincentt-console", v: 1, type: "ack" });
 
     expect(
@@ -431,7 +468,12 @@ describe("QA-F13-G45 · the app sends NOTHING back, on any path", () => {
   it("a malformed `held` does not freeze the app", async () => {
     await mountFramed();
 
-    await deliver({ source: "vincentt-console", v: 1, type: "set-render-hold", held: "yes" });
+    await deliver({
+      source: "vincentt-console",
+      v: 1,
+      type: "set-render-hold",
+      held: "yes",
+    });
 
     expect(currentFrameloop()).toBe("always");
   });

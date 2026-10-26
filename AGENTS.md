@@ -154,7 +154,7 @@ the developer to the point where they can describe what they want.
 
 - If the developer has **not** told you what to build yet: confirm the project is
   ready (`pnpm dev` serves; `pnpm build` passes), **start the preview** (`pnpm
-  preview`, in the background), hand over the project's console page, then ask what
+preview`, in the background), hand over the project's console page, then ask what
   they want to make. **Do not build a scene or pick an idea for them.** The starter
   is worth seeing on a phone before there is anything custom in it — it is how the
   developer learns the loop exists, and it is running by the time they have
@@ -200,6 +200,7 @@ after anything that could have moved you.
   configured source prints what it is baking in. The app starts on that source and
   the in-app media switcher still lets you swap. A hidden tab refusing to play the
   clip is retried until it plays.
+
 - **`pnpm preview`** — on-device preview. Builds and serves the app behind a secure
   tunnel to Vincentt's own edge, so you get one `https` URL to open on a phone. AR
   needs a secure context for camera access, so this is how you test tracking and
@@ -236,17 +237,21 @@ or a full `https://` URL; with `url` set it is made absolute for crawlers. Add
 A share image should be 1200×630. `vincentt publish` checks these tags on the
 built page; note that once `url` is set the image is an absolute URL, which the
 publish check cannot verify against `dist/`, so check the path yourself.
+
 ## Embedding the experience in another page
 
 A published experience can be framed. Two things change inside a frame, and both
 have a switch:
 
 - **The camera.** Framed, the app starts on a sample clip instead of the webcam, so
-  an embed does not open on a permission prompt nobody asked for. To run on the
+  an embed does not open on a permission prompt nobody asked for. The clip follows
+  the scene's trackers: a hand scene opens on a hand clip, a body scene on a body
+  clip, otherwise a face clip (SDK presets carry `tags`; older SDKs get the first
+  clip). To run on the
   live camera the host must allow it on the frame **and** someone must ask for it:
   the host, per frame, with `?source=webcam` on the frame's address; or the
   creator, for every embed, by building with `VITE_FRAMED_SOURCE=webcam`. Use the
-  creator switch when the experience *is* the camera — hand or face tracking has
+  creator switch when the experience _is_ the camera — hand or face tracking has
   nothing to show without it. "Every embed" includes the console's own preview
   frame, which will then ask for the camera too. The template git-ignores `.env`,
   so a switch kept there is lost on a fresh clone or a CI build: un-ignore `.env`
@@ -254,8 +259,12 @@ have a switch:
   prints the switch when it bakes it in.
 
   ```html
-  <iframe src="https://my-app.vincentt.app/" allow="camera"
-          allowfullscreen style="border:0;width:100%;aspect-ratio:9/16"></iframe>
+  <iframe
+    src="https://my-app.vincentt.app/"
+    allow="camera"
+    allowfullscreen
+    style="border:0;width:100%;aspect-ratio:9/16"
+  ></iframe>
   ```
 
 - **Knowing when it is usable.** The app publishes `loading` → `ready` (or `error`)
@@ -265,7 +274,7 @@ have a switch:
 
   ```js
   window.addEventListener("message", (e) => {
-    if (e.source !== frame.contentWindow) return;          // only our frame
+    if (e.source !== frame.contentWindow) return; // only our frame
     if (e.data?.type !== "experience:status") return;
     // e.data.status: "loading" | "ready" | "error"; e.data.reason on error
     if (e.data.status === "ready") placeholder.hidden = true;
@@ -405,7 +414,7 @@ holds in all three cases below.
 reported only if it still holds that project's binding when the listing runs, so a path that no
 longer holds it is never handed to you. Everything after that is authorized the same way it always
 is — the folder is a shortcut to the right directory, not permission to be in it. And it is where
-the project *was* worked, not where it *must* be worked: if the developer names a different place,
+the project _was_ worked, not where it _must_ be worked: if the developer names a different place,
 that place is right and the listing is stale.
 
 `pnpm preview` (above) is the one loop step that is not a `vincentt` verb — run it in the
@@ -419,7 +428,7 @@ reply gives the developer two addresses to choose between at the moment they wan
 
 **Say it opens here, not on the phone.** It is a desktop page: it carries the QR the phone
 scans, the phone link, and the live device view. "Open this on your phone" points the developer
-at the wrong screen — the phone is reached *from* this page, by scanning it.
+at the wrong screen — the phone is reached _from_ this page, by scanning it.
 
 **Put it in the reply as a bare URL on its own line — no backticks, no code fence, no
 `Console:` label.** A URL in code formatting renders as something to copy; a bare one renders
@@ -467,12 +476,12 @@ backwards here, and acting on it is expensive.
 
 ### How it exits
 
-| Exit | What happened | What to do |
-|---|---|---|
-| **0** | One or more annotations were printed, one JSON object per line on stdout. | Read them and take up the work. |
+| Exit   | What happened                                                                           | What to do                                                             |
+| ------ | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **0**  | One or more annotations were printed, one JSON object per line on stdout.               | Read them and take up the work.                                        |
 | **64** | The window passed with nothing waiting. Nothing was printed. The preview is still live. | Run the same command again. Nothing was missed and nothing is re-read. |
-| **65** | The preview ended. Nothing more can arrive on it. | A preview has to be running before there is anything to wait on. |
-| **1** | A usage error or a fault. The reason is on stderr. | Read stderr. |
+| **65** | The preview ended. Nothing more can arrive on it.                                       | A preview has to be running before there is anything to wait on.       |
+| **1**  | A usage error or a fault. The reason is on stderr.                                      | Read stderr.                                                           |
 
 `--timeout <seconds>` sets the window (default 300).
 
@@ -539,7 +548,7 @@ receives. So:
 - **Keep visitor state in `localStorage` or `sessionStorage`.** Those are per app; no other app
   can read or change them.
 - **If the app must set a cookie, name it with the `__Host-` prefix** and set it with `Secure;
-  Path=/` and no `Domain`, for example
+Path=/` and no `Domain`, for example
   `document.cookie = "__Host-session=…; Secure; Path=/; SameSite=Lax"`. Another app cannot set
   or overwrite a `__Host-` cookie, so read only `__Host-` names. Never set
   `Domain=vincentt.app`.
@@ -582,7 +591,7 @@ wrong one fails with "no exported member":
 - The low-level XR context hooks (`useXRContext`, `useXRReady`, `useXRError`) come from
   **`@vincentt-xr/sdk/low-level`**.
 
-The SDK grounding shows the exact import for each API. You *can* read the `.d.ts`
+The SDK grounding shows the exact import for each API. You _can_ read the `.d.ts`
 files, but prefer the grounding — the published types can lag or omit props, and the
 bundle is minified. If something you need isn't in either grounding and isn't clearly
 in the types, ask rather than guessing a prop into existence.
@@ -674,6 +683,7 @@ on top of the tracking models (the face model alone is 3.8 MB).
   Google's servers, and the loader here does not decode KTX2 textures. Load outside models with
   `useGLTF` (or the SDK's `MeshRenderer` with `assetUrl`). `defineGltfAsset` cannot read a
   compressed model.
+
 - Load only what the first scene needs; defer the rest (see `GROUNDING.md`, "Assets and
   frame-loop performance").
 
@@ -683,8 +693,8 @@ file to `CREDITS.md` at the repo root, creating the file with this header if it 
 ```markdown
 # Credits
 
-| File | Title | Author | Source | Licence | Fetched | Credit text |
-|---|---|---|---|---|---|---|
+| File                            | Title        | Author   | Source                              | Licence   | Fetched    | Credit text                           |
+| ------------------------------- | ------------ | -------- | ----------------------------------- | --------- | ---------- | ------------------------------------- |
 | public/assets/sketchfab/fox.glb | Low Poly Fox | Jane Doe | https://sketchfab.com/3d-models/... | CC BY 4.0 | 2026-10-14 | "Low Poly Fox" by Jane Doe, CC BY 4.0 |
 ```
 
