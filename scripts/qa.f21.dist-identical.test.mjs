@@ -37,9 +37,14 @@ const FORBIDDEN = [
 ];
 
 const pre = preCommit();
-const preConfig = spawnSync("git", ["-C", ROOT, "show", `${pre.sha}:esbuild.config.mjs`], {
-  encoding: "utf8",
-});
+const showPreConfig = () =>
+  spawnSync("git", ["-C", ROOT, "show", `${pre.sha}:esbuild.config.mjs`], { encoding: "utf8" });
+let preConfig = showPreConfig();
+// A shallow CI checkout lacks the tag's commit; unread is not "pre-f21", so fetch it and read again.
+if (preConfig.status !== 0 && pre.from === "origin") {
+  spawnSync("git", ["-C", ROOT, "fetch", "--quiet", "--depth", "1", "origin", pre.sha]);
+  preConfig = showPreConfig();
+}
 // Once a release carrying f21 moves `latest`, the tag is no longer a pre-f21 tree and the
 // diff below would compare f21 with itself. Say so by name instead of passing vacuously.
 const preIsPreF21 = preConfig.status !== 0 || !preConfig.stdout.includes("jsxDev");

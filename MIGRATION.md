@@ -5,6 +5,13 @@ Per release tag, newest first. Read by the platform's own version surface
 outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
+## 1.9.0
+required: false
+No action required. The template now depends on SDK `2.0.0-alpha.10`, which is additive.
+- SDK `2.0.0-alpha.10` adds a body avatar and body occlusion, two people with stable ids, per-person masks, nail polish, hand effects, SDK-hosted rig models and stable wristwear. Nothing from alpha.9 changed meaning. The SDK's own migration note lists every addition. Its sample-clip picker no longer lists the numbered clips; a saved numbered id still resolves.
+- A framed scene now opens on a sample clip that matches its trackers: a hand clip for a hand scene, then body, then face. The sample clip used when no input clip is set is now the idle-woman clip from the new sample set.
+- The template grounding now targets SDK `2.0.0-alpha.10` and names its new APIs. The grounding file is not replaced by an upgrade, so only new scaffolds get it.
+
 ## 1.8.0
 required: false
 No action required. The development build now carries JSX source info, and the dev server reloads the page after every change.

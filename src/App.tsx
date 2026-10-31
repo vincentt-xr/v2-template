@@ -47,7 +47,7 @@ import type { MediaPreset } from "./MediaSourceControl";
 // publish runs the webcam default and never hits this path. Editor preview
 // always passes a real VITE_INPUT_URL, so this is a dev/last-resort fallback.
 const FALLBACK_VIDEO_URL =
-  "https://cdn.vincentt.studio/assets/preview/v2/videos/Head_tilt_woman.mp4";
+  "https://cdn.vincentt.studio/assets/sdk/debug-ui/v1/videos/idle-woman.mp4";
 const MOBILE_XR_ACCEPTANCE_HARNESS_ENABLED =
   (globalThis as { VCT_MOBILE_XR_ACCEPTANCE_HARNESS?: boolean })
     .VCT_MOBILE_XR_ACCEPTANCE_HARNESS === true;

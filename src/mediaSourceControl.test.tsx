@@ -123,7 +123,7 @@ describe("MediaSourceControl · unframed", () => {
     await openPanel();
     const select = (await screen.findByRole("combobox")) as HTMLSelectElement;
     expect(select.value).toBe("configured");
-    expect([...select.options].map((o) => o.value)).toContain("sdk-video-1");
+    expect([...select.options].map((o) => o.value)).toContain("sdk-video-idle-woman");
   });
 });
 
