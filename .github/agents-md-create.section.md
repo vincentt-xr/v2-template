@@ -10,11 +10,11 @@ holding.
   binds the folder to the project.
 - **`3` — delivered, not registered.** This invocation wrote the project source, but no address
   was reserved: there is no account on this machine and no browser to get one, which is the
-  ordinary situation in an agent's shell. **The project is complete and the local dev loop
-  already runs** — install, `run dev`, and preview all work with no account at all. Only the
-  public address is deferred. Report the project as built. Do not re-run `create` to "fix" this,
-  and do not treat it as a failed build; the remedy is `vincentt login` on a machine with a
-  browser, and it is optional.
+  ordinary situation in an agent's shell. **The project is complete** — the source is on disk
+  and builds. What it does not have yet is an address, and with it a preview and a console page.
+  Report the project as built. Do not re-run `create` to "fix" this, and do not treat it as a
+  failed build; the remedy is `vincentt login` on a machine with a browser, then the same
+  `create` again. Signing in is what makes the project viewable.
 - **`1` — nothing lasting was produced.** The command refused and no address was reserved. This
   covers sign-in started then abandoned, the address already being taken, no workspace resolving,
   and a missing name. Each of these is fixable with something you can type right now: a different
