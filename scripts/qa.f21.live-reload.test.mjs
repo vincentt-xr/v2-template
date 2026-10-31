@@ -4,7 +4,7 @@
 //   When  a client holds `GET /esbuild` (Accept: text/event-stream) through dev.mjs's Host
 //         check, addressed by the IP-literal URLs the CLI builds (127.0.0.1 and [::1]) and by
 //         `localhost` (what the `vincentt preview` proxy sends), and a literal in src/ changes
-//   Then  a `change` event arrives within 1 s
+//   Then  a `change` event arrives within 2 s
 //   And   negative twin: a Host that is not this server's is refused before the stream opens.
 // The bridge's gate (held for a self-write, passed otherwise) is the toolchain half of (c).
 
@@ -101,7 +101,9 @@ async function expectChange(address, hostHeader, withinMs) {
 describe("QA-F21-GX1 (c) · the template's /esbuild change event, through the Host check", () => {
   // esbuild's watcher polls: a file not changed since the server started is found by a
   // random-subset scan (measured ~2 s on this template), a recently changed one in ~250 ms.
-  // The first agent edit after start is therefore the slow one; it is bounded, not timed at 1 s.
+  // The first agent edit after start is therefore the slow one; it is bounded, not timed.
+  // A warm edit is ~250 ms locally but lands at 1.0-1.05 s on a 2-CPU hosted runner when the
+  // write just misses a poll, so the warm bound is 2 s: a broken reload never fires at all.
   it("cold: the first src literal change after start emits `change` (bounded at 5 s)", async () => {
     await expectChange("127.0.0.1", `127.0.0.1:${port}`, 5000);
   }, 15_000);
@@ -111,8 +113,8 @@ describe("QA-F21-GX1 (c) · the template's /esbuild change event, through the Ho
     ["[::1] (CLI dev URL)", "::1", () => `[::1]:${port}`],
     ["localhost (preview proxy Host)", "127.0.0.1", () => `localhost:${port}`],
   ]) {
-    it(`${label}: a src literal change emits \`change\` within 1 s`, async () => {
-      await expectChange(address, host(), 1000);
+    it(`${label}: a src literal change emits \`change\` within 2 s`, async () => {
+      await expectChange(address, host(), 2000);
     }, 15_000);
   }
 
