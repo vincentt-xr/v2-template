@@ -9,7 +9,7 @@ authored "no action required," not silence.
 required: false
 No action required. The development build now carries JSX source info, and the dev server reloads the page after every change.
 - The development build now records each element's source file and line, which the desktop editor uses to map objects back to code. An upgrade carries this through esbuild.config.mjs. The production build is unchanged, byte for byte.
-- The dev server now reloads the page, including a phone on a live preview, about a second after a source change. This lives in scripts/dev.mjs and the new scripts/dev-html.mjs, which an upgrade does not replace. To get live reload in an existing project, copy both files from a new scaffold, or ask your agent to. Only new scaffolds get it otherwise.
+- The dev server now reloads the page, including a phone on a live preview, about a second after a source change. This lives in the dev server script and a new dev-html.mjs beside it, neither of which an upgrade replaces. To get live reload in an existing project, copy both files from a new scaffold, or ask your agent to. Only new scaffolds get it otherwise.
 
 ## 1.7.1
 required: false
