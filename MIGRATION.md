@@ -5,7 +5,7 @@ Per release tag, newest first. Read by the platform's own version surface
 outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
-## Unreleased
+## 1.8.0
 required: false
 No action required. The development build now carries JSX source info, and the dev server reloads the page after every change.
 - The development build now records each element's source file and line, which the desktop editor uses to map objects back to code. An upgrade carries this through esbuild.config.mjs. The production build is unchanged, byte for byte.
