@@ -12,7 +12,7 @@ file. It ships inside the SDK package, and in this project it is on disk at:
 node_modules/@vincentt-xr/sdk/GROUNDING.md
 ```
 
-This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.9`**. Sections below
+This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.10`**. Sections below
 marked **(alpha.8)** describe APIs that arrived in that version: holistic
 tracking, iris tracking, the coordinate-space toolkit, reusable gesture
 detection and the `PersonCutout` edge controls. A project still pinned to an
@@ -28,6 +28,14 @@ touch objects, body triggers, makeup, face swap, liquify, face characters and
 head accessories. Some are **experimental** (`Faceless`, `HairLock`,
 `WristAttachment`, `ForearmOccluder`, and liquify's hands in front): their props
 may change in a later alpha, and the SDK grounding marks them.
+
+Sections marked **(alpha.10)** describe APIs that arrived in `2.0.0-alpha.10`:
+the body avatar and body occlusion (`BodyRig`, `BodyOccluder`,
+`BodyAttachment`, `useBodyDepthTexture`), two people with stable ids
+(`numBodies`, `getBodies`, `useBodyIds`, per-person masks with
+`useBodyMaskTexture`), nail polish (`HandNails`), hand effects (`HandEffect`),
+SDK-hosted rig models (`sdkModelAsset`) and stable wristwear. Nothing from
+alpha.9 changed meaning, so alpha.9 scenes keep working.
 
 **Since alpha.9, left and right mean the person's own side on every source**
 (the selfie webcam, the rear camera, clips and stills): `hand="left"` is their
@@ -82,6 +90,10 @@ for each API; this is the map of which door to open.
   `WristAttachment`, `ForearmOccluder`), touch objects (`HandTouch`,
   `Touchable`, `useHandTouch`), body triggers (`BodyTrigger`,
   `useBodyTrigger`), `ShoulderOccluder`, `CanonicalTorsoFrame`, `useHairMask`.
+  **(alpha.10)** the body avatar (`BodyRig`, `getBodyPose`), `BodyOccluder`,
+  `BodyAttachment`, `useBodyDepthTexture` (+ `BODY_DEPTH_GLSL`), two people
+  (`getBodies`, `useBodyIds`, `useBodyMaskTexture`), `HandNails`, and
+  `sdkModelAsset` for the SDK-hosted hand, glove and body models.
 - **`@vincentt-xr/sdk/face-effects`** — face deep: FaceMesh material config,
   retouch, canonical mesh, head-binding. **(alpha.8)** `IrisEffect`,
   `LipEffect`, `SegmentationOverlay` face-region masks. **(alpha.9)** makeup
@@ -103,7 +115,8 @@ for each API; this is the map of which door to open.
   `BODY_POSES`; the hint kit (`useGhostModel`, `HintStage`).
 - **`@vincentt-xr/sdk/particles`** **(alpha.9)** — GPU particles:
   `ParticleEmitter` (placed anywhere; inside a tracker it follows it),
-  `PARTICLE_PRESETS`, and the `ParticleSystem` building block.
+  `PARTICLE_PRESETS`, and the `ParticleSystem` building block. **(alpha.10)**
+  `HandEffect`: a trail, sparkles or fire following the hands.
 - **`@vincentt-xr/sdk`** also exports the coordinate helpers: the
   `*ScreenPixels` family today, and **(alpha.8)** the coordinate-space toolkit
   (`feedToWorld`, `feedToViewport`, `feedToScreenPixels`, `trackerToFeed`,
