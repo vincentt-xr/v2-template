@@ -17,7 +17,7 @@
     "@react-three/fiber": "8.18.0",
     "@vincentt-xr/analytics": "^0.3.0",
     "@vincentt-xr/harness": "^3.0.0",
-    "@vincentt-xr/sdk": "2.0.0-alpha.9",
+    "@vincentt-xr/sdk": "2.0.0-alpha.10",
     "onnxruntime-web": "^1.27.0",
     "qrcode.react": "4.2.0",
     "react": "18.3.1",
