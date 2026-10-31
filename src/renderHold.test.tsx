@@ -42,6 +42,7 @@ const { setMediaSource, start, SESSION } = vi.hoisted(() => {
 });
 
 vi.mock("@vincentt-xr/sdk/low-level", () => ({
+  useXRPipelineSnapshot: () => [],
   useXRContext: () => SESSION,
   useXRReady: () => true,
   useXRError: () => undefined,
@@ -77,7 +78,9 @@ vi.mock("./MediaSourceControl", () => ({ MediaSourceControl: () => null }));
 // Applying a source is faked at the stream layer so no clip is fetched. The
 // ordering log is written HERE, at the moment the app actually applies.
 vi.mock("./mediaStream", () => ({
-  streamFromImageUrl: vi.fn(async () => ({ id: "img" }) as unknown as MediaStream),
+  streamFromImageUrl: vi.fn(
+    async () => ({ id: "img" }) as unknown as MediaStream,
+  ),
   streamFromVideoUrl: vi.fn(async () => ({
     stream: { id: "vid" } as unknown as MediaStream,
     stop: () => undefined,
@@ -86,7 +89,9 @@ vi.mock("./mediaStream", () => ({
 
 /** The `canvasProps` handed to the SDK on the most recent render. */
 const currentCanvasProps = () =>
-  sceneProps[sceneProps.length - 1]?.canvasProps as { frameloop?: string } | undefined;
+  sceneProps[sceneProps.length - 1]?.canvasProps as
+    | { frameloop?: string }
+    | undefined;
 
 const currentFrameloop = () => currentCanvasProps()?.frameloop;
 
@@ -120,7 +125,11 @@ async function mountFramed() {
 async function deliver(data: unknown, origin: string = CONSOLE_ORIGIN) {
   await act(async () => {
     window.dispatchEvent(
-      new MessageEvent("message", { data, origin, source: window.parent as Window }),
+      new MessageEvent("message", {
+        data,
+        origin,
+        source: window.parent as Window,
+      }),
     );
     await Promise.resolve();
   });
@@ -165,7 +174,9 @@ afterEach(() => {
   vi.restoreAllMocks();
   // The harness announces once per page and never releases its latch; every test
   // here is a fresh page.
-  delete (window as unknown as Record<symbol, unknown>)[Symbol.for("vincentt.harness.announced")];
+  delete (window as unknown as Record<symbol, unknown>)[
+    Symbol.for("vincentt.harness.announced")
+  ];
 });
 
 describe("QA-F13-G45 · the app holds and releases through canvasProps.frameloop", () => {
@@ -197,8 +208,13 @@ describe("QA-F13-G45 · the app holds and releases through canvasProps.frameloop
     await deliver(holdCommand(true));
 
     const props = sceneProps[sceneProps.length - 1];
-    expect(props.frameloop, "frameloop must not be passed bare to XRScene").toBeUndefined();
-    expect((props.canvasProps as { frameloop?: string }).frameloop).toBe("never");
+    expect(
+      props.frameloop,
+      "frameloop must not be passed bare to XRScene",
+    ).toBeUndefined();
+    expect((props.canvasProps as { frameloop?: string }).frameloop).toBe(
+      "never",
+    );
   });
 
   it("R2 · without the command the frameloop is 'always' and the source is unchanged", async () => {
@@ -223,7 +239,10 @@ describe("QA-F13-G45 · a media command releases the hold, BEFORE applying", () 
     // so this cannot drift from the SDK's real preset list.
     const announced = announce() as { presets?: { id: string }[] };
     const presetId = announced.presets?.[0]?.id;
-    expect(presetId, "the app must announce at least one preset to command").toBeTruthy();
+    expect(
+      presetId,
+      "the app must announce at least one preset to command",
+    ).toBeTruthy();
 
     events.length = 0;
     setMediaSource.mockClear();
@@ -267,7 +286,9 @@ describe("QA-F13-G45 · the announce declares the capability, and the app says n
       );
     const afterAnnounce = channelPosts().length;
     expect(
-      channelPosts().every((call) => (call[0] as { type?: string })?.type === "announce"),
+      channelPosts().every(
+        (call) => (call[0] as { type?: string })?.type === "announce",
+      ),
       "the only thing the app may ever post on the channel is its announce",
     ).toBe(true);
 
@@ -277,7 +298,12 @@ describe("QA-F13-G45 · the announce declares the capability, and the app says n
     await deliver(mediaCommand(announced.presets![0].id));
     // A command from a WRONG origin, and a malformed one, must also stay silent.
     await deliver(holdCommand(true), "https://evil.example");
-    await deliver({ source: "vincentt-console", v: 1, type: "set-render-hold", held: "yes" });
+    await deliver({
+      source: "vincentt-console",
+      v: 1,
+      type: "set-render-hold",
+      held: "yes",
+    });
 
     expect(
       channelPosts().length,

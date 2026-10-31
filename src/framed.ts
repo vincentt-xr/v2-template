@@ -66,9 +66,12 @@ export const FRAMED_SOURCE_WEBCAM = "webcam";
  */
 export const requestsWebcam = (search?: string): boolean => {
   try {
-    const s = search ?? (typeof window === "undefined" ? "" : window.location.search);
+    const s =
+      search ?? (typeof window === "undefined" ? "" : window.location.search);
     if (!s) return false;
-    return new URLSearchParams(s).get(FRAMED_SOURCE_PARAM) === FRAMED_SOURCE_WEBCAM;
+    return (
+      new URLSearchParams(s).get(FRAMED_SOURCE_PARAM) === FRAMED_SOURCE_WEBCAM
+    );
   } catch {
     return false;
   }
@@ -97,22 +100,61 @@ export const chooseMediaSource = (
   framed: boolean,
   webcamRequested = false,
 ): MediaSourceChoice => {
-  if (env.VITE_INPUT_SOURCE === "video") return { kind: "video", url: env.VITE_INPUT_URL };
+  if (env.VITE_INPUT_SOURCE === "video")
+    return { kind: "video", url: env.VITE_INPUT_URL };
   if (env.VITE_INPUT_SOURCE === "photo" && env.VITE_INPUT_URL) {
     return { kind: "photo", url: env.VITE_INPUT_URL };
   }
   const creatorKeepsWebcam = env.VITE_FRAMED_SOURCE === FRAMED_SOURCE_WEBCAM;
-  if (framed && !webcamRequested && !creatorKeepsWebcam) return { kind: "framedPreset" };
+  if (framed && !webcamRequested && !creatorKeepsWebcam)
+    return { kind: "framedPreset" };
   return { kind: "webcam" };
 };
+
+/** What a sample shows, as the SDK tags its presets (`MediaPresetTag`). */
+export type FramedPresetTag = "face" | "hand" | "body" | "people";
+
+/**
+ * Which sample subject each registered tracker wants, in order of need: a hand
+ * scene has nothing to track in a face clip, a body scene little, a face scene
+ * finds a face in almost every clip. Keys are the SDK's `XRModel` ids, kept as
+ * strings so this file stays dependency-free.
+ */
+export const FRAMED_TRACKER_TAGS: ReadonlyArray<
+  readonly [string, FramedPresetTag]
+> = [
+  ["vincentt.xr.hand-tracker", "hand"],
+  ["vincentt.xr.gesture-tracker", "hand"],
+  ["vincentt.xr.body-tracker", "body"],
+  ["vincentt.xr.face-tracker", "face"],
+];
 
 /**
  * The framed default is a MOVING clip rather than a still, so the creator sees
  * the tracker respond rather than a frozen detection. Picking by `kind` rather
  * than by index means a preset list reordered upstream still yields a video.
+ *
+ * With the scene's registered trackers (`models`, the SDK's `XRModel` ids), the
+ * clip is the first video tagged for the most demanding tracker — a hand clip
+ * for a hand scene (vincentt-xr/console#135) — and the first video when no
+ * preset carries that tag (an SDK without tags, or no clip for it).
  */
-export const pickFramedDefault = <T extends { kind: string }>(presets: T[]): T | undefined =>
-  presets.find((p) => p.kind === "video");
+export const pickFramedDefault = <
+  T extends { kind: string; tags?: readonly string[] },
+>(
+  presets: T[],
+  models: readonly string[] = [],
+): T | undefined => {
+  const wanted = FRAMED_TRACKER_TAGS.filter(([model]) =>
+    models.includes(model),
+  ).map(([, tag]) => tag);
+  const tagged = wanted
+    .map((tag) =>
+      presets.find((p) => p.kind === "video" && p.tags?.includes(tag)),
+    )
+    .find((match) => match !== undefined);
+  return tagged ?? presets.find((p) => p.kind === "video");
+};
 
 /** The announce's kind vocabulary. The console renders these; the SDK does not use them. */
 export type AnnouncedPresetKind = "video" | "image" | "camera";
@@ -162,7 +204,9 @@ const isMirrored = (kind: AnnouncedPresetKind): boolean => kind === "camera";
  * passed through, so an SDK that adds a kind cannot put an unrenderable entry
  * into console chrome.
  */
-export const announcedPresets = <T extends { id: string; kind: string; label: string }>(
+export const announcedPresets = <
+  T extends { id: string; kind: string; label: string },
+>(
   presets: T[],
 ): AnnouncedPreset[] =>
   presets.flatMap((p) => {
