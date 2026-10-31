@@ -213,6 +213,10 @@ jobs:
             echo "::error file=AGENTS.md::the contract does not say the listing reports a location without going there. An agent handed a path is the reader most likely to \`cd\` into it."
             exit 1
           fi
+          if ! grep -qF 'Never hand over a localhost address.' AGENTS.md; then
+            echo "::error file=AGENTS.md::the contract does not forbid handing over a localhost address. The console page is the only address a reply carries (B-F3-6)."
+            exit 1
+          fi
 
       # The zone manifest at the TAG is the one every `vincentt upgrade` reads to decide
       # what it may overwrite in a creator's repository. This job accepts
