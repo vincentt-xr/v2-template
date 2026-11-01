@@ -934,8 +934,9 @@ workaround is only for projects scaffolded before it. The repository is
   overrides from the current `.eslintrc.json` (it is never replaced by an upgrade).
 - **Title and share card** ([#119](https://github.com/vincentt-xr/v2-template/issues/119)):
   `app.config.json`, not `index.html`. Older templates kept them in `index.html`,
-  which an upgrade replaces; re-apply after upgrading, or copy
-  `scripts/app-metadata.mjs` with the current `build.mjs` / `dev.mjs`.
+  which an upgrade replaces; re-apply after upgrading. `vincentt build` writes
+  the config's tags itself; for the dev page, copy `scripts/app-metadata.mjs`
+  with the current `dev.mjs`.
 - **Hand sample media** ([console#135](https://github.com/vincentt-xr/console/issues/135)):
   the SDK's sample presets have no hand-centric clip yet, so a hand-tracking scene
   previewed in the console frame shows a face. Preview on the phone, or use a

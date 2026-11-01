@@ -210,8 +210,13 @@ after anything that could have moved you.
 - **`pnpm typecheck`** — `tsc --noEmit`.
 - **`pnpm lint`** — lint the platform source with the template's ESLint rules.
 - **`pnpm test`** — run the platform and QA test suites.
-- **`pnpm build`** — production bundle to `dist/`. Only a production build ever lands
-  there; the dev server writes to `.dev/`.
+- **`pnpm build`** — runs `vincentt build`: production bundle to `dist/`. Only a
+  production build ever lands there; the dev server writes to `.dev/`. The build
+  clears `dist/` only when every file in it is one it wrote on this machine; it
+  refuses anything else rather than deleting it, so empty a `dist/` it did not
+  write (an older template's build, a hand copy) yourself, once.
+  `vincentt build --self-contained` bundles every package into the app, for
+  hosting it anywhere.
 
 ## Page title and share preview
 
@@ -219,7 +224,8 @@ The browser-tab title, the description and the Open Graph / Twitter share card
 come from **`app.config.json`** at the project root — the creator's file. Edit it
 there, never in `index.html`: that file is replaced by a template upgrade, and
 `pnpm build` and `pnpm dev` (at startup — restart dev after editing it) write the
-config's values into its tags.
+config's values into its tags. The build refuses a config with an unknown key, a
+wrong type, a `url` that is not `https://`, or an `image` outside the project.
 
 ```json
 {

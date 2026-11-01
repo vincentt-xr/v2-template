@@ -5,6 +5,18 @@ Per release tag, newest first. Read by the platform's own version surface
 outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
+## 1.10.0
+required: true
+The build is now `vincentt build` on the shared runtime; empty `dist/` once before the first build, which refuses a folder it did not write.
+- `pnpm build` now runs `vincentt build` (CLI 0.26.0 or later) instead of scripts/build.mjs. An upgrade carries this through package.json. scripts/build.mjs and scripts/static-imports.mjs are no longer used and can be deleted; scripts/app-metadata.mjs is still used by the dev server.
+- The template now depends on the shared runtime, `@vincentt-xr/runtime`. A build loads React, three, fiber, drei and the SDK from runtime.vincentt.studio and holds only the app's own code. Removing that dependency, or `vincentt build --self-contained`, gives a self-contained app to host anywhere.
+- The first `vincentt build` refuses a non-empty `dist/` it did not write, such as one from the old build script. Empty it once. Later builds clear only the files the last build on this machine wrote; an added or edited file is refused, never deleted.
+- The CLI now applies `app.config.json`. An unknown key, a wrong type, a `url` that is not `https://`, or an `image` outside the project fails the build.
+- The production build reads no `.env` file and defines no `VITE_*` value. A clip or framed-webcam switch set for the build (`VITE_INPUT_SOURCE`, `VITE_INPUT_URL`, `VITE_FRAMED_SOURCE`) no longer reaches the published app. `pnpm dev` still reads them.
+- Code may import only code and styles. An import of an image, video or model file from `src/` fails the build; put the file under `public/` and refer to it by path.
+- The template now depends on `@vincentt-xr/analytics` `^0.3.2`.
+- Smoke Build installs `@vincentt-xr/cli@0.26.0` before `pnpm build`. The workflow file is not replaced by an upgrade, so a project whose CI runs `pnpm build` must add that install step first, or CI fails with `vincentt` not found.
+
 ## 1.9.0
 required: false
 No action required. The template now depends on SDK `2.0.0-alpha.10`, which is additive.

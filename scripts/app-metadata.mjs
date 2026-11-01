@@ -1,12 +1,13 @@
 /**
- * Creator-owned page metadata, injected into index.html at build and dev time.
+ * Creator-owned page metadata, injected into the dev page's index.html.
  *
  * `index.html` is a PLATFORM file: a template upgrade replaces it, and every
  * creator's title, description and share image used to live there and be lost
  * on upgrade. They now live in `app.config.json` at the repo root, which the
- * upgrade never reads and never writes (it is not in the zone manifest), and
- * are written into the emitted HTML by `scripts/build.mjs` and `scripts/dev.mjs`
- * (vincentt-xr/v2-template#119).
+ * upgrade never reads and never writes (it is not in the zone manifest).
+ * `scripts/dev.mjs` writes them with this module; the production build
+ * (`vincentt build`) applies the same keys itself, and also requires `url` to
+ * be https (vincentt-xr/v2-template#119).
  *
  * The file is OPTIONAL. A project without one (a repo scaffolded before this
  * existed, or a creator who deleted it) builds exactly what index.html says.

@@ -1,7 +1,8 @@
 # v2-template
 
 The Vincentt starter app: a real React + R3F + Vincentt XR SDK (`@vincentt-xr/sdk`)
-WebXR app, bundled by esbuild.
+WebXR app. The dev server bundles with esbuild; the production build is the Vincentt CLI's
+`vincentt build`.
 
 ## Shape
 
@@ -25,7 +26,7 @@ pnpm install
 pnpm dev          # esbuild dev server on localhost:5173 (output in .dev/)
 pnpm preview      # on-device preview over a secure tunnel (needs `vincentt login`)
 pnpm typecheck
-pnpm build        # production bundle to dist/
+pnpm build        # `vincentt build`: production bundle to dist/ (needs the CLI installed)
 ```
 
 ## Release

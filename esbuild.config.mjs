@@ -1,7 +1,7 @@
 /**
- * Shared esbuild config for this project. Travels with the repo so the
- * server-side publish build and the in-browser esbuild-wasm preview use the
- * exact same options (preview == publish). Replaces the old Vite setup.
+ * esbuild config for the local dev server (`scripts/dev.mjs`). The production
+ * build is `vincentt build`, which uses its own fixed options and never reads
+ * this file.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -155,13 +155,11 @@ export function importMetaEnvDefine(prod, viteVars = {}) {
 //
 //   .env  →  .env.local  →  .env.<mode>  →  .env.<mode>.local
 //
-// `.env.development` is where a dev-only clip belongs: it is read by `pnpm dev`
-// and never by `pnpm build`, so the clip cannot reach a published bundle by
-// forgetting to unset it. `.env` and `.env.local` are read in BOTH modes, which
-// is what makes a configured source survive into a build on purpose — and why
-// `scripts/build.mjs` prints what it is baking in when `VITE_INPUT_SOURCE` is
-// set. Only `VITE_`-prefixed keys cross into the bundle; nothing else from the
-// environment is exposed (vincentt-xr/v2-template#113).
+// `.env.development` is where a dev-only clip belongs. The production build
+// (`vincentt build`) reads no env file and defines no `VITE_*` key, so no clip
+// reaches a published bundle through this map. Only `VITE_`-prefixed keys cross
+// into the dev bundle; nothing else from the environment is exposed
+// (vincentt-xr/v2-template#113).
 export function parseEnvFile(text) {
   const out = {};
   for (const raw of text.split(/\r?\n/)) {
