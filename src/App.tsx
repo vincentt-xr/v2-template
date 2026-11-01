@@ -26,11 +26,13 @@ import { PerspectiveCamera } from "@react-three/drei";
 import { Scene } from "./Scene";
 import { PreviewAnchors } from "./PreviewAnchors";
 import { FrameContainer } from "./FrameContainer";
+import { CaptureControls } from "./CaptureControls";
 import {
   announcedPresets,
   chooseMediaSource,
   isFramed,
   pickFramedDefault,
+  requestsRecord,
   requestsWebcam,
 } from "./framed";
 import type { MediaSourceEnv } from "./framed";
@@ -402,6 +404,7 @@ export const Shell = () => {
         <PreviewAnchors />
       </XRScene>
       <MediaSourceControl value={selected} onChange={applySource} />
+      {requestsRecord() ? <CaptureControls /> : null}
       {MobileXRAcceptanceHarness ? (
         <Suspense fallback={null}>
           <MobileXRAcceptanceHarness ready={ready} error={xrError?.message} />

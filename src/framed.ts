@@ -77,6 +77,31 @@ export const requestsWebcam = (search?: string): boolean => {
   }
 };
 
+/** `?record` on the app's own address shows the capture controls. */
+export const RECORD_PARAM = "record";
+
+/**
+ * True when this document's own address asks for the capture controls
+ * (`?record`, `?record=1`): the shutter, the REC chip and the saved files.
+ *
+ * Presence is enough; `0`, `false`, `no` and `off` switch it back off so a
+ * frame can pass the flag through unchanged. Read like `requestsWebcam`: the
+ * first value only, a missing `window` or a throw folds to false, so an
+ * unknown context keeps the creator's plain experience.
+ */
+export const requestsRecord = (search?: string): boolean => {
+  try {
+    const s =
+      search ?? (typeof window === "undefined" ? "" : window.location.search);
+    if (!s) return false;
+    const value = new URLSearchParams(s).get(RECORD_PARAM);
+    if (value === null) return false;
+    return !["0", "false", "no", "off"].includes(value.trim().toLowerCase());
+  } catch {
+    return false;
+  }
+};
+
 /**
  * Which media source this app starts on.
  *
