@@ -64,8 +64,9 @@ needed. There is no lifecycle DSL — per-frame logic is R3F `useFrame`, per-mou
 setup is `useEffect`, both inside the scene component.
 
 `App.tsx` already owns the platform shell. Do not add another `XRProvider`,
-`XRScene`, `AspectRatioContainer`, `VideoBackground`, `PerspectiveCamera`,
-media-source binder, or platform diagnostics inside `Scene.tsx`.
+`XRScene`, `FrameContainer` (or the SDK's `AspectRatioContainer`),
+`VideoBackground`, `PerspectiveCamera`, media-source binder, or platform
+diagnostics inside `Scene.tsx`.
 
 ---
 
@@ -464,6 +465,50 @@ visible phase or HUD changes.
 
 Model downloads per tracker: face 3.8 MB, hand 7.8 MB, gesture 8.4 MB, body
 5.8 MB, holistic 13.7 MB (alpha.8). Each is a first-load cost on the phone.
+
+## Frame: phone or full — `src/frame.config.ts`
+
+The shell sizes the app per one value in `src/frame.config.ts`:
+
+```ts
+export const frame: FrameMode = "phone"; // or "full"
+```
+
+- `"phone"` (default): the 9:16 portrait frame, pillarboxed on wide screens, full
+  width on a phone. Every experience is framed the same everywhere.
+- `"full"`: the whole viewport, edge to edge, under the notch and the home bar
+  (`viewport-fit=cover` is set). The SDK cover-crops the camera feed to the
+  canvas, so trackers, anchors and masks stay aligned; only the visible crop of
+  the feed changes.
+
+Screen space is still the 720 × 1280 design canvas on either frame. Positions
+in design pixels stretch per axis to cover the viewport; **sizes scale
+uniformly**, by `min(viewportWidth / 720, viewportHeight / 1280)`. The two agree
+only at 9:16. A rectangle traced around a tracked face or hand must therefore
+convert its size through the uniform scale, which `feedRectToScreen(rect,
+viewport, padding)` in `src/screenFit.ts` does (the bounding boxes below use
+it). Ordinary UI needs nothing: a 52-pixel button stays 52 design pixels.
+
+## Capture controls — `?record` (shell, not a scene feature)
+
+`?record` on the app's address mounts `src/CaptureControls.tsx` beside the
+scene: the design system's camera UI on Night glass. A 76-unit shutter in the
+control band — tap for a photo, hold 300 ms to record (no time limit), release
+to stop — a REC chip with the elapsed time in the HUD band, "Release to stop"
+above the shutter, a white flash on a photo. Each capture saves straight to the
+device through `src/captureSave.ts`: a download on desktop and Android; on iOS
+the share sheet with the file, which is how a web page reaches Photos. Nothing
+is drawn onto the file.
+
+Recording reads the SDK's capture canvas (`session.captureStream`), so the file
+holds what the canvas composites and not DOM overlays; keep UI that must appear
+in captures in screen space (see "Camera effects, render layers, and DOM HUDs").
+Chromium's MP4 recorder has produced truncated files, so the controls ask for
+WebM there and MP4 on Safari and iOS. `requestsRecord()` in `src/framed.ts` reads
+the flag (`0`, `false`, `no`, `off` switch it off); `?record=0` is how a frame
+passes the address through without the controls. The scene's own capture flow
+(`src/capture.ts`, below) is unaffected and still the way to add a capture the
+experience triggers itself.
 
 ## Tracking bounding boxes — from `src/FaceBoundingBox.tsx` and `src/HandBoundingBox.tsx`
 

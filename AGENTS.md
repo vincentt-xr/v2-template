@@ -260,6 +260,10 @@ A published experience can be framed. Two things change inside a frame:
   the same for every frame in local dev and preview only; a published app never
   reads it, so tell a host that embeds a camera experience to add
   `?source=webcam`.
+- **Capture controls.** `?record` on the app's address (framed or not) adds the
+  camera UI: tap the shutter for a photo, hold to record, release to stop. Each
+  capture saves to the device at once. The plain address shows the creator's
+  experience exactly as built, so nothing in `Scene.tsx` has to change for it.
 
   ```html
   <iframe
@@ -524,6 +528,9 @@ preview is running again.
 - **Any new file you create under `src/`** — utility hooks, sub-components, asset
   imports. Organize freely.
 - **`package.json` dependencies** — add a dependency, then `pnpm install` it yourself.
+- **`src/frame.config.ts`** — one value: `"phone"` keeps the 9:16 frame (default),
+  `"full"` fills the screen edge to edge. Change it only when the creator asks for
+  fullscreen; tracking stays aligned either way.
 
 ## What to leave alone
 
@@ -533,6 +540,8 @@ requires it, and know why).
 
 - **`src/App.tsx`** — the runtime shell: XR session start, media-source binding,
   camera, lighting, scene mount.
+- **`src/FrameContainer.tsx`**, **`src/CaptureControls.tsx`**, **`src/captureSave.ts`**
+  — the frame and the `?record` camera UI (shutter, REC chip, save to device).
 - **`src/main.tsx`** — the mount.
 - **`src/capture.ts`** — capture + share primitives (`usePhotoCapture`,
   `useVideoCapture`, `saveToDevice`, `shareMedia`).

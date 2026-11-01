@@ -9,9 +9,10 @@ WebXR app. The dev server bundles with esbuild; the production build is the Vinc
 ```
 src/
   main.tsx            mount — never edited
-  App.tsx             protected shell: XRProvider + AspectRatioContainer +
+  App.tsx             protected shell: XRProvider + FrameContainer +
                       XRScene + media-source binding, camera, lighting,
                       VideoBackground, PreviewAnchors — never edited
+  frame.config.ts     the creator's one setting: "phone" (9:16) or "full"
   Scene.tsx           the agent's surface: add SDK components and R3F
                       primitives here
   PreviewAnchors.tsx  editor-preview integration — never edited
