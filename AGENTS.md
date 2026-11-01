@@ -528,9 +528,10 @@ preview is running again.
 - **Any new file you create under `src/`** — utility hooks, sub-components, asset
   imports. Organize freely.
 - **`package.json` dependencies** — add a dependency, then `pnpm install` it yourself.
-- **`src/frame.config.ts`** — one value: `"phone"` keeps the 9:16 frame (default),
-  `"full"` fills the screen edge to edge. Change it only when the creator asks for
-  fullscreen; tracking stays aligned either way.
+- **`src/frame.config.ts`** — one value: `"full"` (default) makes the canvas the
+  whole viewport on every device; `"phone"` locks a 9:16 frame, pillarboxed on
+  wide screens. Change it only when the creator asks for the fixed frame;
+  tracking stays aligned either way.
 
 ## What to leave alone
 

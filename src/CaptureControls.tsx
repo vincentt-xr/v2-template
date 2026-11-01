@@ -8,7 +8,7 @@
 //
 // It records the SDK's own capture canvas through `session.captureStream`, so
 // the file holds exactly what the canvas composites; DOM overlays (this UI,
-// the footer) are not in it.
+// the footer) are not in it. Video is MP4 wherever the recorder can write it.
 import {
   useCallback,
   useEffect,

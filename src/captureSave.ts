@@ -13,13 +13,14 @@ export const isIOS = (nav: Navigator = navigator): boolean =>
   /iP(hone|ad|od)/.test(nav.userAgent) ||
   (nav.platform === "MacIntel" && (nav.maxTouchPoints ?? 0) > 1);
 
-/** Prefer the recorder container each engine writes well. */
-export const preferredVideoMimeType = (nav: Navigator = navigator): string => {
-  // Safari records MP4 only; Chromium's MP4 muxer has produced truncated
-  // files, so WebM goes first there and MP4 stays as the SDK's own fallback.
-  const safari =
-    /Safari/.test(nav.userAgent) && !/Chrom(e|ium)|Edg|OPR|Android/.test(nav.userAgent);
-  return safari || isIOS(nav) ? "video/mp4" : "video/webm;codecs=vp9";
+/** The video container: MP4 everywhere it records; WebM only when it cannot. */
+export const preferredVideoMimeType = (): string => {
+  const mr = (globalThis as { MediaRecorder?: { isTypeSupported?: (t: string) => boolean } })
+    .MediaRecorder;
+  const ok = (t: string) => mr?.isTypeSupported?.(t) ?? false;
+  if (ok("video/mp4;codecs=avc1")) return "video/mp4;codecs=avc1";
+  if (ok("video/mp4")) return "video/mp4";
+  return "video/webm;codecs=vp9";
 };
 
 const extensionOf = (mime: string) => {

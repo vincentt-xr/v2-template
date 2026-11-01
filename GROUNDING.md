@@ -466,20 +466,21 @@ visible phase or HUD changes.
 Model downloads per tracker: face 3.8 MB, hand 7.8 MB, gesture 8.4 MB, body
 5.8 MB, holistic 13.7 MB (alpha.8). Each is a first-load cost on the phone.
 
-## Frame: phone or full — `src/frame.config.ts`
+## Frame: full or phone — `src/frame.config.ts`
 
 The shell sizes the app per one value in `src/frame.config.ts`:
 
 ```ts
-export const frame: FrameMode = "phone"; // or "full"
+export const frame: FrameMode = "full"; // or "phone"
 ```
 
-- `"phone"` (default): the 9:16 portrait frame, pillarboxed on wide screens, full
-  width on a phone. Every experience is framed the same everywhere.
-- `"full"`: the whole viewport, edge to edge, under the notch and the home bar
-  (`viewport-fit=cover` is set). The SDK cover-crops the camera feed to the
-  canvas, so trackers, anchors and masks stay aligned; only the visible crop of
-  the feed changes.
+- `"full"` (default): the canvas is the whole viewport, edge to edge, under the
+  notch and the home bar (`viewport-fit=cover` is set). A phone gives its own
+  portrait ratio; a desktop window gives a wide canvas, which suits the webcam.
+  The SDK cover-crops the camera feed to the canvas, so trackers, anchors and
+  masks stay aligned; only the visible crop of the feed changes with the ratio.
+- `"phone"`: a fixed 9:16 portrait frame, pillarboxed on wide screens, full
+  width on a phone, so the composition is framed the same everywhere.
 
 Screen space is still the 720 × 1280 design canvas on either frame. Positions
 in design pixels stretch per axis to cover the viewport; **sizes scale
@@ -503,8 +504,9 @@ is drawn onto the file.
 Recording reads the SDK's capture canvas (`session.captureStream`), so the file
 holds what the canvas composites and not DOM overlays; keep UI that must appear
 in captures in screen space (see "Camera effects, render layers, and DOM HUDs").
-Chromium's MP4 recorder has produced truncated files, so the controls ask for
-WebM there and MP4 on Safari and iOS. `requestsRecord()` in `src/framed.ts` reads
+Video is MP4 (H.264) wherever the browser's recorder can write it, which is
+every current Chrome, Edge, Safari and iOS; WebM is the fallback only where
+MP4 recording is missing (older Firefox). `requestsRecord()` in `src/framed.ts` reads
 the flag (`0`, `false`, `no`, `off` switch it off); `?record=0` is how a frame
 passes the address through without the controls. The scene's own capture flow
 (`src/capture.ts`, below) is unaffected and still the way to add a capture the
