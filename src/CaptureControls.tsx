@@ -64,17 +64,19 @@ export const CaptureControls = ({ audio = false }: { audio?: boolean }) => {
     audio: mic,
     mimeType: preferredVideoMimeType(mic),
     onError: (error) => {
+      // eslint-disable-next-line no-console -- the one place a refused mic is explained to a developer
+      console.warn("[CaptureControls] recorder error", error.name, error.message);
       if (mic && isMicrophoneError(error)) {
         // The mic was refused or is absent; the SDK has already given up on
         // this take. Record it again without audio once the recorder re-forms.
+        // The caption stays until the next capture so the reason is not missed.
         retryWithoutMic.current = true;
         setMic(false);
-        setNote("No microphone, recording video only");
+        setNote(`No microphone (${error.name}), recording video only`);
       } else {
         setStartedAt(null);
-        setNote("Recording failed");
+        setNote(`Recording failed (${error.name})`);
       }
-      window.setTimeout(() => setNote(null), 2200);
     },
     onRecordingComplete: (blob) => {
       void blobToDataUrl(blob).then((dataUrl) =>
@@ -92,6 +94,7 @@ export const CaptureControls = ({ audio = false }: { audio?: boolean }) => {
 
   const takePhoto = useCallback(() => {
     if (!ready) return;
+    setNote(null);
     setFlashKey((k) => k + 1);
     const dataUrl = session.captureFrame();
     void fetch(dataUrl)
@@ -102,6 +105,7 @@ export const CaptureControls = ({ audio = false }: { audio?: boolean }) => {
 
   const startRecording = useCallback(async () => {
     if (!ready || recording) return;
+    setNote(null);
     setElapsed(0);
     setStartedAt(Date.now());
     await recorder.start(session.captureStream(30));
