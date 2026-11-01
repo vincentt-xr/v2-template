@@ -12,7 +12,7 @@ src/
   App.tsx             protected shell: XRProvider + FrameContainer +
                       XRScene + media-source binding, camera, lighting,
                       VideoBackground, PreviewAnchors — never edited
-  frame.config.ts     fallback frame: "phone" (9:16, default) or "full" (the viewport)
+  frame.config.ts     the frame: "phone" (9:16, default) or "full" (the viewport)
   Scene.tsx           the agent's surface: add SDK components and R3F
                       primitives here
   PreviewAnchors.tsx  editor-preview integration — never edited

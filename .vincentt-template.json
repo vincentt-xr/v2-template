@@ -35,8 +35,7 @@
     "src/FrameContainer.tsx",
     "src/captureSave.ts",
     "src/screenFit.ts",
-    "src/screenFit.test.ts",
-    "src/frame.config.test.ts"
+    "src/screenFit.test.ts"
   ],
   "creator": [
     "src/Scene.tsx",

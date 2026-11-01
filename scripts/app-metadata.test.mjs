@@ -113,20 +113,6 @@ describe("applyAppMetadata", () => {
   });
 });
 
-describe("frame", () => {
-  it("writes the frame meta, and only then", () => {
-    expect(applyAppMetadata(TEMPLATE_HTML, { frame: "phone" })).toContain(
-      `<meta name="vincentt:frame" content="phone" />`,
-    );
-    expect(applyAppMetadata(TEMPLATE_HTML, { title: "x" })).not.toContain("vincentt:frame");
-  });
-
-  it("accepts full and phone, refuses anything else", () => {
-    expect(validateAppConfig({ frame: "full" })).toEqual([]);
-    expect(validateAppConfig({ frame: "phone" })).toEqual([]);
-    expect(validateAppConfig({ frame: "wide" })).toEqual([`"frame" must be one of "full", "phone"`]);
-  });
-});
 
 describe("resolveImage", () => {
   it("resolves root-relative against url, leaves absolute and missing alone", () => {

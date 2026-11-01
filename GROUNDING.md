@@ -466,12 +466,12 @@ visible phase or HUD changes.
 Model downloads per tracker: face 3.8 MB, hand 7.8 MB, gesture 8.4 MB, body
 5.8 MB, holistic 13.7 MB (alpha.8). Each is a first-load cost on the phone.
 
-## Frame: full or phone — `"frame"` in `app.config.json`
+## Frame: full or phone — `frame` in `src/frame.config.ts`
 
-The shell sizes the app per the `frame` key of `app.config.json` (`"phone"` or
-`"full"`), which the dev server and `vincentt build` write into the page as
-`<meta name="vincentt:frame">`; `src/frame.config.ts` holds the fallback
-(`"phone"`) for a project without the key and `resolveFrame()` reads the meta.
+The shell sizes the app per the `frame` constant in `src/frame.config.ts`
+(`"phone"` or `"full"`), which `src/FrameContainer.tsx` reads. That file is the
+only place the frame is set; `app.config.json` carries no frame key, because
+`vincentt build` refuses keys it does not know.
 
 - `"phone"` (default): a fixed 9:16 portrait frame, pillarboxed on wide
   screens, full width on a phone, so the composition is framed the same

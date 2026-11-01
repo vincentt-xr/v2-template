@@ -7,7 +7,7 @@
 // Children are absolutely positioned inside either box.
 import { useEffect, useState, type ReactNode } from "react";
 
-import { resolveFrame, type FrameMode } from "./frame.config";
+import { frame, type FrameMode } from "./frame.config";
 
 const ASPECT_W = 9;
 const ASPECT_H = 16;
@@ -22,7 +22,7 @@ const phoneSize = () => {
 };
 
 export const FrameContainer = ({
-  mode = resolveFrame(),
+  mode = frame,
   children,
 }: {
   mode?: FrameMode;
