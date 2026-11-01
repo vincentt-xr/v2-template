@@ -482,13 +482,18 @@ export const frame: FrameMode = "full"; // or "phone"
 - `"phone"`: a fixed 9:16 portrait frame, pillarboxed on wide screens, full
   width on a phone, so the composition is framed the same everywhere.
 
-Screen space is still the 720 × 1280 design canvas on either frame. Positions
-in design pixels stretch per axis to cover the viewport; **sizes scale
-uniformly**, by `min(viewportWidth / 720, viewportHeight / 1280)`. The two agree
-only at 9:16. A rectangle traced around a tracked face or hand must therefore
-convert its size through the uniform scale, which `feedRectToScreen(rect,
-viewport, padding)` in `src/screenFit.ts` does (the bounding boxes below use
-it). Ordinary UI needs nothing: a 52-pixel button stays 52 design pixels.
+Screen space is still the 720 × 1280 design canvas on either frame. A
+`ScreenShape` / `ScreenText` transform (`position`, `size`) is resolved with
+**one uniform scale**, `min(viewportWidth / 720, viewportHeight / 1280)`, for
+its position and its size. The SDK's `normalizedToScreenPixels` /
+`feedToScreenPixels` stretch each axis over the whole viewport instead; the two
+agree only at 9:16. So on any other canvas, place a tracked point in a
+transform through the uniform scale, never through those helpers:
+`feedRectToScreen(rect, viewport, padding)` in `src/screenFit.ts` does it for a
+rectangle (the bounding boxes below use it), and for a single point the same
+maths is `((x − 0.5) · viewportWidth) / scale` and `((0.5 − y) ·
+viewportHeight) / scale`. Ordinary UI needs nothing: a 52-pixel button stays 52
+design pixels, and `position: { x: 0, y: 540 }` stays near the top.
 
 ## Capture controls — `?record` (shell, not a scene feature)
 
