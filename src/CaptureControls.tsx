@@ -117,9 +117,10 @@ export const CaptureControls = ({ audio = false }: { audio?: boolean }) => {
 
   useEffect(() => {
     if (!retryWithoutMic.current || mic) return;
-    retryWithoutMic.current = false;
+    // Start the retake while the flag is still up, so it keeps the warning.
     if (holding.current) void startRecording();
     else setStartedAt(null);
+    retryWithoutMic.current = false;
   }, [mic, startRecording]);
 
   const stopRecording = useCallback(() => {
