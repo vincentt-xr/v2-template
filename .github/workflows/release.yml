@@ -71,10 +71,9 @@ jobs:
       # verified here -- against the tagged commit, not against main. Smoke Build
       # already gates every PR; this re-runs it at the exact tree `latest` will
       # point at, because that tree is what every new creator gets.
+      # No version input: the action reads package.json's packageManager pin.
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
