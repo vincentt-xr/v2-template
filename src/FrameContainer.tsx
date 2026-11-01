@@ -1,9 +1,9 @@
 // FrameContainer.tsx — sizes the app per `frame.config.ts`. Protected shell.
 //
-// "full" (default): one box the size of the visual viewport, so the canvas is
-// the page. `100dvh` follows the mobile browser chrome as it shows and hides.
-// "phone": a fixed 9:16 box centred on a dark ground (the SDK's
+// "phone" (default): a fixed 9:16 box centred on a dark ground (the SDK's
 // AspectRatioContainer behaviour, owned here so the template can switch it).
+// "full": one box the size of the visual viewport, so the canvas is the page.
+// `100dvh` follows the mobile browser chrome as it shows and hides.
 // Children are absolutely positioned inside either box.
 import { useEffect, useState, type ReactNode } from "react";
 

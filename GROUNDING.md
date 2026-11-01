@@ -468,16 +468,17 @@ Model downloads per tracker: face 3.8 MB, hand 7.8 MB, gesture 8.4 MB, body
 
 ## Frame: full or phone — `"frame"` in `app.config.json`
 
-The shell sizes the app per the `frame` key of `app.config.json` (`"full"` or
-`"phone"`), which the dev server and `vincentt build` write into the page as
+The shell sizes the app per the `frame` key of `app.config.json` (`"phone"` or
+`"full"`), which the dev server and `vincentt build` write into the page as
 `<meta name="vincentt:frame">`; `src/frame.config.ts` holds the fallback
-(`"full"`) for a project without the key and `resolveFrame()` reads the meta.
+(`"phone"`) for a project without the key and `resolveFrame()` reads the meta.
 
-- `"full"` (default): the canvas is the whole viewport, edge to edge, under the
-  notch and the home bar (`viewport-fit=cover` is set). A phone gives its own
-  portrait ratio; a desktop window gives a wide canvas, which suits the webcam.
-- `"phone"`: a fixed 9:16 portrait frame, pillarboxed on wide screens, full
-  width on a phone, so the composition is framed the same everywhere.
+- `"phone"` (default): a fixed 9:16 portrait frame, pillarboxed on wide
+  screens, full width on a phone, so the composition is framed the same
+  everywhere.
+- `"full"`: the canvas is the whole viewport, edge to edge, under the notch and
+  the home bar (`viewport-fit=cover` is set). A phone gives its own portrait
+  ratio; a desktop window gives a wide canvas, which suits the webcam.
 
 **Where the camera lands.** The SDK cover-crops the feed into the canvas,
 centred, enlarged by `perf.cameraZoom` (1.2 by default, a selfie-style crop),

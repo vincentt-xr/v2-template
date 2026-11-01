@@ -530,10 +530,10 @@ preview is running again.
 - **Any new file you create under `src/`** — utility hooks, sub-components, asset
   imports. Organize freely.
 - **`package.json` dependencies** — add a dependency, then `pnpm install` it yourself.
-- **`"frame"` in `app.config.json`** — `"full"` (default) makes the canvas the
-  whole viewport on every device; `"phone"` locks a 9:16 frame, pillarboxed on
-  wide screens. Set it only when the creator asks for the fixed frame; tracking
-  stays aligned either way. (`src/frame.config.ts` holds the fallback for a
+- **`"frame"` in `app.config.json`** — `"phone"` (default) is the 9:16 frame,
+  pillarboxed on wide screens; `"full"` makes the canvas the whole viewport on
+  every device, which suits a desktop webcam. Set it only when the creator asks
+  for fullscreen; tracking stays aligned either way. (`src/frame.config.ts` holds the fallback for a
   project without the key; the key needs CLI 0.27 or later at build time.)
 
 ## What to leave alone
