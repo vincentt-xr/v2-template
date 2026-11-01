@@ -5,6 +5,16 @@ Per release tag, newest first. Read by the platform's own version surface
 outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
+## 1.11.0
+required: false
+A `full` frame option beside the default 9:16 frame, and `?record` capture controls; the plain address and the frame are unchanged.
+- `"frame"` in `app.config.json`: `"phone"` (default, the fixed 9:16 frame as before) or `"full"` (the canvas is the whole viewport, under the notch; `viewport-fit=cover`). The dev server writes it into the page; `vincentt build` needs CLI 0.27 or later for the key, older CLIs refuse it. `src/frame.config.ts` is the fallback and `src/FrameContainer.tsx` replaces the SDK `AspectRatioContainer` in `App.tsx`.
+- Nothing visible changes without the key. A project that kept its own `App.tsx` is unaffected until it adopts the new shell.
+- `?record` on the app's address shows the camera UI (`src/CaptureControls.tsx`, `src/captureSave.ts`): tap the shutter for a photo, hold to record, release to stop; `?record=audio` records the microphone too. Captures download on desktop and Android and open the share sheet on iOS; video is MP4 where the browser can record it, WebM otherwise. `recordRequest()` in `src/framed.ts` reads the flag.
+- In record mode the canvas pixel ratio is pinned to `min(devicePixelRatio, 2)` and adaptive quality is off, so captures have the screen's resolution.
+- `FaceBoundingBox` and `HandBoundingBox` size themselves through `src/screenFit.ts`, so they fit on any canvas aspect. At 9:16 they draw exactly as before.
+- `index.html`'s viewport meta now carries `viewport-fit=cover`; `src/index.css` gains the `.cam-*` styles.
+
 ## 1.10.0
 required: true
 The build is now `vincentt build` on the shared runtime; empty `dist/` once before the first build, which refuses a folder it did not write.

@@ -7,6 +7,8 @@ import {
   chooseMediaSource,
   isFramed,
   pickFramedDefault,
+  recordRequest,
+  requestsRecord,
   requestsWebcam,
 } from "./framed";
 
@@ -427,5 +429,48 @@ describe("announcedPresets", () => {
 
   it("is empty for an empty list, not undefined", () => {
     expect(announcedPresets([])).toEqual([]);
+  });
+});
+
+describe("requestsRecord", () => {
+  it("is off without the parameter", () => {
+    expect(requestsRecord("")).toBe(false);
+    expect(requestsRecord("?source=webcam")).toBe(false);
+  });
+
+  it("is on when `record` is present, with or without a value", () => {
+    expect(requestsRecord("?record")).toBe(true);
+    expect(requestsRecord("?record=1")).toBe(true);
+    expect(requestsRecord("?source=webcam&record=true")).toBe(true);
+  });
+
+  it("switches off for 0, false, no and off", () => {
+    expect(requestsRecord("?record=0")).toBe(false);
+    expect(requestsRecord("?record=false")).toBe(false);
+    expect(requestsRecord("?record=No")).toBe(false);
+    expect(requestsRecord("?record=off")).toBe(false);
+  });
+
+  it("reads the first value only", () => {
+    expect(requestsRecord("?record=0&record=1")).toBe(false);
+  });
+
+  it("`audio` turns the microphone on, nothing else does", () => {
+    expect(recordRequest("?record=audio")).toEqual({ enabled: true, audio: true });
+    expect(recordRequest("?record=Audio")).toEqual({ enabled: true, audio: true });
+    expect(recordRequest("?record=1")).toEqual({ enabled: true, audio: false });
+    expect(recordRequest("?record=off")).toEqual({ enabled: false, audio: false });
+    expect(recordRequest("")).toEqual({ enabled: false, audio: false });
+  });
+
+  it("folds a missing window to false", () => {
+    const original = globalThis.window;
+    // @ts-expect-error — simulate a non-browser context
+    delete globalThis.window;
+    try {
+      expect(requestsRecord()).toBe(false);
+    } finally {
+      globalThis.window = original;
+    }
   });
 });

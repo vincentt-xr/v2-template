@@ -20,7 +20,8 @@
  *     "image": "/images/share.jpg",                    // og:image, twitter:image (root-relative = public/)
  *     "imageAlt": "A hand bending a field of lines",   // og:image:alt, twitter:image:alt
  *     "imageWidth": 1200, "imageHeight": 630,          // og:image:width/height (optional)
- *     "imageType": "image/jpeg"                        // og:image:type (optional)
+ *     "imageType": "image/jpeg",                       // og:image:type (optional)
+ *     "frame": "full"                                  // "full" | "phone" → <meta name="vincentt:frame">
  *   }
  *
  * A root-relative image is made absolute against `url` when both are set,
@@ -35,7 +36,9 @@ export const APP_CONFIG = "app.config.json";
 
 const STRING_KEYS = ["title", "description", "url", "image", "imageAlt", "imageType"];
 const NUMBER_KEYS = ["imageWidth", "imageHeight"];
-const KNOWN = new Set([...STRING_KEYS, ...NUMBER_KEYS]);
+/** `frame`: "full" (the viewport) or "phone" (a 9:16 frame); see src/frame.config.ts. */
+const FRAME_VALUES = ["full", "phone"];
+const KNOWN = new Set([...STRING_KEYS, ...NUMBER_KEYS, "frame"]);
 
 /** Validates a parsed config. Returns the problems; empty means it is usable. */
 export function validateAppConfig(config) {
@@ -61,6 +64,9 @@ export function validateAppConfig(config) {
   }
   if (typeof config.image === "string" && !/^(\/|https?:\/\/)/.test(config.image)) {
     problems.push(`"image" must start with "/" (a file under public/) or be an http(s) URL`);
+  }
+  if (config.frame !== undefined && !FRAME_VALUES.includes(config.frame)) {
+    problems.push(`"frame" must be one of ${FRAME_VALUES.map((v) => `"${v}"`).join(", ")}`);
   }
   for (const key of ["title", "description", "image", "imageAlt"]) {
     if (typeof config[key] === "string" && /[<>]/.test(config[key])) {
@@ -188,5 +194,6 @@ export function applyAppMetadata(html, config = {}) {
     out = setMeta(out, "property", "og:image:alt", imageAlt);
     out = setMeta(out, "name", "twitter:image:alt", imageAlt);
   }
+  if (config.frame !== undefined) out = setMeta(out, "name", "vincentt:frame", config.frame);
   return out;
 }

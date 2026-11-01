@@ -30,12 +30,19 @@
     "tsconfig.json",
     "tsconfig.node.json",
     "vitest.config.ts",
-    "esbuild.config.mjs"
+    "esbuild.config.mjs",
+    "src/CaptureControls.tsx",
+    "src/FrameContainer.tsx",
+    "src/captureSave.ts",
+    "src/screenFit.ts",
+    "src/screenFit.test.ts",
+    "src/frame.config.test.ts"
   ],
   "creator": [
     "src/Scene.tsx",
     "src/FaceBoundingBox.tsx",
     "src/FooterHud.tsx",
-    "src/HandBoundingBox.tsx"
+    "src/HandBoundingBox.tsx",
+    "src/frame.config.ts"
   ]
 }

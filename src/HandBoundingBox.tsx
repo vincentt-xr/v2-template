@@ -1,7 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import {
-  normalizedToScreenPixels,
   ScreenShape,
   ScreenSpaceUI,
   XRModel,
@@ -10,6 +9,8 @@ import {
   useXRModel,
   type XRModelNodeHandTracking,
 } from "@vincentt-xr/sdk/low-level";
+
+import { feedRectToScreen } from "./screenFit";
 
 export type HandBoundingBoxProps = {
   hand?: "left" | "right" | "both";
@@ -123,26 +124,15 @@ export const HandBoundingBox = ({
   const transforms = useMemo(
     () =>
       boxes.map((box) => {
-        const topLeft = normalizedToScreenPixels({
-          point: { x: box.minX, y: box.minY },
-          viewportSize,
-        });
-        const bottomRight = normalizedToScreenPixels({
-          point: { x: box.maxX, y: box.maxY },
-          viewportSize,
-        });
-        const left = Math.min(topLeft.x, bottomRight.x) - Math.max(0, padding);
-        const right = Math.max(topLeft.x, bottomRight.x) + Math.max(0, padding);
-        const bottom = Math.min(topLeft.y, bottomRight.y) - Math.max(0, padding);
-        const top = Math.max(topLeft.y, bottomRight.y) + Math.max(0, padding);
+        const { position, size } = feedRectToScreen(box, viewportSize, padding);
 
         return {
           box,
           color: handColor(box.handedness, color),
           transform: {
             enabled: true,
-            position: { x: (left + right) / 2, y: (bottom + top) / 2 },
-            size: { width: Math.max(1, right - left), height: Math.max(1, top - bottom) },
+            position,
+            size,
             pivot: [0.5, 0.5] as [number, number],
             rotation: 0,
             scale2D: { x: 1, y: 1 },

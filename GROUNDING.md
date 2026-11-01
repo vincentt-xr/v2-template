@@ -64,8 +64,9 @@ needed. There is no lifecycle DSL — per-frame logic is R3F `useFrame`, per-mou
 setup is `useEffect`, both inside the scene component.
 
 `App.tsx` already owns the platform shell. Do not add another `XRProvider`,
-`XRScene`, `AspectRatioContainer`, `VideoBackground`, `PerspectiveCamera`,
-media-source binder, or platform diagnostics inside `Scene.tsx`.
+`XRScene`, `FrameContainer` (or the SDK's `AspectRatioContainer`),
+`VideoBackground`, `PerspectiveCamera`, media-source binder, or platform
+diagnostics inside `Scene.tsx`.
 
 ---
 
@@ -464,6 +465,70 @@ visible phase or HUD changes.
 
 Model downloads per tracker: face 3.8 MB, hand 7.8 MB, gesture 8.4 MB, body
 5.8 MB, holistic 13.7 MB (alpha.8). Each is a first-load cost on the phone.
+
+## Frame: full or phone — `"frame"` in `app.config.json`
+
+The shell sizes the app per the `frame` key of `app.config.json` (`"phone"` or
+`"full"`), which the dev server and `vincentt build` write into the page as
+`<meta name="vincentt:frame">`; `src/frame.config.ts` holds the fallback
+(`"phone"`) for a project without the key and `resolveFrame()` reads the meta.
+
+- `"phone"` (default): a fixed 9:16 portrait frame, pillarboxed on wide
+  screens, full width on a phone, so the composition is framed the same
+  everywhere.
+- `"full"`: the canvas is the whole viewport, edge to edge, under the notch and
+  the home bar (`viewport-fit=cover` is set). A phone gives its own portrait
+  ratio; a desktop window gives a wide canvas, which suits the webcam.
+
+**Where the camera lands.** The SDK cover-crops the feed into the canvas,
+centred, enlarged by `perf.cameraZoom` (1.2 by default, a selfie-style crop),
+so trackers, anchors and masks stay aligned on every ratio; only the visible
+part of the feed changes. A 16:9 webcam in a wide desktop window shows almost
+the whole frame; the same webcam in a portrait phone frame keeps a centre
+column of it; a portrait phone camera in a wide window keeps a centre band.
+Set `perf.cameraZoom: 1` on `XRProvider` for the widest view, and keep content
+that must stay in shot near the centre of the feed.
+
+Screen space is still the 720 × 1280 design canvas on either frame. A
+`ScreenShape` / `ScreenText` transform (`position`, `size`) is resolved with
+**one uniform scale**, `min(viewportWidth / 720, viewportHeight / 1280)`, for
+its position and its size. The SDK's `normalizedToScreenPixels` /
+`feedToScreenPixels` stretch each axis over the whole viewport instead; the two
+agree only at 9:16. So on any other canvas, place a tracked point in a
+transform through the uniform scale, never through those helpers:
+`feedRectToScreen(rect, viewport, padding)` in `src/screenFit.ts` does it for a
+rectangle (the bounding boxes below use it), and for a single point the same
+maths is `((x − 0.5) · viewportWidth) / scale` and `((0.5 − y) ·
+viewportHeight) / scale`. Ordinary UI needs nothing: a 52-pixel button stays 52
+design pixels, and `position: { x: 0, y: 540 }` stays near the top.
+
+## Capture controls — `?record` (shell, not a scene feature)
+
+`?record` on the app's address mounts `src/CaptureControls.tsx` beside the
+scene: the design system's camera UI on Night glass. A 76-unit shutter in the
+control band — tap for a photo, hold 300 ms to record (no time limit), release
+to stop — a REC chip with the elapsed time in the HUD band, "Release to stop"
+above the shutter, a white flash on a photo. `?record=audio` adds the microphone to recordings
+(the prompt comes with the first take). Record mode pins the canvas pixel
+ratio (`min(devicePixelRatio, 2)`) and turns adaptive quality off, so a photo
+or a take has the screen's resolution from the first frame to the last. Each
+capture saves straight to the device through `src/captureSave.ts`: a download on desktop and Android; on iOS
+the share sheet with the file, which is how a web page reaches Photos. Nothing
+is drawn onto the file.
+
+Recording reads the SDK's capture canvas (`session.captureStream`), so the file
+holds what the canvas composites and not DOM overlays; keep UI that must appear
+in captures in screen space (see "Camera effects, render layers, and DOM HUDs").
+Video is MP4 (H.264) wherever the browser's recorder can write it, which is
+every current Chrome, Edge, Safari and iOS; WebM is the fallback only where
+MP4 recording is missing (older Firefox). With the microphone the codec string
+names AAC (`avc1,mp4a.40.2`): a video-only string makes Chromium mux the mic
+as Opus inside MP4, which plays in Chrome and is silent in QuickTime, Photos
+and most players. `requestsRecord()` in `src/framed.ts` reads
+the flag (`0`, `false`, `no`, `off` switch it off); `?record=0` is how a frame
+passes the address through without the controls. The scene's own capture flow
+(`src/capture.ts`, below) is unaffected and still the way to add a capture the
+experience triggers itself.
 
 ## Tracking bounding boxes — from `src/FaceBoundingBox.tsx` and `src/HandBoundingBox.tsx`
 

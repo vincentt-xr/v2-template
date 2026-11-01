@@ -77,6 +77,48 @@ export const requestsWebcam = (search?: string): boolean => {
   }
 };
 
+/** `?record` on the app's own address shows the capture controls. */
+export const RECORD_PARAM = "record";
+
+export type RecordRequest = {
+  /** The capture controls are shown. */
+  enabled: boolean;
+  /** Recordings carry the microphone (`?record=audio`). */
+  audio: boolean;
+};
+
+const RECORD_OFF = new Set(["0", "false", "no", "off"]);
+
+/**
+ * What this document's own address asks of the capture controls.
+ *
+ * `?record` or `?record=1` shows them; `?record=audio` also records the
+ * microphone (the mic prompt comes with the first recording, not on load).
+ * `0`, `false`, `no` and `off` switch them back off so a frame can pass the
+ * flag through unchanged. Read like `requestsWebcam`: the first value only, a
+ * missing `window` or a throw folds to off, so an unknown context keeps the
+ * creator's plain experience.
+ */
+export const recordRequest = (search?: string): RecordRequest => {
+  const off = { enabled: false, audio: false };
+  try {
+    const s =
+      search ?? (typeof window === "undefined" ? "" : window.location.search);
+    if (!s) return off;
+    const value = new URLSearchParams(s).get(RECORD_PARAM);
+    if (value === null) return off;
+    const v = value.trim().toLowerCase();
+    if (RECORD_OFF.has(v)) return off;
+    return { enabled: true, audio: v === "audio" };
+  } catch {
+    return off;
+  }
+};
+
+/** True when the capture controls are requested (see `recordRequest`). */
+export const requestsRecord = (search?: string): boolean =>
+  recordRequest(search).enabled;
+
 /**
  * Which media source this app starts on.
  *
