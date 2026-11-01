@@ -327,19 +327,19 @@ in a new session; follow the linked sections when an answer is uncertain.
 
 ## Developing without a camera — local clip input
 
-The template reads `VITE_INPUT_SOURCE` and `VITE_INPUT_URL` from the process
-environment and from `.env`, `.env.local`, `.env.development` (dev only) and
-`.env.production` (build only), and starts the session on that source instead of
-the webcam:
+In local dev and preview, the template reads `VITE_INPUT_SOURCE` and
+`VITE_INPUT_URL` from the process environment and from `.env`, `.env.local` and
+`.env.development`, and starts the session on that source instead of the webcam:
 
 ```
 VITE_INPUT_SOURCE=video VITE_INPUT_URL=/hand-wave.mp4 pnpm dev   # a looping clip
 VITE_INPUT_SOURCE=photo VITE_INPUT_URL=/portrait.jpg  pnpm dev   # one still frame
 ```
 
-Put the clip under `public/` (served from the root) or point at a full URL. Keep
-a dev clip in `.env.development` so `pnpm build` never bakes it in; a clip that
-should ship goes in `.env`, and the build prints what it carries. Clips and
+Put the clip under `public/` (served from the root) or point at a full URL. Every
+`VITE_*` switch is dev-only: `pnpm build` (`vincentt build`) never reads one, so
+a published app always starts on the webcam, and no clip can be shipped this
+way. Clips and
 stills are drawn as filmed, never mirrored, and the shell tells the SDK which
 kind of source it bound, so landmarks land where the footage shows them and
 left/right name the filmed person's own side. A hidden or embedded tab that refuses to play the clip is
@@ -923,9 +923,9 @@ workaround is only for projects scaffolded before it. The repository is
   "classified in neither list".
 - **Framed apps and the webcam** ([#117](https://github.com/vincentt-xr/v2-template/issues/117)).
   Inside any iframe the shell plays a sample clip instead of the webcam unless
-  the frame's address says `?source=webcam` or the build set
-  `VITE_FRAMED_SOURCE=webcam`; the host must also put `allow="camera"` on the
-  frame. The shell publishes `loading | ready | error` for the host; see
+  the frame's address says `?source=webcam` (or, in local dev and preview only,
+  `VITE_FRAMED_SOURCE=webcam` is set); the host must also put `allow="camera"`
+  on the frame. The shell publishes `loading | ready | error` for the host; see
   "Embedding the experience in another page" in `AGENTS.md`. On an older template
   only `?source=webcam` existed and there was no status signal.
 - **Lint on a scene split across files** ([#118](https://github.com/vincentt-xr/v2-template/issues/118)):
@@ -978,8 +978,8 @@ SDK alpha.7/alpha.8):
   for them; it is a platform file an upgrade replaces. See "Page title and share
   preview" in `AGENTS.md`.
 - Framed (any iframe), the shell swaps the webcam for a sample clip unless the
-  frame's address says `?source=webcam` or the build set
-  `VITE_FRAMED_SOURCE=webcam`. The shell also publishes `loading | ready | error`
+  frame's address says `?source=webcam` (`VITE_FRAMED_SOURCE=webcam` does the
+  same in local dev and preview only). The shell also publishes `loading | ready | error`
   for embedders (`<html data-experience>`, the `experience:status` window event,
   a `postMessage` to the parent). Do not re-implement either in `Scene.tsx`; see
   "Embedding the experience in another page" in `AGENTS.md`.

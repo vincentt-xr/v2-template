@@ -12,8 +12,8 @@ The build is now `vincentt build` on the shared runtime; empty `dist/` once befo
 - The template now depends on the shared runtime, `@vincentt-xr/runtime`. A build loads React, three, fiber, drei and the SDK from runtime.vincentt.studio and holds only the app's own code. Removing that dependency, or `vincentt build --self-contained`, gives a self-contained app to host anywhere.
 - The first `vincentt build` refuses a non-empty `dist/` it did not write, such as one from the old build script. Empty it once. Later builds clear only the files the last build on this machine wrote; an added or edited file is refused, never deleted.
 - The CLI now applies `app.config.json`. An unknown key, a wrong type, a `url` that is not `https://`, or an `image` outside the project fails the build.
-- The production build reads no `.env` file and defines no `VITE_*` value. A clip or framed-webcam switch set for the build (`VITE_INPUT_SOURCE`, `VITE_INPUT_URL`, `VITE_FRAMED_SOURCE`) no longer reaches the published app. `pnpm dev` still reads them.
-- Code may import only code and styles. An import of an image, video or model file from `src/` fails the build; put the file under `public/` and refer to it by path.
+- Every `VITE_*` switch is now dev-only. `VITE_INPUT_SOURCE`, `VITE_INPUT_URL`, `VITE_FRAMED_SOURCE` and `VITE_MOBILE_XR_ACCEPTANCE_HARNESS` work in `pnpm dev` and `pnpm preview`, never in `vincentt build` or a published app, whatever `.env` file sets them. A published app starts on the webcam; a framed one uses the camera only when the frame's address carries `?source=webcam`.
+- Code may import only code and styles. An import of an image, video or model file from `src/` fails the build, and the template no longer declares types for such imports; put the file under `public/` and refer to it by path.
 - The template now depends on `@vincentt-xr/analytics` `^0.3.2`.
 - Smoke Build installs `@vincentt-xr/cli@0.26.0` before `pnpm build`. The workflow file is not replaced by an upgrade, so a project whose CI runs `pnpm build` must add that install step first, or CI fails with `vincentt` not found.
 
