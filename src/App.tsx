@@ -48,6 +48,15 @@ import type { MediaPreset } from "./MediaSourceControl";
 // Referenced by URL (not bundled) so it stays out of the published bundle —
 // publish runs the webcam default and never hits this path. Editor preview
 // always passes a real VITE_INPUT_URL, so this is a dev/last-resort fallback.
+// Read once: the address does not change while the app runs. In record mode the
+// canvas keeps a fixed pixel ratio and adaptive quality stays off, so a photo
+// or a take has the screen's resolution from the first frame to the last and
+// the recorder never sees the buffer change size mid-file.
+const RECORD = recordRequest();
+const RECORD_CANVAS = RECORD.enabled
+  ? { dpr: Math.min(typeof window === "undefined" ? 1 : window.devicePixelRatio || 1, 2) }
+  : {};
+
 const FALLBACK_VIDEO_URL =
   "https://cdn.vincentt.studio/assets/sdk/debug-ui/v1/videos/idle-woman.mp4";
 const MOBILE_XR_ACCEPTANCE_HARNESS_ENABLED =
@@ -413,15 +422,6 @@ export const Shell = () => {
     </FrameContainer>
   );
 };
-
-// Read once: the address does not change while the app runs. In record mode the
-// canvas keeps a fixed pixel ratio and adaptive quality stays off, so a photo
-// or a take has the screen's resolution from the first frame to the last and
-// the recorder never sees the buffer change size mid-file.
-const RECORD = recordRequest();
-const RECORD_CANVAS = RECORD.enabled
-  ? { dpr: Math.min(typeof window === "undefined" ? 1 : window.devicePixelRatio || 1, 2) }
-  : {};
 
 const App = () => (
   <XRProvider quality={RECORD.enabled ? false : undefined}>

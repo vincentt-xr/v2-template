@@ -47,6 +47,10 @@ export const CaptureControls = ({ audio = false }: { audio?: boolean }) => {
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [note, setNote] = useState<string | null>(null);
+  // The microphone, while it is available: a refused or missing mic drops to
+  // video only for the rest of the session, with one caption saying so.
+  const [mic, setMic] = useState(audio);
+  const retryWithoutMic = useRef(false);
   const holdTimer = useRef<number | null>(null);
   const holding = useRef(false);
 
@@ -57,8 +61,17 @@ export const CaptureControls = ({ audio = false }: { audio?: boolean }) => {
   }, []);
 
   const recorder = useMediaRecorder({
-    audio,
+    audio: mic,
     mimeType: preferredVideoMimeType(),
+    onError: () => {
+      if (!mic) return;
+      // The mic was refused or is absent; the SDK has already given up on
+      // this take. Record it again without audio once the recorder re-forms.
+      retryWithoutMic.current = true;
+      setMic(false);
+      setNote("No microphone, recording video only");
+      window.setTimeout(() => setNote(null), 2200);
+    },
     onRecordingComplete: (blob) => {
       void blobToDataUrl(blob).then((dataUrl) =>
         saveCapture({ blob, dataUrl }, "video").then(say),
@@ -89,6 +102,13 @@ export const CaptureControls = ({ audio = false }: { audio?: boolean }) => {
     setStartedAt(Date.now());
     await recorder.start(session.captureStream(30));
   }, [ready, recorder, recording, session]);
+
+  useEffect(() => {
+    if (!retryWithoutMic.current || mic) return;
+    retryWithoutMic.current = false;
+    if (holding.current) void startRecording();
+    else setStartedAt(null);
+  }, [mic, startRecording]);
 
   const stopRecording = useCallback(() => {
     if (!recording) return;
