@@ -208,6 +208,13 @@ body,
   -webkit-backdrop-filter: var(--cam-blur);
   animation: cam-enter 220ms ease-out;
 }
+.cam-hud {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cam-chip-warn .cam-chip-text {
+  color: var(--arles);
+}
 .cam-chip-value {
   font-family: "Ibrand", "Literata", Georgia, serif;
   font-size: 24px;

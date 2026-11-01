@@ -47,6 +47,9 @@ export const CaptureControls = ({ audio = false }: { audio?: boolean }) => {
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [note, setNote] = useState<string | null>(null);
+  // Why a take has no sound, or why it failed: its own line, never replaced
+  // by "Saved", cleared when the next capture starts.
+  const [warning, setWarning] = useState<string | null>(null);
   // The microphone, while it is available: a refused or missing mic drops to
   // video only for the rest of the session, with one caption saying so.
   const [mic, setMic] = useState(audio);
@@ -69,13 +72,12 @@ export const CaptureControls = ({ audio = false }: { audio?: boolean }) => {
       if (mic && isMicrophoneError(error)) {
         // The mic was refused or is absent; the SDK has already given up on
         // this take. Record it again without audio once the recorder re-forms.
-        // The caption stays until the next capture so the reason is not missed.
         retryWithoutMic.current = true;
         setMic(false);
-        setNote(`No microphone (${error.name}), recording video only`);
+        setWarning(`No microphone (${error.name}): video only`);
       } else {
         setStartedAt(null);
-        setNote(`Recording failed (${error.name})`);
+        setWarning(`Recording failed (${error.name})`);
       }
     },
     onRecordingComplete: (blob) => {
@@ -95,6 +97,7 @@ export const CaptureControls = ({ audio = false }: { audio?: boolean }) => {
   const takePhoto = useCallback(() => {
     if (!ready) return;
     setNote(null);
+    setWarning(null);
     setFlashKey((k) => k + 1);
     const dataUrl = session.captureFrame();
     void fetch(dataUrl)
@@ -106,6 +109,7 @@ export const CaptureControls = ({ audio = false }: { audio?: boolean }) => {
   const startRecording = useCallback(async () => {
     if (!ready || recording) return;
     setNote(null);
+    if (!retryWithoutMic.current) setWarning(null);
     setElapsed(0);
     setStartedAt(Date.now());
     await recorder.start(session.captureStream(30));
@@ -181,6 +185,11 @@ export const CaptureControls = ({ audio = false }: { audio?: boolean }) => {
         {!recording && note ? (
           <div className="cam-chip" role="status">
             <span className="cam-chip-text">{note}</span>
+          </div>
+        ) : null}
+        {warning ? (
+          <div className="cam-chip cam-chip-warn" role="alert">
+            <span className="cam-chip-text">{warning}</span>
           </div>
         ) : null}
       </div>
