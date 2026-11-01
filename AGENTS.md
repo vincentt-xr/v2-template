@@ -194,12 +194,14 @@ after anything that could have moved you.
 
   `/clip.mp4` is any file under `public/` (served at the root) or a full URL.
   `VITE_INPUT_SOURCE=photo` with an image URL gives a single still frame. To stop
-  typing it, put the same two lines in `.env.development`: `pnpm dev` reads it and
-  `pnpm build` never does, so a dev clip cannot reach a published bundle. `.env` is
-  read by both and is the place for a source that should ship. A build with a
-  configured source prints what it is baking in. The app starts on that source and
-  the in-app media switcher still lets you swap. A hidden tab refusing to play the
-  clip is retried until it plays.
+  typing it, put the same two lines in `.env.development` (or `.env`). The app
+  starts on that source and the in-app media switcher still lets you swap. A
+  hidden tab refusing to play the clip is retried until it plays.
+
+  Every `VITE_*` switch is **dev-only**: `pnpm dev` and `pnpm preview` read them,
+  and `pnpm build` (`vincentt build`) never does, whatever file or environment
+  sets them. A published app always starts on the webcam (or, framed, on a sample
+  clip). There is no way to ship a configured clip.
 
 - **`pnpm preview`** — on-device preview. Builds and serves the app behind a secure
   tunnel to Vincentt's own edge, so you get one `https` URL to open on a phone. AR
@@ -210,8 +212,13 @@ after anything that could have moved you.
 - **`pnpm typecheck`** — `tsc --noEmit`.
 - **`pnpm lint`** — lint the platform source with the template's ESLint rules.
 - **`pnpm test`** — run the platform and QA test suites.
-- **`pnpm build`** — production bundle to `dist/`. Only a production build ever lands
-  there; the dev server writes to `.dev/`.
+- **`pnpm build`** — runs `vincentt build`: production bundle to `dist/`. Only a
+  production build ever lands there; the dev server writes to `.dev/`. The build
+  clears `dist/` only when every file in it is one it wrote on this machine; it
+  refuses anything else rather than deleting it, so empty a `dist/` it did not
+  write (an older template's build, a hand copy) yourself, once.
+  `vincentt build --self-contained` bundles every package into the app, for
+  hosting it anywhere.
 
 ## Page title and share preview
 
@@ -219,7 +226,8 @@ The browser-tab title, the description and the Open Graph / Twitter share card
 come from **`app.config.json`** at the project root — the creator's file. Edit it
 there, never in `index.html`: that file is replaced by a template upgrade, and
 `pnpm build` and `pnpm dev` (at startup — restart dev after editing it) write the
-config's values into its tags.
+config's values into its tags. The build refuses a config with an unknown key, a
+wrong type, a `url` that is not `https://`, or an `image` outside the project.
 
 ```json
 {
@@ -240,23 +248,18 @@ publish check cannot verify against `dist/`, so check the path yourself.
 
 ## Embedding the experience in another page
 
-A published experience can be framed. Two things change inside a frame, and both
-have a switch:
+A published experience can be framed. Two things change inside a frame:
 
 - **The camera.** Framed, the app starts on a sample clip instead of the webcam, so
   an embed does not open on a permission prompt nobody asked for. The clip follows
   the scene's trackers: a hand scene opens on a hand clip, a body scene on a body
   clip, otherwise a face clip (SDK presets carry `tags`; older SDKs get the first
   clip). To run on the
-  live camera the host must allow it on the frame **and** someone must ask for it:
-  the host, per frame, with `?source=webcam` on the frame's address; or the
-  creator, for every embed, by building with `VITE_FRAMED_SOURCE=webcam`. Use the
-  creator switch when the experience _is_ the camera — hand or face tracking has
-  nothing to show without it. "Every embed" includes the console's own preview
-  frame, which will then ask for the camera too. The template git-ignores `.env`,
-  so a switch kept there is lost on a fresh clone or a CI build: un-ignore `.env`
-  for this project or set the variable in the build environment. `pnpm build`
-  prints the switch when it bakes it in.
+  live camera the host must allow it on the frame **and** ask for it, per frame,
+  with `?source=webcam` on the frame's address. `VITE_FRAMED_SOURCE=webcam` does
+  the same for every frame in local dev and preview only; a published app never
+  reads it, so tell a host that embeds a camera experience to add
+  `?source=webcam`.
 
   ```html
   <iframe

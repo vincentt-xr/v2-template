@@ -1,7 +1,8 @@
 /**
  * The development page: `index.html` pointed at the unhashed dev bundle, plus
- * live reload. Used by `scripts/dev.mjs` only. `scripts/build.mjs` never
- * imports this module, which is what keeps the reload snippet out of `dist/`.
+ * live reload. Used by `scripts/dev.mjs` only. The production build
+ * (`vincentt build`) never reads this module, which is what keeps the reload
+ * snippet out of `dist/`.
  *
  * Live reload listens to esbuild's own `GET /esbuild` event stream, which emits
  * `change` after every rebuild that changed an output. The stream is same-origin,

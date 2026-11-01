@@ -1,8 +1,9 @@
 # Mobile XR acceptance harness
 
-Run this on a physical phone through `pnpm preview` or another HTTPS origin.
-Build or start the development shell with
-`VITE_MOBILE_XR_ACCEPTANCE_HARNESS=true`. It exposes a **Mobile XR acceptance**
+Run this on a physical phone through `pnpm preview`. Start the development shell
+with `VITE_MOBILE_XR_ACCEPTANCE_HARNESS=true`. Like every `VITE_*` switch it is
+dev-only: `pnpm build` never reads it, so a built or published app never mounts
+the panel. It exposes a **Mobile XR acceptance**
 panel beside the real media-source switcher. The panel captures the active XR
 canvas using the same `capture.ts` hooks that a creator uses in a scene; it is
 opt-in and is not mounted or requested by ordinary published sessions.

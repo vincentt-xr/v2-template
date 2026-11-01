@@ -46,6 +46,11 @@ jobs:
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
+      # `pnpm build` is `vincentt build`. The CLI is build tooling, which the
+      # project never depends on, so CI installs it the way a creator does.
+      - name: Install the Vincentt CLI
+        run: npm install --global @vincentt-xr/cli@0.26.0
+
       - name: Build
         run: pnpm build
 
