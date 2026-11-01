@@ -12,7 +12,6 @@ import {
   XRScene,
   VideoBackground,
   XRMediaSource,
-  AspectRatioContainer,
 } from "@vincentt-xr/sdk";
 import {
   useXRContext,
@@ -26,6 +25,7 @@ import { PerspectiveCamera } from "@react-three/drei";
 
 import { Scene } from "./Scene";
 import { PreviewAnchors } from "./PreviewAnchors";
+import { FrameContainer } from "./FrameContainer";
 import {
   announcedPresets,
   chooseMediaSource,
@@ -375,7 +375,7 @@ export const Shell = () => {
   }, [applySource]);
 
   return (
-    <AspectRatioContainer>
+    <FrameContainer>
       <XRScene
         loadingComponent={<Loading shouldFadeOut={ready} />}
         errorComponent={<CameraError />}
@@ -407,7 +407,7 @@ export const Shell = () => {
           <MobileXRAcceptanceHarness ready={ready} error={xrError?.message} />
         </Suspense>
       ) : null}
-    </AspectRatioContainer>
+    </FrameContainer>
   );
 };
 
