@@ -4,7 +4,8 @@
 // control band (tap for a photo, hold 300 ms to record, release to stop), a
 // REC chip with the elapsed time in the HUD band, "Release to stop" above the
 // shutter, a white 360 ms flash on a photo. No time limit, no mark on the file.
-// Each capture goes straight to the device (see captureSave.ts).
+// Each capture goes straight to the device (see captureSave.ts). `audio`
+// adds the microphone to recordings; the prompt comes with the first take.
 //
 // It records the SDK's own capture canvas through `session.captureStream`, so
 // the file holds exactly what the canvas composites; DOM overlays (this UI,
@@ -39,7 +40,7 @@ const blobToDataUrl = (blob: Blob) =>
     reader.readAsDataURL(blob);
   });
 
-export const CaptureControls = () => {
+export const CaptureControls = ({ audio = false }: { audio?: boolean }) => {
   const { session } = useXRContext();
   const ready = useXRReady();
   const [flashKey, setFlashKey] = useState(0);
@@ -56,6 +57,7 @@ export const CaptureControls = () => {
   }, []);
 
   const recorder = useMediaRecorder({
+    audio,
     mimeType: preferredVideoMimeType(),
     onRecordingComplete: (blob) => {
       void blobToDataUrl(blob).then((dataUrl) =>

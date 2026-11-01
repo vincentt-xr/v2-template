@@ -261,8 +261,10 @@ A published experience can be framed. Two things change inside a frame:
   reads it, so tell a host that embeds a camera experience to add
   `?source=webcam`.
 - **Capture controls.** `?record` on the app's address (framed or not) adds the
-  camera UI: tap the shutter for a photo, hold to record, release to stop. Each
-  capture saves to the device at once. The plain address shows the creator's
+  camera UI: tap the shutter for a photo, hold to record, release to stop;
+  `?record=audio` records the microphone too. Each capture saves to the device
+  at once, at the screen's resolution (record mode pins the pixel ratio and
+  turns adaptive quality off). The plain address shows the creator's
   experience exactly as built, so nothing in `Scene.tsx` has to change for it.
 
   ```html
@@ -528,10 +530,11 @@ preview is running again.
 - **Any new file you create under `src/`** — utility hooks, sub-components, asset
   imports. Organize freely.
 - **`package.json` dependencies** — add a dependency, then `pnpm install` it yourself.
-- **`src/frame.config.ts`** — one value: `"full"` (default) makes the canvas the
+- **`"frame"` in `app.config.json`** — `"full"` (default) makes the canvas the
   whole viewport on every device; `"phone"` locks a 9:16 frame, pillarboxed on
-  wide screens. Change it only when the creator asks for the fixed frame;
-  tracking stays aligned either way.
+  wide screens. Set it only when the creator asks for the fixed frame; tracking
+  stays aligned either way. (`src/frame.config.ts` holds the fallback for a
+  project without the key; the key needs CLI 0.27 or later at build time.)
 
 ## What to leave alone
 

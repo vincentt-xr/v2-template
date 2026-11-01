@@ -7,6 +7,7 @@ import {
   chooseMediaSource,
   isFramed,
   pickFramedDefault,
+  recordRequest,
   requestsRecord,
   requestsWebcam,
 } from "./framed";
@@ -452,6 +453,14 @@ describe("requestsRecord", () => {
 
   it("reads the first value only", () => {
     expect(requestsRecord("?record=0&record=1")).toBe(false);
+  });
+
+  it("`audio` turns the microphone on, nothing else does", () => {
+    expect(recordRequest("?record=audio")).toEqual({ enabled: true, audio: true });
+    expect(recordRequest("?record=Audio")).toEqual({ enabled: true, audio: true });
+    expect(recordRequest("?record=1")).toEqual({ enabled: true, audio: false });
+    expect(recordRequest("?record=off")).toEqual({ enabled: false, audio: false });
+    expect(recordRequest("")).toEqual({ enabled: false, audio: false });
   });
 
   it("folds a missing window to false", () => {

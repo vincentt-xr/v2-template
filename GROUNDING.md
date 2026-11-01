@@ -466,21 +466,27 @@ visible phase or HUD changes.
 Model downloads per tracker: face 3.8 MB, hand 7.8 MB, gesture 8.4 MB, body
 5.8 MB, holistic 13.7 MB (alpha.8). Each is a first-load cost on the phone.
 
-## Frame: full or phone — `src/frame.config.ts`
+## Frame: full or phone — `"frame"` in `app.config.json`
 
-The shell sizes the app per one value in `src/frame.config.ts`:
-
-```ts
-export const frame: FrameMode = "full"; // or "phone"
-```
+The shell sizes the app per the `frame` key of `app.config.json` (`"full"` or
+`"phone"`), which the dev server and `vincentt build` write into the page as
+`<meta name="vincentt:frame">`; `src/frame.config.ts` holds the fallback
+(`"full"`) for a project without the key and `resolveFrame()` reads the meta.
 
 - `"full"` (default): the canvas is the whole viewport, edge to edge, under the
   notch and the home bar (`viewport-fit=cover` is set). A phone gives its own
   portrait ratio; a desktop window gives a wide canvas, which suits the webcam.
-  The SDK cover-crops the camera feed to the canvas, so trackers, anchors and
-  masks stay aligned; only the visible crop of the feed changes with the ratio.
 - `"phone"`: a fixed 9:16 portrait frame, pillarboxed on wide screens, full
   width on a phone, so the composition is framed the same everywhere.
+
+**Where the camera lands.** The SDK cover-crops the feed into the canvas,
+centred, enlarged by `perf.cameraZoom` (1.2 by default, a selfie-style crop),
+so trackers, anchors and masks stay aligned on every ratio; only the visible
+part of the feed changes. A 16:9 webcam in a wide desktop window shows almost
+the whole frame; the same webcam in a portrait phone frame keeps a centre
+column of it; a portrait phone camera in a wide window keeps a centre band.
+Set `perf.cameraZoom: 1` on `XRProvider` for the widest view, and keep content
+that must stay in shot near the centre of the feed.
 
 Screen space is still the 720 × 1280 design canvas on either frame. A
 `ScreenShape` / `ScreenText` transform (`position`, `size`) is resolved with
@@ -501,8 +507,11 @@ design pixels, and `position: { x: 0, y: 540 }` stays near the top.
 scene: the design system's camera UI on Night glass. A 76-unit shutter in the
 control band — tap for a photo, hold 300 ms to record (no time limit), release
 to stop — a REC chip with the elapsed time in the HUD band, "Release to stop"
-above the shutter, a white flash on a photo. Each capture saves straight to the
-device through `src/captureSave.ts`: a download on desktop and Android; on iOS
+above the shutter, a white flash on a photo. `?record=audio` adds the microphone to recordings
+(the prompt comes with the first take). Record mode pins the canvas pixel
+ratio (`min(devicePixelRatio, 2)`) and turns adaptive quality off, so a photo
+or a take has the screen's resolution from the first frame to the last. Each
+capture saves straight to the device through `src/captureSave.ts`: a download on desktop and Android; on iOS
 the share sheet with the file, which is how a web page reaches Photos. Nothing
 is drawn onto the file.
 

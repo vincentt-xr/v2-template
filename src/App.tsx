@@ -32,7 +32,7 @@ import {
   chooseMediaSource,
   isFramed,
   pickFramedDefault,
-  requestsRecord,
+  recordRequest,
   requestsWebcam,
 } from "./framed";
 import type { MediaSourceEnv } from "./framed";
@@ -389,7 +389,7 @@ export const Shell = () => {
         // A later path needing `preserveDrawingBuffer` (a screenshot, an
         // annotation capture) merges into `canvasProps.gl` rather than replacing
         // `canvasProps`, which would drop the freeze.
-        canvasProps={{ frameloop: paused ? "never" : "always" }}
+        canvasProps={{ frameloop: paused ? "never" : "always", ...RECORD_CANVAS }}
       >
         <MediaSourceBinder onSourceSelected={setSelected} />
         <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={45} />
@@ -404,7 +404,7 @@ export const Shell = () => {
         <PreviewAnchors />
       </XRScene>
       <MediaSourceControl value={selected} onChange={applySource} />
-      {requestsRecord() ? <CaptureControls /> : null}
+      {RECORD.enabled ? <CaptureControls audio={RECORD.audio} /> : null}
       {MobileXRAcceptanceHarness ? (
         <Suspense fallback={null}>
           <MobileXRAcceptanceHarness ready={ready} error={xrError?.message} />
@@ -414,8 +414,17 @@ export const Shell = () => {
   );
 };
 
+// Read once: the address does not change while the app runs. In record mode the
+// canvas keeps a fixed pixel ratio and adaptive quality stays off, so a photo
+// or a take has the screen's resolution from the first frame to the last and
+// the recorder never sees the buffer change size mid-file.
+const RECORD = recordRequest();
+const RECORD_CANVAS = RECORD.enabled
+  ? { dpr: Math.min(typeof window === "undefined" ? 1 : window.devicePixelRatio || 1, 2) }
+  : {};
+
 const App = () => (
-  <XRProvider>
+  <XRProvider quality={RECORD.enabled ? false : undefined}>
     <Shell />
   </XRProvider>
 );

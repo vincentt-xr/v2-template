@@ -9,8 +9,28 @@
 //            on a phone. Use it when the composition must look the same on every
 //            device, such as a kiosk or a framed gallery preview.
 //
-// Change the one value below. (`app.config.json` carries title and share image
-// only; the CLI refuses other keys there.)
+// `"frame"` in `app.config.json` wins when set (the dev server and `vincentt
+// build` write it into the page as `<meta name="vincentt:frame">`); the value
+// below is the fallback for a project without one.
 export type FrameMode = "full" | "phone";
 
 export const frame: FrameMode = "full";
+
+export const FRAME_META = "vincentt:frame";
+
+const isFrameMode = (v: unknown): v is FrameMode => v === "full" || v === "phone";
+
+/** The frame to use: the page's meta from `app.config.json`, else `frame`. */
+export const resolveFrame = (doc?: Document | null): FrameMode => {
+  try {
+    const d = doc ?? (typeof document === "undefined" ? null : document);
+    const content = d
+      ?.querySelector(`meta[name="${FRAME_META}"]`)
+      ?.getAttribute("content")
+      ?.trim()
+      .toLowerCase();
+    return isFrameMode(content) ? content : frame;
+  } catch {
+    return frame;
+  }
+};
