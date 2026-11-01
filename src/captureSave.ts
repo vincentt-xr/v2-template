@@ -13,15 +13,37 @@ export const isIOS = (nav: Navigator = navigator): boolean =>
   /iP(hone|ad|od)/.test(nav.userAgent) ||
   (nav.platform === "MacIntel" && (nav.maxTouchPoints ?? 0) > 1);
 
-/** The video container: MP4 everywhere it records; WebM only when it cannot. */
-export const preferredVideoMimeType = (): string => {
+/**
+ * The video container and codecs: MP4 everywhere it records; WebM only where
+ * it cannot. With a microphone the string must name an audio codec too, or
+ * Chromium refuses the recorder once an audio track is on the stream.
+ */
+export const preferredVideoMimeType = (audio = false): string => {
   const mr = (globalThis as { MediaRecorder?: { isTypeSupported?: (t: string) => boolean } })
     .MediaRecorder;
   const ok = (t: string) => mr?.isTypeSupported?.(t) ?? false;
-  if (ok("video/mp4;codecs=avc1")) return "video/mp4;codecs=avc1";
-  if (ok("video/mp4")) return "video/mp4";
-  return "video/webm;codecs=vp9";
+  const candidates = audio
+    ? [
+        "video/mp4;codecs=avc1,mp4a.40.2",
+        "video/mp4;codecs=avc1,opus",
+        "video/mp4",
+        "video/webm;codecs=vp9,opus",
+        "video/webm",
+      ]
+    : ["video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9", "video/webm"];
+  return candidates.find(ok) ?? candidates[candidates.length - 1];
 };
+
+/** Errors that mean the microphone itself could not be opened. */
+export const isMicrophoneError = (error: Error): boolean =>
+  [
+    "NotAllowedError",
+    "NotFoundError",
+    "NotReadableError",
+    "OverconstrainedError",
+    "SecurityError",
+    "AbortError",
+  ].includes(error.name);
 
 const extensionOf = (mime: string) => {
   if (mime.includes("png")) return "png";

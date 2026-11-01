@@ -21,7 +21,7 @@ import {
 import { useMediaRecorder } from "@vincentt-xr/sdk";
 import { useXRContext, useXRReady } from "@vincentt-xr/sdk/low-level";
 
-import { preferredVideoMimeType, saveCapture } from "./captureSave";
+import { isMicrophoneError, preferredVideoMimeType, saveCapture } from "./captureSave";
 
 const HOLD_MS = 300;
 
@@ -62,14 +62,18 @@ export const CaptureControls = ({ audio = false }: { audio?: boolean }) => {
 
   const recorder = useMediaRecorder({
     audio: mic,
-    mimeType: preferredVideoMimeType(),
-    onError: () => {
-      if (!mic) return;
-      // The mic was refused or is absent; the SDK has already given up on
-      // this take. Record it again without audio once the recorder re-forms.
-      retryWithoutMic.current = true;
-      setMic(false);
-      setNote("No microphone, recording video only");
+    mimeType: preferredVideoMimeType(mic),
+    onError: (error) => {
+      if (mic && isMicrophoneError(error)) {
+        // The mic was refused or is absent; the SDK has already given up on
+        // this take. Record it again without audio once the recorder re-forms.
+        retryWithoutMic.current = true;
+        setMic(false);
+        setNote("No microphone, recording video only");
+      } else {
+        setStartedAt(null);
+        setNote("Recording failed");
+      }
       window.setTimeout(() => setNote(null), 2200);
     },
     onRecordingComplete: (blob) => {

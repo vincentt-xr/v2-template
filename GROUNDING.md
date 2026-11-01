@@ -520,7 +520,10 @@ holds what the canvas composites and not DOM overlays; keep UI that must appear
 in captures in screen space (see "Camera effects, render layers, and DOM HUDs").
 Video is MP4 (H.264) wherever the browser's recorder can write it, which is
 every current Chrome, Edge, Safari and iOS; WebM is the fallback only where
-MP4 recording is missing (older Firefox). `requestsRecord()` in `src/framed.ts` reads
+MP4 recording is missing (older Firefox). With the microphone the codec string
+names AAC (`avc1,mp4a.40.2`): a video-only string makes Chromium mux the mic
+as Opus inside MP4, which plays in Chrome and is silent in QuickTime, Photos
+and most players. `requestsRecord()` in `src/framed.ts` reads
 the flag (`0`, `false`, `no`, `off` switch it off); `?record=0` is how a frame
 passes the address through without the controls. The scene's own capture flow
 (`src/capture.ts`, below) is unaffected and still the way to add a capture the
