@@ -150,15 +150,32 @@ untouched by the person, and the only trace of what was replaced would be gone.
 
 **This project is already a complete, runnable AR starter.** It previews and builds
 as-is. If you just scaffolded it, your job is not to invent an app — it is to get
-the developer to the point where they can describe what they want.
+the developer onto the platform and to the point where they can describe what they
+want. The platform is the product: the console page, the phone link, the published
+address. A session that leaves the developer with a localhost address, or no
+address, has not started.
 
-- If the developer has **not** told you what to build yet: confirm the project is
-  ready (`pnpm dev` serves; `pnpm build` passes), **start the preview** (`pnpm
-preview`, in the background), hand over the project's console page, then ask what
-  they want to make. **Do not build a scene or pick an idea for them.** The starter
-  is worth seeing on a phone before there is anything custom in it — it is how the
-  developer learns the loop exists, and it is running by the time they have
-  described the app.
+**First, in this order, before anything else — every new session, not only the first:**
+
+1. **Signed in?** `vincentt whoami`. If it fails, run `vincentt login`: it opens the
+   browser, the developer signs in or creates the account there, and the command
+   returns once the machine holds a token. Say that one sentence and wait; do not
+   look for a way round it.
+2. **Bound?** A folder from `vincentt create` already is. A folder from `vincentt init`
+   (no account) is not: run `vincentt create` in it to register the project and
+   reserve its address. A fresh clone binds with `vincentt link <project-id>`
+   (`vincentt projects` lists them).
+3. **Preview running.** `pnpm preview` in the background, then hand over the
+   project's console page, written plainly. That page carries the phone link and
+   the code that scans to it.
+4. **Then** ask what they want to make. **Do not build a scene or pick an idea for
+   them.** The starter is worth seeing on a phone before there is anything custom in
+   it — it is how the developer learns the loop exists, and it is running by the
+   time they have described the app.
+
+`pnpm dev` is for your own checks after step 3, never a substitute for it, and its
+address is never handed over (see the dev loop below). `pnpm build` passing is
+worth confirming, but it is not a step the developer waits on.
 - Read the grounding files **when you start building a scene**, not before — the
   template's `GROUNDING.md` and the SDK's own at
   `node_modules/@vincentt-xr/sdk/GROUNDING.md`. There is no need to read the whole

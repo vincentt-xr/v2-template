@@ -33,6 +33,7 @@
  * machine's loopback.
  */
 import fs from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
@@ -177,6 +178,33 @@ function listen(address) {
   });
 }
 
+/** One line for the developer-facing path, plus the sign-in / binding hint when it is missing. */
+function platformNote() {
+  const lines = [
+    "  for your own checks only — the developer sees the app through `pnpm preview` (console page)",
+  ];
+  try {
+    const home = os.homedir();
+    const config = JSON.parse(readFileSync(path.join(home, ".vincentt", "config.json"), "utf8"));
+    if (!config.pat) lines.push("  not signed in: run `vincentt login` first");
+    const here = path.resolve(process.cwd());
+    const bound = readFileSync(path.join(home, ".vincentt", "locations.ndjson"), "utf8")
+      .split("\n")
+      .filter(Boolean)
+      .some((line) => {
+        try {
+          return path.resolve(JSON.parse(line).d) === here;
+        } catch {
+          return false;
+        }
+      });
+    if (!bound) lines.push("  not bound to a project: run `vincentt create` here (or `vincentt link <project-id>`)");
+  } catch {
+    lines.push("  not signed in: run `vincentt login`, then `vincentt create` here");
+  }
+  return lines.join("\n");
+}
+
 const addresses = explicitHost ? [explicitHost] : ["127.0.0.1", "::1"];
 let bound;
 try {
@@ -208,6 +236,10 @@ if (!explicitHost) {
   const families = bound.map((a) => (a === "::1" ? "[::1]" : a)).join(" and ");
   console.log(`  listening on ${families}, port ${port}; output in .dev/`);
 }
+// The platform is the developer's path; this address is the agent's. Say so on
+// every start, and when the machine is not signed in or this folder is not bound
+// to a project, say what fixes it. Best effort: nothing here can stop the server.
+console.log(platformNote());
 if (process.env.SDK_LINK) {
   const linked =
     process.env.SDK_LINK === "1" ? "../xr-sdk" : process.env.SDK_LINK;
