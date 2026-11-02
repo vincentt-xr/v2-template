@@ -9,7 +9,8 @@ authored "no action required," not silence.
 required: false
 A `full` frame option beside the default 9:16 frame, and `?record` capture controls; the plain address and the frame are unchanged.
 - `frame` in `src/frame.config.ts`: `"phone"` (default, the fixed 9:16 frame as before) or `"full"` (the canvas is the whole viewport, under the notch; `viewport-fit=cover`). `src/FrameContainer.tsx` reads it and replaces the SDK `AspectRatioContainer` in `App.tsx`. There is no `app.config.json` key for it.
-- Nothing visible changes without the key. A project that kept its own `App.tsx` is unaffected until it adopts the new shell.
+- Nothing visible changes while `frame` stays `"phone"`. A project that kept its own `App.tsx` is unaffected until it adopts the new shell.
+- `AGENTS.md` now opens every session on the platform: sign in (`vincentt login`), bind (`vincentt create` / `link`), `pnpm preview`, hand over the console page, then ask what to build. `pnpm dev` prints that its address is for checks only and, when the machine is not signed in or the folder is not bound, the commands that fix it.
 - `?record` on the app's address shows the camera UI (`src/CaptureControls.tsx`, `src/captureSave.ts`): tap the shutter for a photo, hold to record, release to stop; `?record=audio` records the microphone too. Captures download on desktop and Android and open the share sheet on iOS; video is MP4 where the browser can record it, WebM otherwise. `recordRequest()` in `src/framed.ts` reads the flag.
 - In record mode the canvas pixel ratio is pinned to `min(devicePixelRatio, 2)` and adaptive quality is off, so captures have the screen's resolution.
 - `FaceBoundingBox` and `HandBoundingBox` size themselves through `src/screenFit.ts`, so they fit on any canvas aspect. At 9:16 they draw exactly as before.
