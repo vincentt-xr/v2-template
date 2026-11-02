@@ -580,8 +580,9 @@ Path=/` and no `Domain`, for example
 
 There are **two** grounding files, and nothing merges them:
 
-- **`GROUNDING.md`** (repo root) documents only this template's local helpers —
-  capture, overlay, sprite, gesture — plus project notes and patterns.
+- **`GROUNDING.md`** (repo root) documents this template's local helpers —
+  capture, overlay, sprite, gesture — plus project notes, patterns, a condensed
+  tracking summary and publishing.
 - **`node_modules/@vincentt-xr/sdk/GROUNDING.md`** is the authoritative reference
   for every SDK component, hook, and prop (`<FaceTracker>`, `<HandTracker>`,
   `<TrackingAnchor>`, screen-space layout, `<ScreenText>`, `<Panel>`). It is much
@@ -705,7 +706,7 @@ on top of the tracking models (the face model alone is 3.8 MB).
   `useGLTF` (or the SDK's `MeshRenderer` with `assetUrl`). `defineGltfAsset` cannot read a
   compressed model.
 
-- Load only what the first scene needs; defer the rest (see `GROUNDING.md`, "Assets and
+- Load only what the first scene needs; defer the rest (see `GROUNDING.md`, "Assets", "Assets and
   frame-loop performance").
 
 **Record where it came from.** Before using an outside file, find its licence. Add one row per

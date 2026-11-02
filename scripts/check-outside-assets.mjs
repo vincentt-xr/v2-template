@@ -19,7 +19,10 @@ const REQUIRED = ['public/assets/<source>/', 'CREDITS.md', '10 MB', '2048 px', '
 // B-F3-5: the contract names no agent host and uses no host's configuration syntax.
 const HOSTS = ['Claude', 'Codex', 'Cursor', 'ChatGPT', 'Copilot', 'Windsurf', 'Gemini'];
 const HOST_SYNTAX = ['mcp add', 'mcp.json', 'settings.json'];
-const GROUNDING_SECTION = '## Assets and frame-loop performance';
+// `## Assets` is the guide topic an AI app reads through the connector (check-guide-topics.mjs),
+// and AGENTS.md cites the subsection by name, so both must carry the pointer.
+const GROUNDING_SECTION = '## Assets';
+const GROUNDING_SUBSECTION = '### Assets and frame-loop performance';
 
 const errors = [];
 const fail = (file, message) => errors.push(`::error file=${file}::${message}`);
@@ -122,9 +125,16 @@ if (!gsec) {
   fail('GROUNDING.md', `"${GROUNDING_SECTION}" is missing.`);
 } else {
   const gnext = ghs.find((h) => h.i > gsec.i && h.level <= 2);
-  const gbody = glines.slice(gsec.i, gnext ? gnext.i : glines.length).join('\n');
-  for (const s of ['Bringing in files from outside the library', 'CREDITS.md']) {
-    if (!gbody.includes(s)) fail('GROUNDING.md', `"${GROUNDING_SECTION}" is missing the string "${s}".`);
+  const gend = gnext ? gnext.i : glines.length;
+  const gsub = ghs.find((h) => h.i > gsec.i && h.i < gend && h.text === GROUNDING_SUBSECTION);
+  if (!gsub) {
+    fail('GROUNDING.md', `"${GROUNDING_SUBSECTION}" is missing from "${GROUNDING_SECTION}".`);
+  } else {
+    const gsubNext = ghs.find((h) => h.i > gsub.i && h.level <= 3);
+    const gsubBody = glines.slice(gsub.i, gsubNext ? gsubNext.i : gend).join('\n');
+    for (const s of ['Bringing in files from outside the library', 'CREDITS.md']) {
+      if (!gsubBody.includes(s)) fail('GROUNDING.md', `"${GROUNDING_SUBSECTION}" is missing the string "${s}".`);
+    }
   }
 }
 
