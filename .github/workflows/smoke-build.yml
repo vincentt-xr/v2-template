@@ -206,6 +206,11 @@ jobs:
       - name: The outside-files contract is present, pinned and host-neutral
         run: node scripts/check-outside-assets.mjs
 
+      # The api's guide bundle cuts one connector guide topic per `## ` heading of GROUNDING.md, so a
+      # grounding edit must not drop, rename or reorder a guide topic.
+      - name: GROUNDING.md splits into the connector guide topics
+        run: node scripts/check-guide-topics.mjs
+
       # QA-F2-G34 assertion B. The step above checks the BRANCH; this one checks
       # what `vincentt init` ACTUALLY CLONES, which is the moving `latest` tag and
       # not this branch. Three outcomes: PASS, BLOCKED (the tag predates the
