@@ -6,27 +6,18 @@ outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
 ## 1.11.0
-required: false
-A `full` frame option beside the default 9:16 frame, and `?record` capture controls; the plain address and the frame are unchanged.
-- `frame` in the source folder's frame config: `"phone"` (default, the fixed 9:16 frame as before) or `"full"` (the canvas is the whole viewport, under the notch; `viewport-fit=cover`). The new `FrameContainer` component reads it and replaces the SDK `AspectRatioContainer` in `App.tsx`. There is no `app.config.json` key for it.
-- Nothing visible changes while `frame` stays `"phone"`. A project that kept its own `App.tsx` is unaffected until it adopts the new shell.
-- `AGENTS.md` now opens every session on the platform: sign in (`vincentt login`), bind (`vincentt create` / `link`), `pnpm preview`, hand over the console page, then ask what to build. `pnpm dev` prints that its address is for checks only and, when the machine is not signed in or the folder is not bound, the commands that fix it.
-- `?record` on the app's address shows the camera UI (the new `CaptureControls` component and its save helper): tap the shutter for a photo, hold to record, release to stop; `?record=audio` records the microphone too. Captures download on desktop and Android and open the share sheet on iOS; video is MP4 where the browser can record it, WebM otherwise. `recordRequest()` in the framed helpers reads the flag.
-- In record mode the canvas pixel ratio is pinned to `min(devicePixelRatio, 2)` and adaptive quality is off, so captures have the screen's resolution.
-- `FaceBoundingBox` and `HandBoundingBox` size themselves through a new screen-fit helper, so they fit on any canvas aspect. At 9:16 they draw exactly as before.
-- `index.html`'s viewport meta now carries `viewport-fit=cover`; the app stylesheet gains the `.cam-*` styles.
-
-## 1.10.0
 required: true
-The build is now `vincentt build` on the shared runtime; empty the build output folder once before the first build, which refuses a folder it did not write.
-- `pnpm build` now runs `vincentt build` (CLI 0.27.0 or later, the first that knows runtime 2026.11.0) instead of the template's own build script. An upgrade carries this through package.json. The old build and static-imports scripts are no longer used and can be deleted; the app-metadata script is still used by the dev server.
-- The template now depends on the shared runtime, `@vincentt-xr/runtime` `2026.11.0`. A build loads React, three, fiber, drei and the SDK from runtime.vincentt.studio and holds only the app's own code. Removing that dependency, or `vincentt build --self-contained`, gives a self-contained app to host anywhere.
+The build is now `vincentt build` on shared runtime 2026.11.0; empty the build output folder once before the first build. Also a `full` frame option and `?record` capture controls.
+- `pnpm build` now runs `vincentt build` (CLI 0.27.0 or later) instead of the template's own build script, carried by package.json. The template depends on `@vincentt-xr/runtime` `2026.11.0`: a build loads React, three, fiber, drei and the SDK from runtime.vincentt.studio and holds only the app's own code. Removing that dependency, or `vincentt build --self-contained`, gives a self-contained app. The old build and static-imports scripts can be deleted; the app-metadata script stays.
 - The first `vincentt build` refuses a non-empty build output folder it did not write, such as one from the old build script. Empty it once. Later builds clear only the files the last build on this machine wrote; an added or edited file is refused, never deleted.
-- The CLI now applies `app.config.json`. An unknown key, a wrong type, a `url` that is not `https://`, or an `image` outside the project fails the build.
-- Every `VITE_*` switch is now dev-only. `VITE_INPUT_SOURCE`, `VITE_INPUT_URL`, `VITE_FRAMED_SOURCE` and `VITE_MOBILE_XR_ACCEPTANCE_HARNESS` work in `pnpm dev` and `pnpm preview`, never in `vincentt build` or a published app, whatever `.env` file sets them. A published app starts on the webcam; a framed one uses the camera only when the frame's address carries `?source=webcam`.
-- Code may import only code and styles. An import of an image, video or model file from the source folder fails the build, and the template no longer declares types for such imports; put the file in the public folder and refer to it by path.
-- The template now depends on `@vincentt-xr/analytics` `^0.3.2`.
-- Smoke Build installs `@vincentt-xr/cli@0.27.1` before `pnpm build`. The workflow file is not replaced by an upgrade, so a project whose CI runs `pnpm build` must add that install step first, or CI fails with `vincentt` not found.
+- The CLI now applies `app.config.json`: an unknown key, a wrong type, a `url` that is not `https://`, or an `image` outside the project fails the build. Code may import only code and styles; an image, video or model import from the source folder fails the build, so put the file in the public folder and refer to it by path.
+- Every `VITE_*` switch is now dev-only. `VITE_INPUT_SOURCE`, `VITE_INPUT_URL`, `VITE_FRAMED_SOURCE` and `VITE_MOBILE_XR_ACCEPTANCE_HARNESS` work in `pnpm dev` and `pnpm preview`, never in `vincentt build` or a published app. A published app starts on the webcam; a framed one uses the camera only when the frame's address carries `?source=webcam`.
+- The template depends on `@vincentt-xr/analytics` `^0.3.2`. Smoke Build installs `@vincentt-xr/cli@0.27.1` before `pnpm build`; the workflow file is not replaced by an upgrade, so a project whose CI runs `pnpm build` must add that install step, or CI fails with `vincentt` not found.
+- `frame` in the source folder's frame config: `"phone"` (default, the fixed 9:16 frame as before) or `"full"` (the canvas is the whole viewport, under the notch). The new `FrameContainer` component reads it and replaces the SDK `AspectRatioContainer` in `App.tsx`; no `app.config.json` key. Nothing changes while it stays `"phone"`, and a project that kept its own `App.tsx` is unaffected until it adopts the new shell.
+- `AGENTS.md` now opens every session on the platform: sign in (`vincentt login`), bind (`vincentt create` / `link`), `pnpm preview`, hand over the console page, then ask what to build. `pnpm dev` prints that its address is for checks only and, when the machine is not signed in or the folder is not bound, the commands that fix it.
+- `?record` on the app's address shows the camera UI (the new `CaptureControls` component and its save helper): tap the shutter for a photo, hold to record, release to stop; `?record=audio` adds the microphone. Captures download on desktop and Android and open the share sheet on iOS; video is MP4 where the browser can record it, WebM otherwise.
+- In record mode the canvas pixel ratio is pinned to `min(devicePixelRatio, 2)` and adaptive quality is off, so captures have the screen's resolution. `FaceBoundingBox` and `HandBoundingBox` size themselves through a new screen-fit helper, so they fit any canvas aspect and draw as before at 9:16.
+- `index.html`'s viewport meta now carries `viewport-fit=cover`; the app stylesheet gains the `.cam-*` styles.
 
 ## 1.9.0
 required: false
