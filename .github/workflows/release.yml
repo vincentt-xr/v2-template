@@ -120,7 +120,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install the Vincentt CLI
-        run: npm install --global @vincentt-xr/cli@0.26.0
+        run: npm install --global @vincentt-xr/cli@0.27.1
 
       - name: Build
         run: pnpm build
