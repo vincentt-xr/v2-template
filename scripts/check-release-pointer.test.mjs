@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { highestReleaseTag, lockedVersion, pointerFailures, pinFailures } from './check-release-pointer.mjs';
+import {
+  highestReleaseTag,
+  lockedVersion,
+  pointerFailures,
+  pinFailures,
+  expectedVersions,
+} from './check-release-pointer.mjs';
 
 describe('highestReleaseTag', () => {
   it('compares numerically, not lexically', () => {
@@ -85,5 +91,41 @@ describe('pinFailures', () => {
 
   it('fails on a package that is not locked', () => {
     expect(pinFailures({}, { '@vincentt-xr/sdk': '1', '@vincentt-xr/harness': '1' })).toHaveLength(2);
+  });
+});
+
+describe('expectedVersions', () => {
+  const npm = { '@vincentt-xr/sdk': '2.0.0-alpha.11', '@vincentt-xr/harness': '3.4.0' };
+  const runtime = { '@vincentt-xr/sdk': '2.0.0-alpha.10', '@vincentt-xr/harness': '3.0.0' };
+
+  it('follows npm latest when the template locks no runtime', () => {
+    const r = expectedVersions({ runtimeVersion: null, runtimePackages: null, distLatest: npm });
+    expect(r.want).toBe(npm);
+    expect(r.failures).toEqual([]);
+  });
+
+  it("follows the runtime's own versions when the template locks one", () => {
+    const r = expectedVersions({ runtimeVersion: '2026.11.0', runtimePackages: runtime, distLatest: npm });
+    expect(r.want).toBe(runtime);
+    expect(r.source).toBe('runtime 2026.11.0');
+    expect(r.failures).toEqual([]);
+  });
+
+  it('fails instead of falling back to npm when the runtime manifest is unreadable', () => {
+    const r = expectedVersions({ runtimeVersion: '2026.11.0', runtimePackages: null, distLatest: npm });
+    expect(r.failures).toHaveLength(1);
+    expect(r.failures[0]).toContain('2026.11.0');
+  });
+
+  it('passes a template that locks what its runtime carries, though npm has newer', () => {
+    const { want, source } = expectedVersions({ runtimeVersion: '2026.11.0', runtimePackages: runtime, distLatest: npm });
+    expect(pinFailures(runtime, want, source)).toEqual([]);
+  });
+
+  it('fails a template that locks newer than its runtime, naming the runtime', () => {
+    const { want, source } = expectedVersions({ runtimeVersion: '2026.11.0', runtimePackages: runtime, distLatest: npm });
+    const failures = pinFailures({ ...runtime, '@vincentt-xr/harness': '3.4.0' }, want, source);
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toContain('runtime 2026.11.0 is 3.0.0');
   });
 });
