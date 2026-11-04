@@ -54,7 +54,7 @@ migration guide). Reach for those when the grounding reference is too terse.
 
 ### SDK version
 
-This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.10`**. Sections
+This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.11`**. Sections
 marked **(alpha.8)** describe APIs that arrived in that version: holistic
 tracking, iris tracking, the coordinate-space toolkit, reusable gesture
 detection and the `PersonCutout` edge controls. A project still pinned to an
@@ -78,6 +78,14 @@ the body avatar and body occlusion (`BodyRig`, `BodyOccluder`,
 `useBodyMaskTexture`), nail polish (`HandNails`), hand effects (`HandEffect`),
 SDK-hosted rig models (`sdkModelAsset`) and stable wristwear. Nothing from
 alpha.9 changed meaning, so alpha.9 scenes keep working.
+
+Sections marked **(alpha.11)** describe APIs that arrived in `2.0.0-alpha.11`:
+helpers that put a tracked point or a viewport-pixel size into a `ScreenShape`,
+`ScreenText` or `ScreenImage` transform (`normalizedToTransform2DPixels`,
+`transform2DPixelsToNormalized`, `viewportSizeToTransform2DPixels`,
+`screenTransform2DScale`). It also lets the console's visual editor show an
+unsaved colour on `ScreenText` and `TextLabel` at once, and preview the app on
+platform footage; neither needs app code. Nothing from alpha.10 changed meaning.
 
 ### Choose a scene architecture and state model
 
@@ -423,6 +431,10 @@ for each API; this is the map of which door to open.
   (`feedToWorld`, `feedToViewport`, `feedToScreenPixels`, `trackerToFeed`,
   `feedToTracker`, `trackerToWorld`, `sourceToFeed`, `feedToSource`,
   `computeFeedCrop`, `isMirroredSourceKind`) plus `PersonCutout`.
+  **(alpha.11)** `normalizedToTransform2DPixels` (and its inverse
+  `transform2DPixelsToNormalized`), `viewportSizeToTransform2DPixels` and
+  `screenTransform2DScale`: use these, not the stretching `*ScreenPixels`
+  helpers, to place a tracked point in a screen element's `transform`.
 - **`@vincentt-xr/sdk/scene-object`** — public authoring state: scene-object and
   component types, factories, selectors, immutable store operations, and the
   render-group API.
@@ -855,7 +867,7 @@ useFrame((_s, delta) => {
 
 ## Face, world and image tracking
 
-The SDK (`2.0.0-alpha.10`) tracks **faces, hands and bodies** in the camera feed, recognises
+The SDK (`2.0.0-alpha.11`) tracks **faces, hands and bodies** in the camera feed, recognises
 **gestures**, and cuts out **people and hair** as masks. Every tracker comes from
 `@vincentt-xr/sdk/tracking`, registers itself when mounted, and runs on the phone. This topic
 condenses the tracking parts of the SDK's grounding; when you can open the project's files, the full
