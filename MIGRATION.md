@@ -7,7 +7,7 @@ authored "no action required," not silence.
 
 ## 1.12.0
 required: false
-No action required. The template now depends on SDK `2.0.0-alpha.12`, harness `3.4.0` and runtime `2026.11.2`: live edits in the visual editor and platform footage in the console.
+Update the CLI to 0.27.3 or later first; older CLIs refuse runtime `2026.11.2`. The template moves to SDK `2.0.0-alpha.12`, harness `3.4.0` and that runtime: live visual edits, console footage.
 - SDK `2.0.0-alpha.11` and `2.0.0-alpha.12` are additive. The console's visual editor shows an unsaved colour, font size or screen placement on `ScreenText`, `TextLabel`, `ScreenImage` and `ScreenShape` at once, and `XRProvider` lets the console preview the app on platform sample footage; app code does nothing for either. New core helpers place a tracked point or a viewport-pixel size in a screen transform. The SDK's own migration notes list every addition.
 - Harness `3.4.0` (was `3.0.0`): in the console frame the preview can switch to the platform's sample footage and back to the camera, and Send feedback attaches the real screen with numbered marks. When the console pauses the app, the hold handler now runs one frame after the command, and every announce also declares `frame-still`. A project test that expects the hold at once, or an exact capability list, must wait a frame or include `frame-still`; the template's own render-hold tests are updated.
 - `@vincentt-xr/runtime` moves from `2026.11.0` to `2026.11.2`, which carries these SDK and harness versions, so `vincentt build` loads them from runtime.vincentt.studio. An upgrade carries the new pins through package.json.
