@@ -54,7 +54,7 @@ migration guide). Reach for those when the grounding reference is too terse.
 
 ### SDK version
 
-This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.11`**. Sections
+This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.12`**. Sections
 marked **(alpha.8)** describe APIs that arrived in that version: holistic
 tracking, iris tracking, the coordinate-space toolkit, reusable gesture
 detection and the `PersonCutout` edge controls. A project still pinned to an
@@ -86,6 +86,12 @@ helpers that put a tracked point or a viewport-pixel size into a `ScreenShape`,
 `screenTransform2DScale`). It also lets the console's visual editor show an
 unsaved colour on `ScreenText` and `TextLabel` at once, and preview the app on
 platform footage; neither needs app code. Nothing from alpha.10 changed meaning.
+
+`2.0.0-alpha.12` adds no API. The console's visual editor now also shows an
+unsaved font size and screen placement on `ScreenText`, screen placement on
+`ScreenImage`, and screen placement and fill colour on `ScreenShape` at once.
+App code does nothing for it: never define or read the editor's override store.
+Nothing from alpha.11 changed meaning.
 
 ### Choose a scene architecture and state model
 
@@ -867,7 +873,7 @@ useFrame((_s, delta) => {
 
 ## Face, world and image tracking
 
-The SDK (`2.0.0-alpha.11`) tracks **faces, hands and bodies** in the camera feed, recognises
+The SDK (`2.0.0-alpha.12`) tracks **faces, hands and bodies** in the camera feed, recognises
 **gestures**, and cuts out **people and hair** as masks. Every tracker comes from
 `@vincentt-xr/sdk/tracking`, registers itself when mounted, and runs on the phone. This topic
 condenses the tracking parts of the SDK's grounding; when you can open the project's files, the full
