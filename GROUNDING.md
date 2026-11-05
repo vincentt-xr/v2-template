@@ -54,7 +54,7 @@ migration guide). Reach for those when the grounding reference is too terse.
 
 ### SDK version
 
-This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.12`**. Sections
+This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.13`**. Sections
 marked **(alpha.8)** describe APIs that arrived in that version: holistic
 tracking, iris tracking, the coordinate-space toolkit, reusable gesture
 detection and the `PersonCutout` edge controls. A project still pinned to an
@@ -92,6 +92,22 @@ unsaved font size and screen placement on `ScreenText`, screen placement on
 `ScreenImage`, and screen placement and fill colour on `ScreenShape` at once.
 App code does nothing for it: never define or read the editor's override store.
 Nothing from alpha.11 changed meaning.
+
+`2.0.0-alpha.13` adds no API. In the console's visual editor a creator can now
+change `ScreenText` text and `ScreenImage` images, opacity and fit, written as
+literals. Two rules keep them editable:
+
+- Write a still image, including a placeholder, as `src`:
+  `<ScreenImage src="/images/placeholder.png" ... />`. The template ships
+  `public/images/placeholder.png` for anything "to be replaced". Never write
+  `source={{ kind: "default" }}` or `source={{ kind: "image", src }}` for a still
+  image: `source` wins over `src`, and the editor cannot swap an image that has a
+  `source` prop. Keep `source` for GIFs, textures and media a program produces.
+- Write `text` as a literal string with no `lines` prop
+  (`<ScreenText text="Tap to start" ... />`). Text built from a variable, an
+  expression or a template literal can only be changed in code.
+
+Nothing from alpha.12 changed meaning.
 
 ### Choose a scene architecture and state model
 
@@ -135,7 +151,9 @@ assets or scene behavior.
 - **`ScreenText`**: ordinary prompts, scores, instructions, and labels. Use its
   canvas `position` and `size` for authored design-pixel layouts.
 - **`ScreenImage`**: raster images, GIFs, photo placeholders, and textured 2D
-  overlays. It owns the screen transform; use `fit` for content aspect.
+  overlays. It owns the screen transform; use `fit` for content aspect. A still
+  image is `src="/images/..."` (a placeholder is `/images/placeholder.png`), so
+  the visual editor can swap it.
 - **`ScreenShape`**: editable vector rectangles, circles, and lines. Use it for
   outlines, masks, and debug geometry; line endpoints are normalized within the
   shape, not design pixels.
@@ -873,7 +891,7 @@ useFrame((_s, delta) => {
 
 ## Face, world and image tracking
 
-The SDK (`2.0.0-alpha.12`) tracks **faces, hands and bodies** in the camera feed, recognises
+The SDK (`2.0.0-alpha.13`) tracks **faces, hands and bodies** in the camera feed, recognises
 **gestures**, and cuts out **people and hair** as masks. Every tracker comes from
 `@vincentt-xr/sdk/tracking`, registers itself when mounted, and runs on the phone. This topic
 condenses the tracking parts of the SDK's grounding; when you can open the project's files, the full
