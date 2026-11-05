@@ -21,8 +21,8 @@ importers:
         specifier: ^0.3.2
         version: 0.3.2
       '@vincentt-xr/harness':
-        specifier: ^3.0.0
-        version: 3.0.0(react@18.3.1)
+        specifier: ^3.4.0
+        version: 3.4.0(react@18.3.1)
       '@vincentt-xr/runtime':
         specifier: 2026.11.0
         version: 2026.11.0
@@ -1017,8 +1017,8 @@ packages:
   '@vincentt-xr/analytics@0.3.2':
     resolution: {integrity: sha512-QdhVg0jtqieAsMRA87WMOx7dPSS98cBsolY/VT5tHCPy+cRrCDiUTvuyChNvNTh8mKjc3T1EuV++gUFrIQHFfQ==}
 
-  '@vincentt-xr/harness@3.0.0':
-    resolution: {integrity: sha512-+bRf+tRnyOvCAv+1dz9jN1Gq6PXR0EoPssQgnfaHjPvdjP3dcBQ1VQ0jCQwNQkRHt9TucvLkcSQBdNIn1fhYBg==}
+  '@vincentt-xr/harness@3.4.0':
+    resolution: {integrity: sha512-TDsAMtSz6niR1Ho52WQMSj9jPSYX9zL2YMu84BXkOY+CgDJjP5PXhCQQUjp4pwY1TQ4w4QYnEkAzO+xL9HUnnw==}
     peerDependencies:
       react: ^18.2.0
     peerDependenciesMeta:
@@ -3783,7 +3783,7 @@ snapshots:
 
   '@vincentt-xr/analytics@0.3.2': {}
 
-  '@vincentt-xr/harness@3.0.0(react@18.3.1)':
+  '@vincentt-xr/harness@3.4.0(react@18.3.1)':
     dependencies:
       qrcode: 1.5.4
     optionalDependencies:
