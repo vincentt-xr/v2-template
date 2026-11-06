@@ -54,7 +54,7 @@ migration guide). Reach for those when the grounding reference is too terse.
 
 ### SDK version
 
-This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.13`**. Sections
+This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.14`**. Sections
 marked **(alpha.8)** describe APIs that arrived in that version: holistic
 tracking, iris tracking, the coordinate-space toolkit, reusable gesture
 detection and the `PersonCutout` edge controls. A project still pinned to an
@@ -108,6 +108,14 @@ literals. Two rules keep them editable:
   expression or a template literal can only be changed in code.
 
 Nothing from alpha.12 changed meaning.
+
+`2.0.0-alpha.14` adds no API. In the console's visual editor a creator can now
+move and resize a `ScreenImage` placed by its anchor edges. It stays draggable
+only when it has an `anchors` prop, no `transform` prop, and all four edges are
+number literals:
+`<ScreenImage src="/images/placeholder.png" anchors={{ left: -0.5, right: 0.5, top: 0.8, bottom: 0.2 }} />`.
+A move shifts every edge, a resize moves only the dragged edges, and an anchored
+image never rotates in the editor. Nothing from alpha.13 changed meaning.
 
 ### Choose a scene architecture and state model
 
@@ -392,6 +400,7 @@ Each pattern names which primitives compose it (SDK components + template helper
 - A custom emitter is placed like any 3D object (its +Z is forward): `<ParticleEmitter shape="cone" angle={20} rate={120} speed={40} lifetime={1.2} color={["#ffffff", "#ff3b30"]} size={[1.2, 0.2]} />`; inside a tracker, `HeadAttachment` or `TrackingAnchor` it follows that face or hand
 - Particles live on in world space: a moving emitter leaves a trail, `emitting={false}` stops new ones and the old ones finish; `gravity`, `wind` and `drag` shape their path, `sprite="streak"` stretches them along the motion
 - Thousands cost one draw (the GPU works out each particle from its spawn record); keep `rate × lifetime` sensible on phones
+- For a one-shot 2D celebration burst over the page (a win, a reveal), the template carries `@tsparticles/confetti`: `import { confetti } from "@tsparticles/confetti"; confetti({ particleCount: 120, spread: 70 })`. It draws on its own canvas above the app; use `ParticleEmitter` for anything that must sit in the 3D scene or follow a face or hand
 
 #### iris-eye-effect (alpha.8)
 
@@ -891,7 +900,7 @@ useFrame((_s, delta) => {
 
 ## Face, world and image tracking
 
-The SDK (`2.0.0-alpha.13`) tracks **faces, hands and bodies** in the camera feed, recognises
+The SDK (`2.0.0-alpha.14`) tracks **faces, hands and bodies** in the camera feed, recognises
 **gestures**, and cuts out **people and hair** as masks. Every tracker comes from
 `@vincentt-xr/sdk/tracking`, registers itself when mounted, and runs on the phone. This topic
 condenses the tracking parts of the SDK's grounding; when you can open the project's files, the full
