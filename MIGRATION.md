@@ -5,6 +5,14 @@ Per release tag, newest first. Read by the platform's own version surface
 outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
+## 1.14.0
+required: false
+Update the CLI to 0.28.0 or later first; older CLIs refuse runtime `2026.11.5`. The template moves to SDK `2.0.0-alpha.14` on that runtime.
+- SDK `2.0.0-alpha.13` and `2.0.0-alpha.14` are additive. A `ScreenImage` placed by its anchor edges can be dragged and resized in the visual editor, and the template ships a placeholder image for swappable frames.
+- The template now carries `@tsparticles/confetti`, which runtime `2026.11.5` also carries.
+- `@vincentt-xr/runtime` moves from `2026.11.2` to `2026.11.5`. An upgrade carries the new pins through the package manifest.
+- Smoke Build now installs the 0.28.0 CLI line; the workflow is not replaced by an upgrade, so a project whose CI installs an older CLI must raise that pin.
+
 ## 1.12.0
 required: false
 Update the CLI to 0.27.4 or later first; older CLIs refuse runtime `2026.11.2`. The template moves to SDK `2.0.0-alpha.12`, harness `3.4.0` and that runtime: live visual edits, console footage.
