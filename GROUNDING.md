@@ -401,6 +401,7 @@ Each pattern names which primitives compose it (SDK components + template helper
 - Particles live on in world space: a moving emitter leaves a trail, `emitting={false}` stops new ones and the old ones finish; `gravity`, `wind` and `drag` shape their path, `sprite="streak"` stretches them along the motion
 - Thousands cost one draw (the GPU works out each particle from its spawn record); keep `rate × lifetime` sensible on phones
 - For a one-shot 2D celebration burst over the page (a win, a reveal), the template carries `@tsparticles/confetti`: `import { confetti } from "@tsparticles/confetti"; confetti({ particleCount: 120, spread: 70 })`. It draws on its own canvas above the app; use `ParticleEmitter` for anything that must sit in the 3D scene or follow a face or hand
+- For rigid-body physics (things that fall, bounce, stack or collide), the template carries `@react-three/rapier`: wrap the bodies in `<Physics>` and give each a `<RigidBody>` (`import { Physics, RigidBody } from "@react-three/rapier"`). It adds about 570 KB (brotli) to the first visit of any app that imports it, so use it only when the app needs real physics; a simple arc or bounce is cheaper as your own `useFrame` motion
 
 #### iris-eye-effect (alpha.8)
 

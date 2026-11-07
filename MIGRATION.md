@@ -5,6 +5,10 @@ Per release tag, newest first. Read by the platform's own version surface
 outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
+## 1.15.0
+required: false
+- The template now carries `@react-three/rapier` `1.5.0` for rigid-body physics. Nothing changes for an app that does not import it.
+
 ## 1.14.0
 required: false
 Update the CLI to 0.28.0 or later first; older CLIs refuse runtime `2026.11.5`. The template moves to SDK `2.0.0-alpha.14` on that runtime.
