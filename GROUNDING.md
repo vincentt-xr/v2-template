@@ -54,7 +54,7 @@ migration guide). Reach for those when the grounding reference is too terse.
 
 ### SDK version
 
-This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.14`**. Sections
+This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.15`**. Sections
 marked **(alpha.8)** describe APIs that arrived in that version: holistic
 tracking, iris tracking, the coordinate-space toolkit, reusable gesture
 detection and the `PersonCutout` edge controls. A project still pinned to an
@@ -116,6 +116,13 @@ number literals:
 `<ScreenImage src="/images/placeholder.png" anchors={{ left: -0.5, right: 0.5, top: 0.8, bottom: 0.2 }} />`.
 A move shifts every edge, a resize moves only the dragged edges, and an anchored
 image never rotates in the editor. Nothing from alpha.13 changed meaning.
+
+`2.0.0-alpha.15` adds no API. A `ScreenImage` whose file is missing or fails to
+load now draws the default picture and logs a warning instead of stopping the
+whole view; the rest of the scene keeps rendering, and changing `src` to a file
+that loads shows it. Still check that every image path exists under `public/`:
+the default picture is a safety net, not a substitute. Nothing from alpha.14
+changed meaning.
 
 ### Choose a scene architecture and state model
 
@@ -901,7 +908,7 @@ useFrame((_s, delta) => {
 
 ## Face, world and image tracking
 
-The SDK (`2.0.0-alpha.14`) tracks **faces, hands and bodies** in the camera feed, recognises
+The SDK (`2.0.0-alpha.15`) tracks **faces, hands and bodies** in the camera feed, recognises
 **gestures**, and cuts out **people and hair** as masks. Every tracker comes from
 `@vincentt-xr/sdk/tracking`, registers itself when mounted, and runs on the phone. This topic
 condenses the tracking parts of the SDK's grounding; when you can open the project's files, the full
