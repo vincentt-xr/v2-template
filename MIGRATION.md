@@ -7,7 +7,11 @@ authored "no action required," not silence.
 
 ## 1.15.0
 required: false
-- The template now carries `@react-three/rapier` `1.5.0` for rigid-body physics. Nothing changes for an app that does not import it.
+Update the CLI to 0.28.1 or later first; older CLIs refuse runtime `2026.11.7`. The template moves to SDK `2.0.0-alpha.15` on that runtime.
+- SDK `2.0.0-alpha.15` is additive: a `ScreenImage` whose file is missing or fails to load draws the default picture and warns instead of stopping the whole view.
+- The template now carries `@react-three/rapier` `1.5.0` for rigid-body physics, which runtime `2026.11.7` also carries. Nothing changes for an app that does not import it.
+- `@vincentt-xr/runtime` moves from `2026.11.5` to `2026.11.7`. An upgrade carries the new pins through the package manifest.
+- Smoke Build now installs CLI 0.28.1; the workflow is not replaced by an upgrade, so a project whose CI installs an older CLI must raise that pin.
 
 ## 1.14.0
 required: false
