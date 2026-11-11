@@ -42,6 +42,7 @@
     "src/FaceBoundingBox.tsx",
     "src/FooterHud.tsx",
     "src/HandBoundingBox.tsx",
-    "src/frame.config.ts"
+    "src/frame.config.ts",
+    "src/settings.ts"
   ]
 }

@@ -293,6 +293,31 @@ per-file disables:
   `/* eslint-enable */` around the function, the way `src/sprite.tsx` does, not a
   file-wide one.
 
+### Editable shape
+
+The creator changes text, colours, pictures and counts in the Vincentt editor without
+asking you. The editor can only change what it can read as a plain value in the source, so
+write the app in this shape:
+
+1. **Settings live in `src/settings.ts`.** Every value a creator would want to change (titles,
+   colours, timings, scores, the questions of a quiz) is a plain literal in the exported
+   `settings` object, and the app reads it from there. No computed values, no imports, no
+   spreads in that file.
+2. **Never hard-code a count.** "Five questions" is a list of five items in `settings`, and the
+   app uses its length. Adding a sixth item must need no code change.
+3. **Repeated objects are one component in `.map()`.** Spawned or listed things (targets,
+   cards, answers) render as one component mapped over a `settings` list, with each item's
+   differences (its text, colour or model) as fields of that item.
+4. **HTML UI uses Tailwind classes, written as literal `className` strings.** No CSS file and no
+   inline `style` for anything a creator would change, and no class names built from variables.
+   Use `text-[#hex]`-style values when the palette has no match.
+5. **Asset paths are plain strings** (`"/models/bomb.glb"`), in `settings` or at the loader,
+   never assembled from parts.
+
+Then run `vincentt editor --check` and fix what it lists that you can fix. It needs no account
+and makes no network request; `--json` gives each item a reason code and `file:line`. A CLI
+that does not know `--check` yet refuses the flag: skip the step then.
+
 ### Authoring self-review before handoff
 
 Run this list after every scene change. It is deliberately short enough to use

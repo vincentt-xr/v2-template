@@ -17,6 +17,7 @@ import {
 
 import { FaceBoundingBox } from "./FaceBoundingBox";
 import { FooterHud } from "./FooterHud";
+import { settings } from "./settings";
 
 const HELLO_TRANSFORM: ScreenTransform2DSettings = {
   enabled: true,
@@ -39,7 +40,7 @@ export const Scene = () => (
     <ScreenSpaceUI>
       <ScreenText
         name="trackingTitle"
-        text="Welcome to the Vincentt XR"
+        text={settings.title}
         screenTransform={HELLO_TRANSFORM}
         textAlign="center"
         verticalAlign="center"
@@ -48,11 +49,11 @@ export const Scene = () => (
         fontSize={54}
         resolution={150}
         letterSpacing={0.04}
-        color="#f8fafc"
-        strokeColor="#0f172a"
+        color={settings.titleColor}
+        strokeColor={settings.titleOutlineColor}
         strokeWidth={8}
         strokeOpacity={0.92}
-        shadowColor="#38bdf8"
+        shadowColor={settings.titleGlowColor}
         shadowBlur={10}
         shadowOffsetY={4}
         shadowOpacity={0.82}
