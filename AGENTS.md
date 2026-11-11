@@ -574,8 +574,7 @@ requires it, and know why).
 - **`src/sprite.tsx`** — sprite-sheet animation (`useSpriteSheet`, `<SpriteSheet>`,
   `useInstancedSpriteUV`).
 - **`src/gesture.ts`** — gesture helpers (`useGestureHold`).
-- **`src/PreviewAnchors.tsx`** and the build config (`esbuild.config.mjs`,
-  `tsconfig*.json`).
+- The build config (`esbuild.config.mjs`, `tsconfig*.json`).
 
 The helper APIs (`capture`, `overlay`, `sprite`, `gesture`) are documented in
 `GROUNDING.md` — import and use them, don't re-implement them.

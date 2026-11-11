@@ -24,7 +24,6 @@ import { openConsoleChannel } from "@vincentt-xr/harness";
 import { PerspectiveCamera } from "@react-three/drei";
 
 import { Scene } from "./Scene";
-import { PreviewAnchors } from "./PreviewAnchors";
 import { FrameContainer } from "./FrameContainer";
 import { CaptureControls } from "./CaptureControls";
 import {
@@ -410,7 +409,6 @@ export const Shell = () => {
         <ambientLight intensity={1} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
         <Scene />
-        <PreviewAnchors />
       </XRScene>
       <MediaSourceControl value={selected} onChange={applySource} />
       {RECORD.enabled ? <CaptureControls audio={RECORD.audio} /> : null}

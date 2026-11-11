@@ -3,7 +3,6 @@
   "platform": [
     "src/App.tsx",
     "src/main.tsx",
-    "src/PreviewAnchors.tsx",
     "src/mediaStream.ts",
     "src/MediaSourceControl.tsx",
     "src/MobileXRAcceptanceHarness.tsx",
