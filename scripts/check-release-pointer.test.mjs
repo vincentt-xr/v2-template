@@ -1,23 +1,22 @@
 import { describe, it, expect } from 'vitest';
 import {
-  highestReleaseTag,
+  namedTemplateVersion,
+  promoteFailures,
   lockedVersion,
   pointerFailures,
   pinFailures,
   expectedVersions,
 } from './check-release-pointer.mjs';
 
-describe('highestReleaseTag', () => {
-  it('compares numerically, not lexically', () => {
-    expect(highestReleaseTag(['1.5.9', '1.5.10', '1.10.0', '1.9.3'])).toBe('1.10.0');
+describe('namedTemplateVersion', () => {
+  it('reads the template version out of the versions body', () => {
+    expect(namedTemplateVersion({ components: { template: { version: '1.15.0' } } })).toBe('1.15.0');
   });
 
-  it('ignores latest, prereleases and prefixed tags', () => {
-    expect(highestReleaseTag(['latest', '2.0.0-rc.1', 'v9.9.9', '1.5.6', ''])).toBe('1.5.6');
-  });
-
-  it('returns null with no release tag', () => {
-    expect(highestReleaseTag(['latest'])).toBeNull();
+  it('returns null for a missing component, a prerelease or a non-object', () => {
+    expect(namedTemplateVersion({ components: {} })).toBeNull();
+    expect(namedTemplateVersion({ components: { template: { version: '1.15.0-rc.1' } } })).toBeNull();
+    expect(namedTemplateVersion(null)).toBeNull();
   });
 });
 
@@ -59,17 +58,46 @@ describe('lockedVersion', () => {
 });
 
 describe('pointerFailures', () => {
-  it('passes when latest is the highest tag', () => {
-    expect(pointerFailures({ pointerSha: 'a', highestTag: '1.5.6', highestSha: 'a' })).toEqual([]);
+  it('passes when latest is at the commit of the version prod names', () => {
+    expect(pointerFailures({ pointerSha: 'a', prodVersion: '1.5.6', prodSha: 'a' })).toEqual([]);
   });
 
-  it('fails naming the tag latest fell behind', () => {
-    const [f] = pointerFailures({ pointerSha: 'a', highestTag: '1.5.7', highestSha: 'b' });
+  it('passes while a newer tag exists that prod does not name yet', () => {
+    // latest deliberately trails the newest tag between a tag push and release day
+    expect(pointerFailures({ pointerSha: 'a', prodVersion: '1.5.6', prodSha: 'a' })).toEqual([]);
+  });
+
+  it('fails naming the version latest fell behind', () => {
+    const [f] = pointerFailures({ pointerSha: 'a', prodVersion: '1.5.7', prodSha: 'b' });
     expect(f).toContain('1.5.7');
   });
 
   it('fails when latest is missing', () => {
-    expect(pointerFailures({ pointerSha: null, highestTag: '1.5.6', highestSha: 'a' })).toHaveLength(1);
+    expect(pointerFailures({ pointerSha: null, prodVersion: '1.5.6', prodSha: 'a' })).toHaveLength(1);
+  });
+
+  it('fails when prod names no template version', () => {
+    expect(pointerFailures({ pointerSha: 'a', prodVersion: null, prodSha: null })).toHaveLength(1);
+  });
+
+  it('fails when prod names a version with no tag here', () => {
+    expect(pointerFailures({ pointerSha: 'a', prodVersion: '1.5.6', prodSha: null })).toHaveLength(1);
+  });
+});
+
+describe('promoteFailures', () => {
+  it('passes when staging already names the tag', () => {
+    expect(promoteFailures({ tag: '1.5.7', stagingVersion: '1.5.7' })).toEqual([]);
+  });
+
+  it('refuses a tag staging has not seen', () => {
+    const [f] = promoteFailures({ tag: '1.5.7', stagingVersion: '1.5.6' });
+    expect(f).toContain('1.5.6');
+  });
+
+  it('refuses when staging names nothing, and a non-semver tag', () => {
+    expect(promoteFailures({ tag: '1.5.7', stagingVersion: null })).toHaveLength(1);
+    expect(promoteFailures({ tag: '1.5.7-rc.1', stagingVersion: '1.5.7-rc.1' })).toHaveLength(1);
   });
 });
 

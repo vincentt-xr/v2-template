@@ -1,15 +1,25 @@
 name: Release
-# Moves the `latest` tag to whatever bare-semver tag was just pushed.
+# Two paths, one workflow.
 #
-# `vincentt init` clones this repo at `--branch latest` (@vincentt-xr/cli), so
-# `latest` — not `main` — is what reaches a new creator. Merging to main no longer
-# ships a template; cutting a release does. That is the whole point: a bad merge
-# sits on main until someone deliberately tags it.
+#   Tag push (bare semver): runs every check below against the tagged tree, then
+#   writes the release row to STAGING only. `latest` does not move and the prod
+#   token is never used. `vincentt create` against staging clones the version
+#   staging's row names, so a staging scaffold already gets this tag.
+#
+#   workflow_dispatch from the tag (release day, owner-run): the PROMOTE. It runs
+#   the same checks, requires that staging's row already names the tag and that
+#   the SDK and harness pins the tag locks are what they should follow (the owner
+#   moves those on npm first), then moves `latest` to the tag and writes the PROD
+#   row. Nothing is rebuilt or re-tagged; the artifact is the one staging served.
+#
+# `vincentt init` clones this repo at `--branch latest` (@vincentt-xr/cli) when the
+# api cannot be read, so `latest` -- not `main` -- is the prod fallback. Merging to
+# main does not ship a template; neither does a tag push. Only the promote does.
 #
 # Tags are BARE semver (1.0.0), no `v` prefix, matching api and console.
 #
 # `latest` is a MOVING tag, which is unusual for git but is exactly what a floating
-# release pointer is. It is force-updated here and nowhere else — never move it by
+# release pointer is. It is force-updated here and nowhere else -- never move it by
 # hand, or the pointer stops matching the version it claims to be.
 
 on:
@@ -19,7 +29,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Bare-semver tag to point `latest` at (e.g. 1.0.0)"
+        description: "Bare-semver tag to promote (e.g. 1.0.0); must be the ref this run was dispatched from"
         required: true
 
 permissions:
@@ -30,9 +40,10 @@ jobs:
     # This file ships into every scaffolded project; a semver tag there must not
     # force-move the creator's own `latest`.
     if: github.repository == 'vincentt-xr/v2-template'
-    # The prod publisher token lives only in this environment, which allows
+    # The publisher tokens live only in this environment, which allows
     # bare-semver tags alone. A workflow_dispatch must therefore be run from a
     # tag ref ("Use workflow from: <tag>"); a dispatch from main is refused.
+    # The prod token is passed only to the promote's row step.
     environment: release
     runs-on: ubuntu-latest
     steps:
@@ -46,8 +57,14 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           INPUT_REF: ${{ inputs.ref }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$REF_TYPE" != "tag" ] || [ "$REF_NAME" != "$INPUT_REF" ]; then
+              echo "::error::run this workflow from the tag ${INPUT_REF} (\"Use workflow from: ${INPUT_REF}\"); it was run from ${REF_TYPE} ${REF_NAME}."
+              exit 1
+            fi
             TAG="$INPUT_REF"
           else
             TAG="${GITHUB_REF#refs/tags/}"
@@ -92,7 +109,8 @@ jobs:
       #
       # A corrected MIGRATION.md entry is re-sent by release-row.yml, which
       # writes only the row. Dispatching THIS workflow at an older tag moves
-      # `latest` backwards; the api corrects only the newest row's note anyway.
+      # `latest` backwards (and the staging-names-it gate refuses it); the api
+      # corrects only the newest row's note anyway.
       - name: Prepare the release-row script and note from main
         run: |
           mkdir -p "$RUNNER_TEMP/release-row"
@@ -253,10 +271,22 @@ jobs:
       - name: GROUNDING.md splits into the connector guide topics
         run: node scripts/check-guide-topics.mjs
 
-      # Only now is the tag known good. Moving `latest` before this point would
-      # publish a broken template to every `vincentt init` for as long as it took
-      # someone to notice.
+      # The release-day gate, run before `latest` moves: staging's row already
+      # names this tag, and the SDK and harness the tag locks are the versions it
+      # should follow (npm `latest`, or the runtime's own when it locks one). The
+      # owner moves those on npm first; a tag locking an unpromoted version fails
+      # here instead of reaching every prod scaffold.
+      - name: Staging names this tag and its pins are followed
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          TAG: ${{ steps.rel.outputs.tag }}
+        run: node scripts/check-release-pointer.mjs --promote "$TAG"
+
+      # Only the promote moves `latest`, and only once the tag is known good.
+      # Moving it earlier would publish a broken template to every prod
+      # `vincentt init` for as long as it took someone to notice.
       - name: Move `latest`
+        if: github.event_name == 'workflow_dispatch'
         env:
           TAG: ${{ steps.rel.outputs.tag }}
           SHA: ${{ steps.rel.outputs.sha }}
@@ -265,22 +295,30 @@ jobs:
           git push --force origin refs/tags/latest
           echo "latest -> ${TAG} (${SHA})" >> "$GITHUB_STEP_SUMMARY"
 
-      # Only now does the platform learn about it: the artifact is public (the
-      # gates above passed and `latest` moved), which is the ordering f17 §2.3
-      # requires — a row naming a version before it is installable would tell
-      # an agent to install something that does not exist yet. Idempotent on
-      # (component, version), so a re-run (including the one-time bootstrap via
-      # workflow_dispatch on an already-current tag) is a safe no-op.
-      - name: Write the platform release row
+      # Idempotent on (component, version), so a re-run is a safe no-op. A tag
+      # push sends the staging row only: the artifact is installable (the checks
+      # above passed) and staging scaffolds read it from the row, which is the
+      # ordering f17 §2.3 requires. Only the staging token is in this step.
+      - name: Write the staging release row
+        if: github.event_name == 'push'
         env:
-          RELEASE_ROWS_TARGETS: "staging=https://api.staging.vincentt.studio,prod=https://api.vincentt.studio"
           RELEASE_PUBLISHER_TOKEN_STAGING: ${{ secrets.RELEASE_PUBLISHER_TOKEN_STAGING }}
-          RELEASE_PUBLISHER_TOKEN_PROD: ${{ secrets.RELEASE_PUBLISHER_TOKEN_PROD }}
-          # Overrides the default GITHUB_SHA, which is the run's ref SHA and is
-          # WRONG for workflow_dispatch (it would be main's HEAD, not the
-          # tag's). steps.rel.outputs.sha is resolved for both trigger paths.
+          # The tag's commit; the default GITHUB_SHA is the run's ref SHA.
           GITHUB_SHA: ${{ steps.rel.outputs.sha }}
           TAG: ${{ steps.rel.outputs.tag }}
         run: |
           node "$RUNNER_TEMP/release-row/release-row.mjs" "$TAG" \
-            --migration "$RUNNER_TEMP/release-row/MIGRATION.md"
+            --migration "$RUNNER_TEMP/release-row/MIGRATION.md" --target staging
+
+      # The prod row, after `latest` has moved. The script refuses it unless
+      # `latest` is at this tag's commit and staging already names the version.
+      # This is the only step that receives the prod token.
+      - name: Write the prod release row
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          RELEASE_PUBLISHER_TOKEN_PROD: ${{ secrets.RELEASE_PUBLISHER_TOKEN_PROD }}
+          GITHUB_SHA: ${{ steps.rel.outputs.sha }}
+          TAG: ${{ steps.rel.outputs.tag }}
+        run: |
+          node "$RUNNER_TEMP/release-row/release-row.mjs" "$TAG" \
+            --migration "$RUNNER_TEMP/release-row/MIGRATION.md" --target prod

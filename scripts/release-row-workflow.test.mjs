@@ -40,3 +40,18 @@ test('the dispatch ref must be the tag named by the input', () => {
   expect(yaml).toMatch(/REF_NAME"\s*!=\s*"\$INPUT_TAG"/);
   expect(yaml).toContain('scripts/tag-guard.sh');
 });
+
+test('target is a choice of staging or prod, and each token has its own step', () => {
+  expect(yaml).toMatch(/target:[\s\S]*?type:\s*choice[\s\S]*?-\s*staging\s*\n\s*-\s*prod/);
+  const stagingStep = yaml.split('- name: Write the staging release row')[1].split('- name:')[0];
+  const prodStep = yaml.split('- name: Write the prod release row')[1];
+  expect(stagingStep).toContain('--target staging');
+  expect(stagingStep).not.toContain('TOKEN_PROD');
+  expect(prodStep).toContain('--target prod');
+  expect(prodStep).not.toContain('TOKEN_STAGING');
+});
+
+test('inputs reach the shell through env, never inline', () => {
+  const runs = yaml.split('\n').filter((l) => /\$\{\{\s*inputs\./.test(l) && !/^\s+\w+:\s*\$\{\{/.test(l));
+  expect(runs.filter((l) => !/^\s+if:/.test(l))).toEqual([]);
+});

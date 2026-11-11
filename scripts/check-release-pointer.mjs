@@ -1,10 +1,16 @@
 // Daily check of what `vincentt init` actually hands a creator: the `latest`
-// tag. Fails when `latest` is not the highest release tag (a release job died
-// before moving it), or when the SDK/harness versions locked at `latest` are
-// not the ones the template should follow (a package shipped and the template
-// never followed). A template on the shared runtime follows the versions that
+// tag. Fails when `latest` is not at the commit of the template version prod's
+// `GET /platform/versions` names (a promote died before moving it, or a tag
+// moved it), or when the SDK/harness versions locked at `latest` are not the
+// ones the template should follow (a package shipped and the template never
+// followed). A template on the shared runtime follows the versions that
 // runtime carries, since its build loads them from the runtime and a newer local
 // copy would be bundled beside it; otherwise it follows npm's `latest` dist-tag.
+// Between a template tag and release day `latest` is deliberately behind the
+// newest tag; prod's row, not the tag list, says what `latest` must be.
+//
+// `--promote <tag>` is the release-day gate release.yml runs before it moves
+// `latest`: staging's row already names <tag> and the tag's pins are followed.
 // Reads the repo this file lives in; tags must be fetched.
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
@@ -17,24 +23,17 @@ export const RUNTIME = '@vincentt-xr/runtime';
 // where a released runtime version is guaranteed to exist.
 export const RUNTIME_ORIGIN = 'https://runtime.vincentt.studio';
 
-const RELEASE_TAG = /^(\d+)\.(\d+)\.(\d+)$/;
+export const API_ORIGINS = {
+  staging: 'https://api.staging.vincentt.studio',
+  prod: 'https://api.vincentt.studio',
+};
 
-export function highestReleaseTag(tags) {
-  let best = null;
-  for (const tag of tags) {
-    const m = RELEASE_TAG.exec(tag.trim());
-    if (!m) continue;
-    const parts = m.slice(1).map(Number);
-    if (!best || compareParts(parts, best.parts) > 0) best = { tag: tag.trim(), parts };
-  }
-  return best?.tag ?? null;
-}
+const RELEASE_TAG = /^\d+\.\d+\.\d+$/;
 
-function compareParts(a, b) {
-  for (let i = 0; i < 3; i += 1) {
-    if (a[i] !== b[i]) return a[i] - b[i];
-  }
-  return 0;
+/** The template version a `GET /platform/versions` body names, or null. */
+export function namedTemplateVersion(body) {
+  const v = body?.components?.template?.version;
+  return typeof v === 'string' && RELEASE_TAG.test(v) ? v : null;
 }
 
 // The version the root importer resolves `pkg` to. The lockfile, not the
@@ -60,13 +59,23 @@ export function lockedVersion(lockText, pkg) {
   return null;
 }
 
-export function pointerFailures({ pointerSha, highestTag, highestSha }) {
-  if (!highestTag) return ['no bare-semver release tag found'];
+export function pointerFailures({ pointerSha, prodVersion, prodSha }) {
+  if (!prodVersion) return ['prod names no template version'];
   if (!pointerSha) return [`tag \`${POINTER}\` does not exist`];
-  if (pointerSha !== highestSha) {
+  if (!prodSha) return [`prod names template ${prodVersion}, but that tag does not exist here`];
+  if (pointerSha !== prodSha) {
     return [
-      `\`${POINTER}\` is at ${pointerSha}, but the highest release tag ${highestTag} is at ${highestSha}; the release job for ${highestTag} did not move \`${POINTER}\``,
+      `\`${POINTER}\` is at ${pointerSha}, but prod names template ${prodVersion} at ${prodSha}; the promote for ${prodVersion} did not move \`${POINTER}\``,
     ];
+  }
+  return [];
+}
+
+/** The release-day gate: staging's row already names the tag being promoted. */
+export function promoteFailures({ tag, stagingVersion }) {
+  if (!RELEASE_TAG.test(tag ?? '')) return [`${tag} is not a bare-semver tag`];
+  if (stagingVersion !== tag) {
+    return [`staging names template ${stagingVersion ?? 'nothing'}, not ${tag}; only the version staging already serves is promoted`];
   }
   return [];
 }
@@ -133,40 +142,58 @@ function tagSha(tag) {
   }
 }
 
-async function main() {
-  const highestTag = highestReleaseTag(git('tag', '-l').split('\n'));
-  const failures = pointerFailures({
-    pointerSha: tagSha(POINTER),
-    highestTag,
-    highestSha: highestTag ? tagSha(highestTag) : null,
-  });
+async function versionsAt(origin) {
+  try {
+    const res = await fetch(`${origin}/platform/versions`, { redirect: 'error' });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}
 
-  if (tagSha(POINTER)) {
-    const lockText = git('show', `refs/tags/${POINTER}:pnpm-lock.yaml`);
-    const locked = {};
-    const distLatest = {};
-    for (const pkg of FOLLOWED) {
-      locked[pkg] = lockedVersion(lockText, pkg);
-      const tags = JSON.parse(
-        execFileSync('npm', ['view', pkg, 'dist-tags', '--json'], { encoding: 'utf8' }),
-      );
-      distLatest[pkg] = tags.latest ?? null;
-    }
-    const runtimeVersion = lockedVersion(lockText, RUNTIME);
-    const runtimePackages = runtimeVersion ? await runtimePackagesFor(runtimeVersion) : null;
-    const { want, source, failures: sourceFailures } = expectedVersions({
-      runtimeVersion,
-      runtimePackages,
-      distLatest,
-    });
-    for (const pkg of FOLLOWED) {
-      const npmNote = runtimeVersion ? `, npm latest ${distLatest[pkg]}` : '';
-      console.log(`${pkg}: locked at \`${POINTER}\` ${locked[pkg]}, ${source} ${want[pkg] ?? '?'}${npmNote}`);
-    }
-    failures.push(...sourceFailures, ...pinFailures(locked, want, source));
+// Failures for the pins locked at `ref`, against what they should follow.
+async function pinCheck(ref) {
+  const lockText = git('show', `${ref}:pnpm-lock.yaml`);
+  const locked = {};
+  const distLatest = {};
+  for (const pkg of FOLLOWED) {
+    locked[pkg] = lockedVersion(lockText, pkg);
+    const tags = JSON.parse(
+      execFileSync('npm', ['view', pkg, 'dist-tags', '--json'], { encoding: 'utf8' }),
+    );
+    distLatest[pkg] = tags.latest ?? null;
+  }
+  const runtimeVersion = lockedVersion(lockText, RUNTIME);
+  const runtimePackages = runtimeVersion ? await runtimePackagesFor(runtimeVersion) : null;
+  const { want, source, failures } = expectedVersions({ runtimeVersion, runtimePackages, distLatest });
+  for (const pkg of FOLLOWED) {
+    const npmNote = runtimeVersion ? `, npm latest ${distLatest[pkg]}` : '';
+    console.log(`${pkg}: locked at ${ref} ${locked[pkg]}, ${source} ${want[pkg] ?? '?'}${npmNote}`);
+  }
+  return [...failures, ...pinFailures(locked, want, source)];
+}
+
+async function main() {
+  const promoteAt = process.argv.indexOf('--promote');
+  if (promoteAt !== -1) {
+    const tag = process.argv[promoteAt + 1];
+    const stagingVersion = namedTemplateVersion(await versionsAt(API_ORIGINS.staging));
+    const failures = promoteFailures({ tag, stagingVersion });
+    if (failures.length === 0) failures.push(...(await pinCheck(`refs/tags/${tag}`)));
+    if (failures.length === 0) console.log(`OK: ${tag} is staged and its pins are followed`);
+    for (const f of failures) console.log(`::error::${f}`);
+    process.exit(failures.length ? 1 : 0);
   }
 
-  console.log(`\`${POINTER}\` -> ${tagSha(POINTER)}; highest release tag ${highestTag}`);
+  const prodVersion = namedTemplateVersion(await versionsAt(API_ORIGINS.prod));
+  const failures = pointerFailures({
+    pointerSha: tagSha(POINTER),
+    prodVersion,
+    prodSha: prodVersion ? tagSha(prodVersion) : null,
+  });
+  if (tagSha(POINTER)) failures.push(...(await pinCheck(`refs/tags/${POINTER}`)));
+
+  console.log(`\`${POINTER}\` -> ${tagSha(POINTER)}; prod names template ${prodVersion}`);
   if (failures.length === 0) console.log('OK');
   for (const f of failures) console.log(`::error::${f}`);
   process.exit(failures.length ? 1 : 0);
