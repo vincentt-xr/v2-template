@@ -9,10 +9,16 @@
 // — because a half-parsed note is worse than none: the corpus must never hold
 // a note the endpoint would then serve incomplete.
 //
-// Run twice by release.yml: once with --dry-run as an early gate (parses and
-// bounds-checks, no network, no secrets needed — so `latest` never moves for a
-// tag with no valid note), and once for real after `latest` has moved, against
-// every target in RELEASE_ROWS_TARGETS.
+// Run by release.yml with --dry-run as an early gate (parses and bounds-checks,
+// no network, no secrets needed), then for real: `--target staging` on a tag
+// push, `--target prod` on the release-day dispatch after `latest` has moved.
+// release-row.yml re-sends one chosen target the same way.
+//
+// --target <staging|prod> maps to a hardcoded api origin and reads only that
+// target's token, so the prod token is never touched by a staging write. The
+// prod write is refused here unless: the version is bare semver, the `latest`
+// tag points at that version's commit (the promote moved it), and staging's
+// `GET /platform/versions` already names the version.
 //
 // --migration <path> reads the note from an explicit file instead of
 // MIGRATION.md in the cwd. release.yml passes this pointed at a copy taken
@@ -21,6 +27,7 @@
 // for ANY tag — including one cut before this file existed, which the tagged
 // tree can never carry.
 
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -145,19 +152,60 @@ export function findEntry(content, version) {
   return entry;
 }
 
-/** Parses "name=url,name=url" into [{name, url}]. Throws on a malformed pair. */
-export function parseTargets(spec) {
-  return spec
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
-    .map((pair) => {
-      const eq = pair.indexOf('=');
-      if (eq <= 0) {
-        throw new Error(`malformed target "${pair}" in RELEASE_ROWS_TARGETS (expected name=url)`);
-      }
-      return { name: pair.slice(0, eq).trim(), url: pair.slice(eq + 1).trim() };
-    });
+// The only origins a row is ever sent to. A target is chosen by name; no
+// caller-supplied URL reaches a request carrying a publisher token.
+export const TARGET_ORIGINS = {
+  staging: 'https://api.staging.vincentt.studio',
+  prod: 'https://api.vincentt.studio',
+};
+
+const BARE_SEMVER = /^\d+\.\d+\.\d+$/;
+
+/** The one `{name, url}` a `--target` value selects. Throws on anything not in the map. */
+export function resolveTarget(name) {
+  if (!Object.hasOwn(TARGET_ORIGINS, name ?? '')) {
+    throw new Error(`--target must be one of ${Object.keys(TARGET_ORIGINS).join(', ')}; got "${name}"`);
+  }
+  return { name, url: TARGET_ORIGINS[name] };
+}
+
+/**
+ * The refusals for a prod write. `latestSha` is where the `latest` tag points,
+ * `tagSha` the version's own tag, `stagingVersion` what staging already names.
+ */
+export function prodGuardFailures({ version, latestSha, tagSha, stagingVersion }) {
+  const failures = [];
+  if (!BARE_SEMVER.test(version ?? '')) {
+    failures.push(`${version} is not bare semver; a prod row is never written for a prerelease`);
+  }
+  if (!latestSha || !tagSha || latestSha !== tagSha) {
+    failures.push(`the \`latest\` tag is not at ${version}'s commit; promote moves it before the prod row`);
+  }
+  if (stagingVersion !== version) {
+    failures.push(`staging names template ${stagingVersion ?? 'nothing'}, not ${version}; staging row first`);
+  }
+  return failures;
+}
+
+async function stagingTemplateVersion(fetchImpl = fetch) {
+  try {
+    const res = await fetchImpl(`${TARGET_ORIGINS.staging}/platform/versions`, { redirect: 'error' });
+    if (!res.ok) return null;
+    return (await res.json())?.components?.template?.version ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function tagSha(tag) {
+  try {
+    return execFileSync('git', ['rev-list', '-n1', `refs/tags/${tag}`], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    return null;
+  }
 }
 
 /** The env var a target's release-publisher token is read from. */
@@ -258,13 +306,21 @@ export function formatResult(result) {
 }
 
 /**
- * Parses argv into `{version, dryRun, migrationPath}`. `--migration` takes the
+ * Parses argv into `{version, dryRun, migrationPath, target}`. `--migration` takes the
  * very next argv entry as its value (never sniffed as the version), and a
  * trailing `--migration` with nothing after it is a usage error rather than a
  * silently-ignored flag.
  */
 export function parseArgs(argv) {
   const dryRun = argv.includes('--dry-run');
+  const targetIdx = argv.indexOf('--target');
+  let target;
+  if (targetIdx !== -1) {
+    target = argv[targetIdx + 1];
+    if (!target || target.startsWith('--')) {
+      throw new Error('--target requires staging or prod');
+    }
+  }
   const migrationIdx = argv.indexOf('--migration');
   let migrationPath;
   if (migrationIdx !== -1) {
@@ -275,25 +331,26 @@ export function parseArgs(argv) {
   }
   const version = argv.find((a, i) => {
     if (a.startsWith('--')) return false;
-    if (i > 0 && argv[i - 1] === '--migration') return false;
+    if (i > 0 && (argv[i - 1] === '--migration' || argv[i - 1] === '--target')) return false;
     return true;
   });
-  return { version, dryRun, migrationPath };
+  return { version, dryRun, migrationPath, target };
 }
 
 async function main() {
   let version;
   let dryRun;
   let migrationPath;
+  let targetName;
   try {
-    ({ version, dryRun, migrationPath } = parseArgs(process.argv.slice(2)));
+    ({ version, dryRun, migrationPath, target: targetName } = parseArgs(process.argv.slice(2)));
   } catch (err) {
     console.error(`release-row: ${err.message}`);
     process.exit(1);
   }
 
   if (!version) {
-    console.error('usage: release-row.mjs <version> [--dry-run] [--migration <path>]');
+    console.error('usage: release-row.mjs <version> [--dry-run] [--migration <path>] [--target staging|prod]');
     process.exit(1);
   }
 
@@ -323,22 +380,27 @@ async function main() {
     return;
   }
 
-  const targetsSpec = process.env.RELEASE_ROWS_TARGETS;
-  if (!targetsSpec) {
-    console.error('release-row: RELEASE_ROWS_TARGETS is not set');
-    process.exit(1);
-  }
-
   let targets;
   try {
-    targets = parseTargets(targetsSpec);
+    targets = [resolveTarget(targetName)];
   } catch (err) {
     console.error(`release-row: ${err.message}`);
     process.exit(1);
   }
 
-  // Every target is attempted before the run fails, so one bad token or one
-  // down box does not hide the state of the others.
+  if (targetName === 'prod') {
+    const failures = prodGuardFailures({
+      version,
+      latestSha: tagSha('latest'),
+      tagSha: tagSha(version),
+      stagingVersion: await stagingTemplateVersion(),
+    });
+    if (failures.length > 0) {
+      for (const f of failures) console.error(`release-row: refused: ${f}`);
+      process.exit(1);
+    }
+  }
+
   const results = [];
   for (const target of targets) {
     results.push(await postRelease(target, body));

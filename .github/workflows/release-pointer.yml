@@ -1,8 +1,10 @@
 name: Release Pointer
-# Daily: `latest` (what `vincentt init` clones) must be the highest release tag,
-# and the SDK and harness it locks must be npm's `latest` dist-tag. A Release
-# run that dies before `Move latest`, or a package that ships without the
-# template following, is otherwise silent until a creator scaffolds stale code.
+# Daily: `latest` (what `vincentt init` clones when the api cannot be read) must
+# be the template version prod's GET /platform/versions names, and the SDK and
+# harness it locks must be the versions the template follows (npm's `latest`
+# dist-tag). A promote that dies before `Move latest`, or a package that ships
+# without the template following, is otherwise silent until a creator scaffolds
+# stale code. `latest` trails the newest tag between a tag push and release day.
 
 on:
   schedule:
@@ -26,5 +28,5 @@ jobs:
         with:
           node-version: 22
 
-      - name: "`latest` is the highest release and follows npm"
+      - name: "`latest` is the version prod names and follows npm"
         run: node scripts/check-release-pointer.mjs

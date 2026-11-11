@@ -11,7 +11,8 @@ import {
   parseEntryBlock,
   validateBounds,
   findEntry,
-  parseTargets,
+  resolveTarget,
+  prodGuardFailures,
   tokenEnvVar,
   buildBody,
   postRelease,
@@ -160,18 +161,38 @@ describe('validateBounds', () => {
   });
 });
 
-describe('parseTargets', () => {
-  it('parses the documented RELEASE_ROWS_TARGETS shape', () => {
-    expect(
-      parseTargets('staging=https://api.staging.vincentt.studio,prod=https://api.vincentt.studio'),
-    ).toEqual([
-      { name: 'staging', url: 'https://api.staging.vincentt.studio' },
-      { name: 'prod', url: 'https://api.vincentt.studio' },
-    ]);
+describe('resolveTarget', () => {
+  it('maps each target name to its hardcoded origin', () => {
+    expect(resolveTarget('staging')).toEqual({ name: 'staging', url: 'https://api.staging.vincentt.studio' });
+    expect(resolveTarget('prod')).toEqual({ name: 'prod', url: 'https://api.vincentt.studio' });
   });
 
-  it('throws on a pair with no "="', () => {
-    expect(() => parseTargets('staging')).toThrow();
+  it('refuses anything outside the map, including a URL and inherited keys', () => {
+    expect(() => resolveTarget('https://evil.example')).toThrow(/--target must be one of/);
+    expect(() => resolveTarget('constructor')).toThrow();
+    expect(() => resolveTarget(undefined)).toThrow();
+  });
+});
+
+describe('prodGuardFailures', () => {
+  const ok = { version: '1.5.7', latestSha: 'a', tagSha: 'a', stagingVersion: '1.5.7' };
+
+  it('passes a bare-semver version that latest and staging both already name', () => {
+    expect(prodGuardFailures(ok)).toEqual([]);
+  });
+
+  it('refuses a prerelease', () => {
+    expect(prodGuardFailures({ ...ok, version: '1.5.7-rc.1', stagingVersion: '1.5.7-rc.1' })).toHaveLength(1);
+  });
+
+  it('refuses when latest is not at the version commit, or is missing', () => {
+    expect(prodGuardFailures({ ...ok, latestSha: 'b' })).toHaveLength(1);
+    expect(prodGuardFailures({ ...ok, latestSha: null })).toHaveLength(1);
+  });
+
+  it('refuses when staging does not name the version, or cannot be read', () => {
+    expect(prodGuardFailures({ ...ok, stagingVersion: '1.5.6' })[0]).toContain('1.5.6');
+    expect(prodGuardFailures({ ...ok, stagingVersion: null })).toHaveLength(1);
   });
 });
 
@@ -226,6 +247,17 @@ describe('parseArgs', () => {
 
   it('throws when --migration has no value after it', () => {
     expect(() => parseArgs(['1.5.6', '--migration'])).toThrow(/requires a path argument/);
+  });
+
+  it('parses --target and never sniffs its value as the version', () => {
+    const r = parseArgs(['--target', 'prod', '1.5.6', '--migration', '/m.md']);
+    expect(r.target).toBe('prod');
+    expect(r.version).toBe('1.5.6');
+  });
+
+  it('throws when --target has no value after it', () => {
+    expect(() => parseArgs(['1.5.6', '--target'])).toThrow(/requires staging or prod/);
+    expect(() => parseArgs(['--target', '--dry-run', '1.5.6'])).toThrow();
   });
 
   it('leaves version undefined when none is given', () => {
