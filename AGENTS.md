@@ -544,6 +544,9 @@ preview is running again.
 
 - **`src/Scene.tsx`** — the scene. This is your primary surface. Add SDK components,
   R3F primitives, animation, and state here.
+- **`src/settings.ts`** — the values a creator changes in the Vincentt editor (text,
+  colours, counts, lists), as plain literals the scene reads. Follow "Editable shape" in
+  `GROUNDING.md`, then run `vincentt editor --check`.
 - **Any new file you create under `src/`** — utility hooks, sub-components, asset
   imports. Organize freely.
 - **`package.json` dependencies** — add a dependency, then `pnpm install` it yourself.
