@@ -71,7 +71,6 @@ vi.mock("@vincentt-xr/sdk", async () => {
 
 // The app's own scene content is irrelevant here and pulls in three.js.
 vi.mock("./Scene", () => ({ Scene: () => null }));
-vi.mock("./PreviewAnchors", () => ({ PreviewAnchors: () => null }));
 vi.mock("@react-three/drei", () => ({ PerspectiveCamera: () => null }));
 vi.mock("./MediaSourceControl", () => ({ MediaSourceControl: () => null }));
 

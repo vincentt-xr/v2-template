@@ -75,7 +75,6 @@ vi.mock("@vincentt-xr/sdk", async () => {
 });
 
 vi.mock("./Scene", () => ({ Scene: () => null }));
-vi.mock("./PreviewAnchors", () => ({ PreviewAnchors: () => null }));
 vi.mock("@react-three/drei", () => ({ PerspectiveCamera: () => null }));
 vi.mock("./MediaSourceControl", () => ({ MediaSourceControl: () => null }));
 vi.mock("./mediaStream", () => ({
