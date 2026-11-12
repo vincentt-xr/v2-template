@@ -52,6 +52,8 @@ vi.mock("@vincentt-xr/sdk", async () => {
   const { createElement } = await import("react");
   return {
     XRProvider: ({ children }: { children?: unknown }) => children,
+    Scenes: ({ children }: { children?: unknown }) => children,
+    Scene: ({ children }: { children?: unknown }) => children ?? null,
     // Records the props and mounts NO children.
     //
     // The real children are the r3f scene graph — `<ambientLight>` and friends —
