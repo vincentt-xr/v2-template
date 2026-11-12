@@ -54,7 +54,7 @@ migration guide). Reach for those when the grounding reference is too terse.
 
 ### SDK version
 
-This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.16`**. Sections
+This template targets `@vincentt-xr/sdk` **`2.0.0-alpha.17`**. Sections
 marked **(alpha.8)** describe APIs that arrived in that version: holistic
 tracking, iris tracking, the coordinate-space toolkit, reusable gesture
 detection and the `PersonCutout` edge controls. A project still pinned to an
@@ -122,6 +122,15 @@ load now draws the default picture and logs a warning instead of stopping the
 whole view; the rest of the scene keeps rendering, and changing `src` to a file
 that loads shows it. Still check that every image path exists under `public/`:
 the default picture is a safety net, not a substitute. Nothing from alpha.14
+changed meaning.
+
+`2.0.0-alpha.17` adds `Scenes` and `Scene`: split the app into named screens with
+`<Scenes current={scene}>` and `<Scene id="quiz" label="Quiz">` children, once inside the canvas
+and once in the HTML around it; the same `id` in both is one screen. Keep `current` in the app's
+own `useState` and move it from code (a button, a timer). `id` is a lowercase name code refers
+to; `label` is what the console's scene list shows, and the creator can rename it there. Each
+scene should render on its own with the settings' sample values, because the editor opens
+screens directly. The starter has one `start` scene in both trees. Nothing from alpha.16
 changed meaning.
 
 `2.0.0-alpha.16` adds no API. A `MeshRenderer` model (`value.assetUrl`) and an
@@ -939,7 +948,7 @@ useFrame((_s, delta) => {
 
 ## Face, world and image tracking
 
-The SDK (`2.0.0-alpha.16`) tracks **faces, hands and bodies** in the camera feed, recognises
+The SDK (`2.0.0-alpha.17`) tracks **faces, hands and bodies** in the camera feed, recognises
 **gestures**, and cuts out **people and hair** as masks. Every tracker comes from
 `@vincentt-xr/sdk/tracking`, registers itself when mounted, and runs on the phone. This topic
 condenses the tracking parts of the SDK's grounding; when you can open the project's files, the full

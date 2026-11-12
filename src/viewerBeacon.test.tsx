@@ -66,6 +66,8 @@ vi.mock("@vincentt-xr/sdk", async () => {
   const { createElement } = await import("react");
   return {
     XRProvider: ({ children }: { children?: unknown }) => children,
+    Scenes: ({ children }: { children?: unknown }) => children,
+    Scene: ({ children }: { children?: unknown }) => children ?? null,
     XRScene: () => createElement("div", { "data-testid": "scene" }),
     AspectRatioContainer: ({ children }: { children?: unknown }) =>
       createElement("div", null, children as never),

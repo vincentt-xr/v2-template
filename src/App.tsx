@@ -12,6 +12,8 @@ import {
   XRScene,
   VideoBackground,
   XRMediaSource,
+  Scenes,
+  Scene,
 } from "@vincentt-xr/sdk";
 import {
   useXRContext,
@@ -23,7 +25,7 @@ import { mountViewerBeacon, reportSession } from "@vincentt-xr/analytics";
 import { openConsoleChannel } from "@vincentt-xr/harness";
 import { PerspectiveCamera } from "@react-three/drei";
 
-import { Scene } from "./Scene";
+import { Scene as StartScene } from "./Scene";
 import { FrameContainer } from "./FrameContainer";
 import { CaptureControls } from "./CaptureControls";
 import {
@@ -276,6 +278,8 @@ export const Shell = () => {
   // delicate path. The cost is that release JUMPS to where the world now is
   // rather than resuming from the frozen instant.
   const [paused, setPaused] = useState(false);
+  // The screen shown: add a `<Scene>` per screen in both trees and move this from code.
+  const [scene] = useState("start");
 
   const applySource = useCallback(
     (next: MediaPreset) => {
@@ -408,8 +412,15 @@ export const Shell = () => {
         />
         <ambientLight intensity={1} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
-        <Scene />
+        <Scenes current={scene}>
+          <Scene id="start" label="Start">
+            <StartScene />
+          </Scene>
+        </Scenes>
       </XRScene>
+      <Scenes current={scene}>
+        <Scene id="start" label="Start" />
+      </Scenes>
       <MediaSourceControl value={selected} onChange={applySource} />
       {RECORD.enabled ? <CaptureControls audio={RECORD.audio} /> : null}
       {MobileXRAcceptanceHarness ? (
