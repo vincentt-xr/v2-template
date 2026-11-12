@@ -5,6 +5,16 @@ Per release tag, newest first. Read by the platform's own version surface
 outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
+## 1.16.0
+required: false
+Update the CLI to 0.29.0 or later first; older CLIs refuse runtime `2026.11.9`. The template moves to SDK `2.0.0-alpha.17` on that runtime, which also carries it.
+- SDK `2.0.0-alpha.16` and `2.0.0-alpha.17` are additive. A model and a sound declared as editable settings can be replaced from the console's visual editor, and the new `Scenes` / `Scene` parts let the editor list an app's screens and jump between them.
+- New projects start with one `<Scenes>` block in the 3D tree and one in the HTML tree, each holding `<Scene id="start" label="Start">`, with the current scene in the app's own state. The local start scene is imported as `StartScene` so the SDK's `Scene` keeps its name. An existing app needs none of this; without it the editor lists no scenes.
+- New projects get `src/settings.ts` (creator zone): the values a creator changes in the visual editor, as plain literals the scene reads. The starter title text and colours now come from it and render the same. `GROUNDING.md` adds an "Editable shape" section and points the agent at `vincentt editor --check`.
+- `src/PreviewAnchors.tsx` is removed. It served the retired editor and nothing on the platform reads it. An existing project may keep or delete it; no code depends on it.
+- `@vincentt-xr/runtime` moves from `2026.11.7` to `2026.11.9`. An upgrade carries the new pins through the package manifest.
+- Smoke Build now installs CLI 0.29.0; the workflow is not replaced by an upgrade, so a project whose CI installs an older CLI must raise that pin.
+
 ## 1.15.0
 required: false
 Update the CLI to 0.28.1 or later first; older CLIs refuse runtime `2026.11.7`. The template moves to SDK `2.0.0-alpha.15` on that runtime.
