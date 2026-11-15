@@ -8,4 +8,5 @@ phone, what to edit and what to leave alone — is **[AGENTS.md](./AGENTS.md)**.
 Two grounding files, and nothing merges them — read both when you begin a scene, not
 before: **[GROUNDING.md](./GROUNDING.md)** for this template's own helpers, and
 **`node_modules/@vincentt-xr/sdk/GROUNDING.md`** for the SDK API (every component, hook
-and prop — much the larger of the two).
+and prop — much the larger of the two). For anything a person changes in the editor, read its
+`## Editable components` section (guide topic `sdk-editable-components`).

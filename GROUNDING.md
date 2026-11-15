@@ -336,6 +336,11 @@ Then run `vincentt editor --check` and fix what it lists that you can fix. It ne
 and makes no network request; `--json` gives each item a reason code and `file:line`. A CLI
 that does not know `--check` yet refuses the flag: skip the step then.
 
+Text, images, sounds and models a person changes go in the SDK's editable components. Their list,
+props, the `name` and `locked` props and what each `--check` code means are in the `## Editable
+components` section of `node_modules/@vincentt-xr/sdk/GROUNDING.md` (guide topic
+`sdk-editable-components`). Status, error, timer and debug text stays plain code.
+
 ### Authoring self-review before handoff
 
 Run this list after every scene change. It is deliberately short enough to use
