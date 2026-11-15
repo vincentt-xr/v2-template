@@ -308,10 +308,19 @@ The creator changes text, colours, pictures and counts in the Vincentt editor wi
 asking you. The editor can only change what it can read as a plain value in the source, so
 write the app in this shape:
 
-1. **Settings live in `src/settings.ts`.** Every value a creator would want to change (titles,
-   colours, timings, scores, the questions of a quiz) is a plain literal in the exported
-   `settings` object, and the app reads it from there. No computed values, no imports, no
-   spreads in that file.
+1. **Settings live in `src/settings.ts`, as a declared zod list.** The file has a module-scope
+   `export const SettingsSchema = z.object({...})` and
+   `export const settings = SettingsSchema.parse({ ...object literal... })`. Every value a creator
+   would want to change (titles, colours, timings, scores, the questions of a quiz) is a plain
+   literal leaf of that object literal, with a schema field of the same name carrying its label and
+   limits via only this subset: `z.object`, `z.number()` (`.min .max .int .multipleOf`),
+   `z.string()` (`.min .max`), `z.boolean()`, `z.enum([...])`, `z.array(x)` (`.min .max`),
+   `z.optional`, `.default(literal)`, `.describe(text)`, and
+   `.meta({ label, help, group, kind })` with literal values (`kind`: `colour | image | model |
+   sound | video`). Anything else in a field's chain shows as "Made by code" in the editor. No
+   computed values and no spreads in the literal. The editor reads the file by parsing, never by
+   running it. Apps read leaves as `settings.<leaf>` (or `settings.list.map(...)`); the editor
+   counts those static reads as "used in N places", so do not alias or destructure them away.
 2. **Never hard-code a count.** "Five questions" is a list of five items in `settings`, and the
    app uses its length. Adding a sixth item must need no code change.
 3. **Repeated objects are one component in `.map()`.** Spawned or listed things (targets,
