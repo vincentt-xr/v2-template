@@ -546,7 +546,9 @@ preview is running again.
   R3F primitives, animation, and state here.
 - **`src/settings.ts`** — the values a creator changes in the Vincentt editor (text,
   colours, counts, lists), as plain literals the scene reads. Follow "Editable shape" in
-  `GROUNDING.md`, then run `vincentt editor --check`.
+  `GROUNDING.md`, then run `vincentt editor --check --json`. The components a person can
+  edit, and how to fix each check code, are in the `## Editable components` section of
+  `node_modules/@vincentt-xr/sdk/GROUNDING.md` (guide topic `sdk-editable-components`).
 - **Any new file you create under `src/`** — utility hooks, sub-components, asset
   imports. Organize freely.
 - **`package.json` dependencies** — add a dependency, then `pnpm install` it yourself.
