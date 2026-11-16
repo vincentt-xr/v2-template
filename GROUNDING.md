@@ -308,16 +308,21 @@ The creator changes text, colours, pictures and counts in the Vincentt editor wi
 asking you. The editor can only change what it can read as a plain value in the source, so
 write the app in this shape:
 
-1. **Settings live in `src/settings.ts`, as a declared zod list.** The file has a module-scope
+1. **Settings live in `src/settings.ts`, as a declared zod/mini list.** The file imports
+   `import * as z from "zod/mini"` (classic `zod` also parses but adds about 87 KB gzip to the first
+   visit, so use `zod/mini`), and has a module-scope
    `export const SettingsSchema = z.object({...})` and
    `export const settings = SettingsSchema.parse({ ...object literal... })`. Every value a creator
    would want to change (titles, colours, timings, scores, the questions of a quiz) is a plain
    literal leaf of that object literal, with a schema field of the same name carrying its label and
-   limits via only this subset: `z.object`, `z.number()` (`.min .max .int .multipleOf`),
-   `z.string()` (`.min .max`), `z.boolean()`, `z.enum([...])`, `z.array(x)` (`.min .max`),
-   `z.optional`, `.default(literal)`, `.describe(text)`, and
-   `.meta({ label, help, group, kind })` with literal values (`kind`: `colour | image | model |
-   sound | video`). Anything else in a field's chain shows as "Made by code" in the editor. No
+   limits via only this subset, written as `.check(...)` arguments:
+   `z.object`, `z.number()` (`z.gte z.lte z.int z.multipleOf`), `z.string()` (`z.minLength
+   z.maxLength`), `z.boolean()`, `z.enum([...])`, `z.array(x)` (`z.minLength z.maxLength`),
+   `z.optional(x)`, `z._default(x, literal)`, `z.describe(text)`, and
+   `z.meta({ label, help, group, kind })` with literal values (`kind`: `colour | image | model |
+   sound | video`), for example
+   `z.string().check(z.minLength(1), z.maxLength(80), z.meta({ label: "Title", group: "Title" }))`.
+   Classic method chains (`.min().meta()`) are also read. Anything else in a field's chain shows as "Made by code" in the editor. No
    computed values and no spreads in the literal. The editor reads the file by parsing, never by
    running it. Apps read leaves as `settings.<leaf>` (or `settings.list.map(...)`); the editor
    counts those static reads as "used in N places", so do not alias or destructure them away.
