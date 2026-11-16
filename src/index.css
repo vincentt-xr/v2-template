@@ -94,7 +94,7 @@
   left: 0;
   width: 28%;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #38bdf8, #a78bfa, transparent);
+  background: linear-gradient(90deg, transparent, var(--vincentt-accent, #38bdf8), #a78bfa, transparent);
   filter: blur(0.3px);
   animation: footerHudShimmer 6s ease-in-out 1.2s infinite;
 }

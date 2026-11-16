@@ -14,6 +14,7 @@ import {
   XRMediaSource,
   Scenes,
   Scene,
+  ThemeProvider,
 } from "@vincentt-xr/sdk";
 import {
   useXRContext,
@@ -26,6 +27,7 @@ import { openConsoleChannel } from "@vincentt-xr/harness";
 import { PerspectiveCamera } from "@react-three/drei";
 
 import { Scene as StartScene } from "./Scene";
+import { settings } from "./settings";
 import { FrameContainer } from "./FrameContainer";
 import { CaptureControls } from "./CaptureControls";
 import {
@@ -413,13 +415,13 @@ export const Shell = () => {
         <ambientLight intensity={1} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
         <Scenes current={scene}>
-          <Scene id="start" label="Start">
+          <Scene id="start" name="Start" label="Start">
             <StartScene />
           </Scene>
         </Scenes>
       </XRScene>
       <Scenes current={scene}>
-        <Scene id="start" label="Start" />
+        <Scene id="start" name="Start" label="Start" />
       </Scenes>
       <MediaSourceControl value={selected} onChange={applySource} />
       {RECORD.enabled ? <CaptureControls audio={RECORD.audio} /> : null}
@@ -434,7 +436,9 @@ export const Shell = () => {
 
 const App = () => (
   <XRProvider quality={RECORD.enabled ? false : undefined}>
-    <Shell />
+    <ThemeProvider theme={settings.theme}>
+      <Shell />
+    </ThemeProvider>
   </XRProvider>
 );
 
