@@ -15,6 +15,11 @@ export const SettingsSchema = z.object({
   titleGlowColor: z
     .string()
     .check(z.meta({ label: "Title glow colour", group: "Title", kind: "colour" })),
+  theme: z
+    .object({
+      accent: z.string().check(z.meta({ label: "Accent colour", kind: "colour" })),
+    })
+    .check(z.meta({ label: "Theme", kind: "theme" })),
 });
 
 export const settings = SettingsSchema.parse({
@@ -22,6 +27,7 @@ export const settings = SettingsSchema.parse({
   titleColor: "#f8fafc",
   titleOutlineColor: "#0f172a",
   titleGlowColor: "#38bdf8",
+  theme: { accent: "#38bdf8" },
 });
 
 export type Settings = z.infer<typeof SettingsSchema>;
