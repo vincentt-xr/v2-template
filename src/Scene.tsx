@@ -9,39 +9,34 @@
 // runs --report-unused-disable-directives, which makes the unused directive
 // itself the error. Disabling at the config keeps the suppression true in both
 // states.
-import {
-  ScreenSpaceUI,
-  ScreenText,
-  type ScreenTransform2DSettings,
-} from "@vincentt-xr/sdk";
+import { ScreenSpaceUI, ScreenText } from "@vincentt-xr/sdk";
 
 import { FaceBoundingBox } from "./FaceBoundingBox";
 import { FooterHud } from "./FooterHud";
 import { settings } from "./settings";
-
-const HELLO_TRANSFORM: ScreenTransform2DSettings = {
-  enabled: true,
-  position: { x: 0, y: 540 },
-  size: { width: 620, height: 96 },
-  pivot: [0.5, 0.5],
-  rotation: 0,
-  scale2D: { x: 1, y: 1 },
-  referencePixelsPerUnit: 32,
-  renderOrder: 1000,
-  overlay: true,
-  visible: true,
-  showTransformGuides: false,
-};
 
 export const Scene = () => (
   <>
     <FaceBoundingBox />
     <FooterHud />
     <ScreenSpaceUI>
+      {/* Placement stays an object in the tag: the editor reads Position, Size and Rotation only from here. */}
       <ScreenText
         name="trackingTitle"
         text={settings.title}
-        screenTransform={HELLO_TRANSFORM}
+        screenTransform={{
+          enabled: true,
+          position: { x: 0, y: 540 },
+          size: { width: 620, height: 96 },
+          pivot: [0.5, 0.5],
+          rotation: 0,
+          scale2D: { x: 1, y: 1 },
+          referencePixelsPerUnit: 32,
+          renderOrder: 1000,
+          overlay: true,
+          visible: true,
+          showTransformGuides: false,
+        }}
         textAlign="center"
         verticalAlign="center"
         fontFamily='"Space Grotesk", sans-serif'
