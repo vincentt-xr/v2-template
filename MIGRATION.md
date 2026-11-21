@@ -5,6 +5,14 @@ Per release tag, newest first. Read by the platform's own version surface
 outdated`. Accurate or absent — never speculative. `required: false` is the
 authored "no action required," not silence.
 
+## 1.16.0
+required: false
+Update the CLI to 0.29.3 or later first; older CLIs refuse runtime `2026.11.14`. The template moves to SDK `2.0.0-alpha.22` on that runtime.
+- SDK `2.0.0-alpha.16` to `2.0.0-alpha.22` are additive. They add known editable components (Text and others) that the console's visual editor reads, a `ThemeProvider` export, and `components.json` in the package. App code does nothing for them.
+- The starter scenes are named and a Theme group wraps the app in `ThemeProvider`, so the visual editor lists them. An upgraded project keeps its own scenes.
+- Settings are declared as a zod list and the template carries `zod` `4.6.7`, which runtime `2026.11.14` also carries (zod/mini keeps the first visit small).
+- `@vincentt-xr/runtime` moves from `2026.11.7` to `2026.11.14`. An upgrade carries the new pins through the package manifest.
+
 ## 1.15.0
 required: false
 Update the CLI to 0.28.1 or later first; older CLIs refuse runtime `2026.11.7`. The template moves to SDK `2.0.0-alpha.15` on that runtime.
