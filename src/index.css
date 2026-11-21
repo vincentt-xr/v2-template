@@ -125,6 +125,10 @@ body,
   left: 0;
   width: 100%;
   height: 100%;
+  /* A page that scrolls or bounces on a phone drags the camera view and every AR element with it. */
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
   user-select: none;
   font-family:
     system-ui,
