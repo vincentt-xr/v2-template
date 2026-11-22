@@ -57,10 +57,12 @@ is the one who resolves that, not an assumption about which they meant.
 ### Showing it on a phone
 
 When the person asks to see it, try it, test it on a device, show a client, or get it on their
-phone, a test link is what they are asking for. A test link is the built work held at an address a
-phone can open, and `vincentt test-link` is the command that makes one. It builds in the project
-folder and leaves nothing running on this machine, so the person can close the laptop and the
-link still opens. A project the platform already hosts has a page in the console instead, which
+phone, a test link is what they are asking for. A test link is one frozen copy of the work held
+at an address a phone can open, and `vincentt test-link` is the command that makes one. It
+leaves nothing running on this machine, so the person can close the laptop and the link still
+opens. The copy lasts seven days or a hundred views, whichever comes first, on every plan, it
+can carry a passcode, the person can end it at any time from the console, and it never follows
+later saves. A project the platform already hosts has a page in the console instead, which
 carries the phone link, the code that scans to it, and the view of the device, and that page is
 the other way to hand the work over. Only one address belongs in the reply, because the person
 asking wants an address rather than a decision between two. It belongs there as soon as it
@@ -73,13 +75,15 @@ holding the phone is the one who finds out.
 ### Finishing
 
 When the person says they are done or finished, the work stops there. Nothing on this machine is
-holding a phone open, so there is nothing to end and no command to run for it. A quiet
-conversation is not a reason to make another link. A passing test is not. A successful publish
-is not. A demo that appeared to go well is not. The person is the one who asks for a new link,
-and a link someone was already given is not replaced on a guess that it has stopped working.
+holding a phone open, so there is nothing to end and no command to run for it. A test link ends
+by itself, or when the person ends it from the console. A quiet conversation is not a reason to
+make another link. A passing test is not. A successful publish is not. A demo that appeared to
+go well is not. The person is the one who asks for a new link, and a link someone was already
+given is not replaced on a guess that it has stopped working.
 
-If the person says a link no longer opens, that is a thing to report as they said it. Making
-another link changes the address everyone was given, and the person is the one who asks for it.
+A new save needs a new link, because a link never follows later saves. Making one changes the
+address everyone was given, so the person is the one who asks for it. If the person says a link
+no longer opens, that is a thing to report as they said it.
 
 ### Bringing things up to date
 
@@ -145,7 +149,7 @@ untouched by the person, and the only trace of what was replaced would be gone.
 
 ## Start here
 
-**This project is already a complete, runnable AR starter.** It previews and builds
+**This project is already a complete, runnable AR starter.** It builds and opens on a phone
 as-is. If you just scaffolded it, your job is not to invent an app — it is to get
 the developer onto the platform and to the point where they can describe what they
 want. The platform is the product: the console page, the phone link, the published
@@ -162,9 +166,10 @@ address, has not started.
    (no account) is not: run `vincentt create` in it to register the project and
    reserve its address. A fresh clone binds with `vincentt link <project-id>`
    (`vincentt projects` lists them).
-3. **Preview running.** `pnpm preview` in the background, then hand over the
-   project's console page, written plainly. That page carries the phone link and
-   the code that scans to it.
+3. **A test link.** `vincentt test-link`, then hand over the link it prints, written
+   plainly (a hosted project's console page works too, see **Getting the work onto a
+   phone** below). The link opens on a phone and is a frozen copy: it lasts 7 days or
+   100 views and never follows later saves.
 4. **Then** ask what they want to make. **Do not build a scene or pick an idea for
    them.** The starter is worth seeing on a phone before there is anything custom in
    it — it is how the developer learns the loop exists, and it is running by the
@@ -186,18 +191,18 @@ you started the conversation in, and not its parent. A background command especi
 inherit a directory you changed earlier in the conversation, so pass the project folder to it
 explicitly rather than assuming the shell is still there.
 
-Getting this wrong does not look like a path error. `pnpm preview` in a parent folder exits
-non-zero and reads as the preview having failed, and the same mistake in a folder that happens to
-hold another Vincentt project starts a preview for **that** project — reported as a working
-preview, at an address for someone else's app. Check where you are before the first command and
+Getting this wrong does not look like a path error. `vincentt test-link` in a parent folder fails
+as not linked, and the same mistake in a folder that happens to hold another Vincentt project
+makes a link for **that** project — reported as a working link, at an address for someone
+else's app. Check where you are before the first command and
 after anything that could have moved you.
 
 - **`pnpm install`** — install dependencies.
 - **`pnpm dev`** — esbuild dev server on `http://localhost:5173` (answers on both
   `127.0.0.1` and `[::1]`; `PORT` changes the port). This address is for your own
   checks. It is never given to the developer: not as a link, not as a fallback, not
-  when a preview fails. A phone reaches the work through `pnpm preview` and nothing
-  else. Dev output goes to `.dev/`, gitignored and separate from `dist/`, so a
+  when a test link fails. A phone reaches the work through `vincentt test-link` and
+  nothing else. Dev output goes to `.dev/`, gitignored and separate from `dist/`, so a
   `pnpm build` while dev is running does not change what the dev page serves.
 - **Develop against a clip instead of the camera** — when there is no webcam, or
   the browser you are previewing in blocks it (an embedded preview browser does):
@@ -212,17 +217,17 @@ after anything that could have moved you.
   starts on that source and the in-app media switcher still lets you swap. A
   hidden tab refusing to play the clip is retried until it plays.
 
-  Every `VITE_*` switch is **dev-only**: `pnpm dev` and `pnpm preview` read them,
+  Every `VITE_*` switch is **dev-only**: `pnpm dev` reads them,
   and `pnpm build` (`vincentt build`) never does, whatever file or environment
   sets them. A published app always starts on the webcam (or, framed, on a sample
   clip). There is no way to ship a configured clip.
 
-- **`pnpm preview`** — on-device preview. Builds and serves the app behind a secure
-  tunnel to Vincentt's own edge, so you get one `https` URL to open on a phone. AR
-  needs a secure context for camera access, so this is how you test tracking and
-  gestures on a real device. Nothing extra to install; the tunnel client ships with
-  the CLI. Requires being signed in (`vincentt login`) — the edge address is minted
-  per session by the platform.
+- **`vincentt test-link`** — on-device testing. Makes one `https` link to a frozen copy of
+  the app, so you can open it on a phone. AR needs a secure context for camera access,
+  so this is how you test tracking and gestures on a real device. Requires being signed
+  in (`vincentt login`). See **Getting the work onto a phone** below.
+- **`pnpm preview`** — retired. It prints the redirect to `vincentt test-link` and exits
+  non-zero; the script name stays so an old habit gets an answer.
 - **`pnpm typecheck`** — `tsc --noEmit`.
 - **`pnpm lint`** — lint the platform source with the template's ESLint rules.
 - **`pnpm test`** — run the platform and QA test suites.
@@ -357,12 +362,10 @@ verbs run without prompting.
 - **`vincentt publish`** — build first (`pnpm build`), then this uploads the built
   `dist/` and returns the live `<slug>.vincentt.app` URL. Nothing installs or builds
   server-side; publishing moves the bytes you built locally.
-- **`vincentt logs` / `network` / `trace`** — read what the phone reported to the
-  preview relay: console (add `--errors` to filter), fetch/XHR, performance samples.
-  Add `--json` for machine-readable output. Use these to debug on-device misbehavior
-  instead of guessing.
+- **`vincentt test-link`** — make a link to a frozen copy of the app for a phone (see
+  **Getting the work onto a phone** below).
 - **`vincentt feedback --wait`** — block until the developer draws an annotation on the
-  phone preview (a screenshot + strokes/pins + a message), print every annotation waiting as
+  phone (a screenshot + strokes/pins + a message), print every annotation waiting as
   one JSON object per line, and exit. See **Waiting for the phone** below for how to park on
   it.
 
@@ -440,62 +443,69 @@ is — the folder is a shortcut to the right directory, not permission to be in 
 the project _was_ worked, not where it _must_ be worked: if the developer names a different place,
 that place is right and the listing is stale.
 
-`pnpm preview` (above) is the one loop step that is not a `vincentt` verb — run it in the
-background; it holds the secure tunnel open until stopped. It prints the phone URL and, for a
-registered project, the project's page in the console.
+### Getting the work onto a phone
 
-**Hand over the console page, and nothing else.** It is the one address the developer needs
-from you: it carries the phone link and its QR, it is where they watch the device, and it is
-what they send to anyone else. The phone URL is already on that page, so repeating it in the
-reply gives the developer two addresses to choose between at the moment they want one.
+**`vincentt test-link`** is how a phone reaches the work. It makes a link to one frozen copy of
+the app. The link lasts 7 days or 100 views, whichever comes first, on every plan. It can carry
+a passcode, and the developer can end it at any time from the project's page in the console. It
+never follows later saves: a change made after the link was made needs a new link.
 
-**Never hand over a localhost address.** It reaches nobody but this machine, and the console
-page is what the developer opens. If `pnpm preview` refuses because this machine is not signed
-in, ask the developer to sign in (`vincentt login`) and run it again. Do not start `pnpm dev` and
-offer its address instead.
+- **Where the copy comes from.** A project with saved versions on the platform gets its link
+  from the latest clean save and sends nothing from this folder, so run `vincentt push` first
+  when there are changes to include. A project with no saved version, or one the platform
+  cannot build, is built in this folder and uploaded, and the command prints that it is doing so.
+  Running `vincentt build` first is harmless but is not required.
+- **Needs** an account on this machine (`vincentt login`) and a bound folder (see **Picking up
+  a project** above). Add `--json` for one machine-readable document. `--version <n>` picks a
+  saved version instead of the latest.
+- **A passcode is the developer's to ask for.** `--passcode` asks for it at a prompt with
+  nothing echoed, so it needs a terminal and is refused in an agent's shell. Never put a
+  passcode on the command line.
+- **If it refuses** (too many live links, too many made today, a save with problems), print
+  what it says and stop there. The remedy it names is the developer's to take.
 
-**Say it opens here, not on the phone.** It is a desktop page: it carries the QR the phone
-scans, the phone link, and the live device view. "Open this on your phone" points the developer
-at the wrong screen — the phone is reached _from_ this page, by scanning it.
+**Hand over the link it prints, and nothing else.** For a hosted project the project's page in
+the console is the other way to hand the work over: it is where the developer watches the
+project and ends links. One of the two goes in the reply, not both, so the developer is not
+choosing between addresses at the moment they want one.
+
+**Never hand over a localhost address.** It reaches nobody but this machine. If `vincentt
+test-link` refuses because this machine is not signed in, ask the developer to sign in
+(`vincentt login`) and run it again. Do not start `pnpm dev` and offer its address instead.
+
+**Say it opens on the phone's screen, not this one.** Both the link and the console page are
+for the person holding the device; on the desktop, the console page carries the QR the phone
+scans.
 
 **Put it in the reply as a bare URL on its own line — no backticks, no code fence, no
 `Console:` label.** A URL in code formatting renders as something to copy; a bare one renders
 as something to click, and the developer is reaching for their phone, not their clipboard.
 
-**The console page is the only link in the reply. Everything else is named, not linked.** A
+**The link or console page is the only link in the reply. Everything else is named, not linked.** A
 project, a folder, or a file is written as plain text — `christmas-booth-10`, not
 `[christmas-booth-10](christmas-booth-10)`. A markdown link whose target is a bare folder name
 points at nothing: it renders as a link, invites a click, and goes nowhere. If a path is worth
 giving, give the path itself.
 
-### When the preview ends while you are working
+### When a test link ends or goes stale
 
-`pnpm preview` holds the tunnel open until something ends it, and it prints why on the way out.
-**A preview that ends is not a command that failed.** It is usually the developer stopping it —
-from the console, from another terminal, or by closing the one it was running in.
+Nothing on this machine holds a phone open, so there is no running process to watch, stop or
+restart. A test link ends by itself (7 days or 100 views) or when the developer ends it from the
+console, and it never follows later saves.
 
-**Read the last block it printed and say what it says. Do not start another one.**
+**A link that has ended is not a command that failed.** If the developer says a link no longer
+opens, say so as they said it and wait to be asked. **A new save needs a new link**, and making
+one is the developer's call: a new link changes the address every phone was given. Do not make
+another one because a test passed, a save went through, or a quiet stretch went by.
 
-- `✓ Preview stopped. The link no longer works.` — someone stopped it on this account. Say so
-  and stop there. **This is the common case and it is not an error**: the developer chose it,
-  often from the console page you just handed them.
-- `✓ Preview stopped. 12-hour maximum reached.` — it ran its full life. Say so.
-- `✗ Preview ended. …` — something went wrong; relay the line as printed.
-
-**Starting a new preview because the old one ended is the wrong move**, even when the developer
-has not said anything since. It overrides a deliberate stop, it mints a new link so every phone
-already holding one needs a re-scan, and it makes the reason you were about to report untrue by
-the time you report it. Wait to be asked.
-
-**A `✓` is not a failure to retry.** Re-running `pnpm preview` on a folder whose preview is
-already running attaches instead of minting, so a retry loop does not even produce a second
-preview — it supersedes the session it just attached to and reports `superseded`, which reads as
-something breaking when nothing was.
+**`pnpm preview` is retired.** It prints where to go instead (`vincentt build`, then `vincentt
+test-link`, or the project's console page) and exits non-zero. Do not retry it and do not look
+for a way round it.
 
 ## Waiting for the phone
 
 `vincentt feedback --wait` blocks until the developer sends something from the phone
-preview, then prints it and exits. It is the one step in this loop where you wait on a person.
+(a comment on the project's page or on a test link), then prints it and exits. It is the one step in this loop where you wait on a person.
 
 **Blocking costs nothing while it waits.** No model turn is spent, no timer runs, nothing is
 polled. The process is parked on a single open request. This is worth stating because the
@@ -507,8 +517,8 @@ backwards here, and acting on it is expensive.
 | Exit   | What happened                                                                           | What to do                                                             |
 | ------ | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | **0**  | One or more annotations were printed, one JSON object per line on stdout.               | Read them and take up the work.                                        |
-| **64** | The window passed with nothing waiting. Nothing was printed. The preview is still live. | Run the same command again. Nothing was missed and nothing is re-read. |
-| **65** | The preview ended. Nothing more can arrive on it.                                       | A preview has to be running before there is anything to wait on.       |
+| **64** | The window passed with nothing waiting. Nothing was printed.                            | Run the same command again. Nothing was missed and nothing is re-read. |
+| **65** | The channel ended. Nothing more can arrive on it.                                       | Make sure a test link is out before there is anything to wait on.      |
 | **1**  | A usage error or a fault. The reason is on stderr.                                      | Read stderr.                                                           |
 
 `--timeout <seconds>` sets the window (default 300).
@@ -526,7 +536,7 @@ Decide by what **you** can do, not by what you are:
 
 Either way, on **64** the correct next step is the same command again. That is the whole loop:
 park, handle whatever exit you get, park again. On **65**, stop — the channel is closed until a
-preview is running again.
+new test link is out.
 
 ### Two things that are true of both
 
@@ -761,4 +771,4 @@ the build reads can end up in the published files.
 You are working with a developer, not a non-technical user. Be concise and specific —
 component names, props, and file paths are welcome, not something to hide. When you
 finish a change, say what you changed and how to check it: for anything camera- or
-AR-related, that usually means `pnpm preview` on a phone.
+AR-related, that usually means a `vincentt test-link` opened on a phone.
