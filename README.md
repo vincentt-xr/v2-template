@@ -24,14 +24,14 @@ See `AGENTS.md` and `GROUNDING.md` for the API reference and how to author scene
 ```
 pnpm install
 vincentt login    # once per machine; `vincentt create` registers a folder from `vincentt init`
-pnpm preview      # on-device preview over a secure tunnel: the address the developer gets
+vincentt test-link  # on-device testing: a link to a frozen copy (7 days or 100 views)
 pnpm dev          # esbuild dev server on localhost:5173 for your own checks (output in .dev/)
 pnpm typecheck
 pnpm build        # `vincentt build`: production bundle to dist/ (needs the CLI installed)
 vincentt publish  # upload dist/ and go live at <slug>.vincentt.app
 ```
 
-The developer's path is the platform: sign in, preview, publish. `pnpm dev` is a local
+The developer's path is the platform: sign in, test link, publish. `pnpm dev` is a local
 check; its address is never the one a developer or a phone is given.
 
 ## Release

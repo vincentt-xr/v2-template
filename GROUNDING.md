@@ -1437,4 +1437,5 @@ it itself. Otherwise the publish goes straight through.
   app. A cookie must use the `__Host-` prefix (`Secure; Path=/`, no `Domain`); never set
   `Domain=vincentt.app`, which every other published app would receive. An app with real visitor
   sign-in belongs on its own custom domain.
-- **Publishing does not end a preview.** A preview stops only when the person asks for it to stop.
+- **Publishing does not replace a test link.** A test link is a frozen copy that ends by itself or
+  when the person ends it, and a new save needs a new link only when the person asks for one.
